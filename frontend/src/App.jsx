@@ -1,10 +1,23 @@
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Navbar from './components/layout/Navbar';
+import AppRoutes from './routes/AppRoutes';
+
 function App() {
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <h1 className="text-4xl font-bold text-blue-600">
-                SEP490-SP27
-            </h1>
-        </div>
+        <BrowserRouter>
+            <AuthProvider>
+                <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+                    <Navbar />
+                    <main className="flex-grow">
+                        <AppRoutes />
+                    </main>
+                    <footer className="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-500">
+                        <p>© {new Date().getFullYear()} SEP490-SP27 Authentication System. All rights reserved.</p>
+                    </footer>
+                </div>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }
 
