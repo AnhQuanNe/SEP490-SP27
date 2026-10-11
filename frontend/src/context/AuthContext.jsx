@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
                         setUser(res.data);
                     }
                 } catch (error) {
-                    console.error('Không thể xác thực phiên đăng nhập cũ:', error.message);
+                    console.warn('Phiên đăng nhập cũ đã hết hạn, tự động làm mới trạng thái.');
                     logout();
                 }
             }

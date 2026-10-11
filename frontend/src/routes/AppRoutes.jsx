@@ -6,11 +6,16 @@ import VerifyEmail from '../pages/auth/VerifyEmail';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import ResetPassword from '../pages/auth/ResetPassword';
 import Profile from '../pages/customer/Profile';
+import SplitScreenMirror from '../pages/learning/SplitScreenMirror';
+import SkillTree from '../pages/learning/SkillTree';
+import TwoWayTranslator from '../pages/communicator/TwoWayTranslator';
+import LocalSignSpace from '../pages/dictionary/LocalSignSpace';
 import ProtectedRoute from './ProtectedRoute';
 
 const AppRoutes = () => {
     return (
         <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -18,7 +23,13 @@ const AppRoutes = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Route yêu cầu đăng nhập */}
+            {/* Core Feature Modules (Accessible for Guest demo & Registered Users) */}
+            <Route path="/learning/mirror" element={<SplitScreenMirror />} />
+            <Route path="/learning/skill-tree" element={<SkillTree />} />
+            <Route path="/communicator" element={<TwoWayTranslator />} />
+            <Route path="/dictionary" element={<LocalSignSpace />} />
+
+            {/* Authenticated user routes */}
             <Route
                 path="/profile"
                 element={
@@ -28,7 +39,7 @@ const AppRoutes = () => {
                 }
             />
 
-            {/* Bắt các route không xác định */}
+            {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
