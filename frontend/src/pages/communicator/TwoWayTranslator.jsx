@@ -79,9 +79,6 @@ const TwoWayTranslator = () => {
                             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                                 Trợ Lý Giao Tiếp Hai Chiều Thời Gian Thực
                             </h1>
-                            <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                UC09 - UC11
-                            </span>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500">
                             Cầu nối hai chiều giữa Người khiếm thính (Ký hiệu) và Xã hội (Giọng nói/Văn bản).
@@ -99,7 +96,7 @@ const TwoWayTranslator = () => {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        Cử chỉ ➔ Giọng nói (UC09)
+                        Cử chỉ ➔ Giọng nói
                     </button>
                     <button
                         onClick={() => setActiveTab('voice-to-sign')}
@@ -109,7 +106,7 @@ const TwoWayTranslator = () => {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        Giọng nói ➔ Ký hiệu (UC10)
+                        Giọng nói ➔ Ký hiệu
                     </button>
                     <button
                         onClick={() => setActiveTab('websocket-room')}

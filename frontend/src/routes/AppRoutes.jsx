@@ -10,6 +10,7 @@ import SplitScreenMirror from '../pages/learning/SplitScreenMirror';
 import SkillTree from '../pages/learning/SkillTree';
 import TwoWayTranslator from '../pages/communicator/TwoWayTranslator';
 import LocalSignSpace from '../pages/dictionary/LocalSignSpace';
+import EducatorConsole from '../pages/educator/EducatorConsole';
 import ProtectedRoute from './ProtectedRoute';
 
 const AppRoutes = () => {
@@ -28,6 +29,8 @@ const AppRoutes = () => {
             <Route path="/learning/skill-tree" element={<SkillTree />} />
             <Route path="/communicator" element={<TwoWayTranslator />} />
             <Route path="/dictionary" element={<LocalSignSpace />} />
+            <Route path="/educator" element={<EducatorConsole />} />
+            <Route path="/educator/classrooms" element={<EducatorConsole />} />
 
             {/* Authenticated user routes */}
             <Route

@@ -297,7 +297,7 @@ const Home = () => {
                                 <Video className="w-6 h-6" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wide">UC06 Studio</span>
+                                <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wide">Studio</span>
                                 <h3 className="text-lg font-bold text-slate-900">Gương Ảo AI Split-Screen</h3>
                             </div>
                             <p className="text-sm text-slate-600 leading-relaxed">
@@ -318,7 +318,7 @@ const Home = () => {
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">UC09 - UC11 Communicator</span>
+                                <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">Communicator</span>
                                 <h3 className="text-lg font-bold text-slate-900">Trợ Lý Dịch 2 Chiều Real-Time</h3>
                             </div>
                             <p className="text-sm text-slate-600 leading-relaxed">
@@ -339,7 +339,7 @@ const Home = () => {
                                 <Globe className="w-5 h-5" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">UC12 - UC14 Crowdsourcing</span>
+                                <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Crowdsourcing</span>
                                 <h3 className="text-lg font-bold text-slate-900">Không Gian Phương Ngữ Synset</h3>
                             </div>
                             <p className="text-sm text-slate-600 leading-relaxed">
@@ -360,7 +360,7 @@ const Home = () => {
                                 <GraduationCap className="w-6 h-6" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide">UC05 & UC15-17 Console</span>
+                                <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide">Console</span>
                                 <h3 className="text-lg font-bold text-slate-900">Skill Tree & Lớp Học Giảng Viên</h3>
                             </div>
                             <p className="text-sm text-slate-600 leading-relaxed">

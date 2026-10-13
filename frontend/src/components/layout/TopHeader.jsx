@@ -207,6 +207,15 @@ const TopHeader = ({
                                             <User className="w-4 h-4 mr-3 text-slate-400" />
                                             Hồ sơ cá nhân & Đổi mật khẩu
                                         </Link>
+
+                                        <Link
+                                            to="/educator/classrooms"
+                                            onClick={() => setUserDropdownOpen(false)}
+                                            className="flex items-center px-4 py-2.5 text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition font-medium"
+                                        >
+                                            <GraduationCap className="w-4 h-4 mr-3 text-slate-400" />
+                                            Lớp học & Giáo án Giảng viên
+                                        </Link>
                                     </div>
 
                                     <div className="border-t border-slate-100 my-1"></div>

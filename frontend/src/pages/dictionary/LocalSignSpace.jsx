@@ -128,7 +128,6 @@ const LocalSignSpace = () => {
                                 Không Gian Phương Ngữ & Ngữ Liệu Synset
                             </h1>
                             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                UC12 - UC14
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500">
@@ -270,7 +269,7 @@ const LocalSignSpace = () => {
 
                         <div className="space-y-1">
                             <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
-                                UC13 • Crowdsourced Studio
+                                Crowdsourced Studio
                             </span>
                             <h3 className="text-xl font-black text-slate-900">
                                 Đóng Góp Video Cử Chỉ Mới

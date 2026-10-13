@@ -43,6 +43,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, mobileOpen, setMobileOpen }) => 
         { label: 'Gương ảo AI', path: '/learning/mirror', icon: Video, badge: 'Webcam', badgeColor: 'bg-sky-50 text-sky-600 border border-sky-100' },
         { label: 'Trợ lý Dịch 2 Chiều', path: '/communicator', icon: MessageSquare, badge: 'Real-time', badgeColor: 'bg-blue-50 text-blue-600 border border-blue-100' },
         { label: 'Không gian Synset', path: '/dictionary', icon: Layers },
+        { label: 'Lớp học Giảng viên', path: '/educator/classrooms', icon: GraduationCap, badge: 'LMS', badgeColor: 'bg-purple-50 text-purple-700 border border-purple-200' },
     ];
 
     return (
