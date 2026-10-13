@@ -46,7 +46,7 @@ const SplitScreenMirror = () => {
     const [isAiLoaded, setIsAiLoaded] = useState(false);
     const [poseMatchScore, setPoseMatchScore] = useState(0);
     const [isPoseCorrect, setIsPoseCorrect] = useState(false);
-    const [poseFeedback, setPoseFeedback] = useState('Bật webcam và đưa bàn tay lên ngang thái dương');
+    const [poseFeedback, setPoseFeedback] = useState('Bật webcam và đưa 2 tay lên ngang 2 bên thái dương');
     const [holdProgress, setHoldProgress] = useState(0); // 0 to 100%
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [completionResult, setCompletionResult] = useState(null);
@@ -180,56 +180,103 @@ const SplitScreenMirror = () => {
         }
     }, [currentLesson, isAuthenticated, poseMatchScore, isSubmitting, refreshProfile]);
 
-    // RIGOROUS VSL GESTURE EVALUATION
+    // RIGOROUS VSL GESTURE EVALUATION (SUPPORTS BOTH 1-HAND & 2-HAND SIGNS)
     const evaluateGesture = useCallback(
-        (landmarks) => {
-            if (!landmarks || landmarks.length < 21) {
+        (multiHandLandmarks) => {
+            if (!multiHandLandmarks || multiHandLandmarks.length === 0) {
                 setPoseMatchScore(0);
                 setIsPoseCorrect(false);
-                setPoseFeedback('Chưa phát hiện bàn tay trước camera');
+                setPoseFeedback('Chưa phát hiện bàn tay trước camera. Hãy giơ tay lên!');
                 holdStartTimeRef.current = null;
                 setHoldProgress(0);
                 return;
             }
 
-            // Key Landmarks:
-            // 0: Wrist, 4: Thumb tip, 8: Index tip, 12: Middle tip, 16: Ring tip, 20: Pinky tip
-            // 2: Thumb MCP, 6: Index PIP, 10: Middle PIP, 14: Ring PIP, 18: Pinky PIP
-            const wrist = landmarks[0];
-            const indexTip = landmarks[8];
-            const middleTip = landmarks[12];
-            const ringTip = landmarks[16];
-            const pinkyTip = landmarks[20];
-
-            const isThumbOpen = landmarks[4].y < landmarks[3].y;
-            const isIndexOpen = indexTip.y < landmarks[6].y;
-            const isMiddleOpen = middleTip.y < landmarks[10].y;
-            const isRingOpen = ringTip.y < landmarks[14].y;
-            const isPinkyOpen = pinkyTip.y < landmarks[18].y;
-
-            const openFingersCount = [isThumbOpen, isIndexOpen, isMiddleOpen, isRingOpen, isPinkyOpen].filter(
-                Boolean
-            ).length;
+            // Helper to count open fingers on a given hand
+            const countOpenFingers = (landmarks) => {
+                if (!landmarks || landmarks.length < 21) return 0;
+                const isThumbOpen = Math.hypot(landmarks[4].x - landmarks[2].x, landmarks[4].y - landmarks[2].y) > 0.07;
+                const isIndexOpen = landmarks[8].y < landmarks[6].y;
+                const isMiddleOpen = landmarks[12].y < landmarks[10].y;
+                const isRingOpen = landmarks[16].y < landmarks[14].y;
+                const isPinkyOpen = landmarks[20].y < landmarks[18].y;
+                return [isThumbOpen, isIndexOpen, isMiddleOpen, isRingOpen, isPinkyOpen].filter(Boolean).length;
+            };
 
             const concept = currentLesson?.signConcept?.toLowerCase() || 'xin chào';
             let match = false;
             let score = 0;
             let feedback = '';
 
-            if (concept.includes('yêu') || concept.includes('ily')) {
-                // ILY: Thumb + Index + Pinky OPEN; Middle + Ring CLOSED
+            // BÀI HỌC "XIN CHÀO" - CỬ CHỈ 2 TAY CHUẨN VSL
+            if (concept.includes('chào') || concept.includes('xin chào')) {
+                const handCount = multiHandLandmarks.length;
+
+                if (handCount < 2) {
+                    // Người dùng mới chỉ giơ 1 bàn tay
+                    const singleHand = multiHandLandmarks[0];
+                    const isAtHead = singleHand[0].y < 0.65;
+                    match = false;
+                    score = isAtHead ? 50 : 35;
+                    feedback = '⚠️ Cử chỉ "Xin chào" cần CẢ 2 TAY! Hãy giơ cả bàn tay còn lại lên ngang thái dương.';
+                } else {
+                    // Đã phát hiện đủ 2 bàn tay
+                    const handA = multiHandLandmarks[0];
+                    const handB = multiHandLandmarks[1];
+                    const openA = countOpenFingers(handA);
+                    const openB = countOpenFingers(handB);
+
+                    // Kiểm tra vị trí: Cả 2 tay phải ở ngang tầm thái dương / mang tai
+                    const isHandAAtHead = handA[0].y < 0.68 && handA[8].y < handA[0].y;
+                    const isHandBAtHead = handB[0].y < 0.68 && handB[8].y < handB[0].y;
+
+                    // Khoảng cách ngang giữa 2 cổ tay (đặt ở 2 bên đầu, không chụm sát)
+                    const separation = Math.abs(handA[0].x - handB[0].x);
+
+                    if (!isHandAAtHead || !isHandBAtHead) {
+                        match = false;
+                        score = 65;
+                        feedback = '⚠️ Hãy nâng cả 2 bàn tay lên ngang 2 bên thái dương / mang tai!';
+                    } else if (openA < 4 || openB < 4) {
+                        match = false;
+                        score = 75;
+                        feedback = '⚠️ Mở thẳng 4 - 5 ngón tay của cả 2 bàn tay hướng lên trên!';
+                    } else if (separation < 0.15) {
+                        match = false;
+                        score = 80;
+                        feedback = '⚠️ Đặt 2 tay cân xứng ở 2 bên thái dương (đừng để sát nhau quá)!';
+                    } else {
+                        // ĐẠT CHUẨN CẢ 2 TAY THEO VIDEO MẪU!
+                        match = true;
+                        score = (openA === 5 && openB === 5) ? 98 : 94;
+                        feedback = '✨ Rất chuẩn! Cả 2 tay đúng vị trí 2 bên thái dương! Giữ yên 1.5 giây...';
+                    }
+                }
+            } else if (concept.includes('yêu') || concept.includes('ily')) {
+                const primaryHand = multiHandLandmarks[0];
+                const isThumbOpen = Math.hypot(primaryHand[4].x - primaryHand[2].x, primaryHand[4].y - primaryHand[2].y) > 0.07;
+                const isIndexOpen = primaryHand[8].y < primaryHand[6].y;
+                const isMiddleOpen = primaryHand[12].y < primaryHand[10].y;
+                const isRingOpen = primaryHand[16].y < primaryHand[14].y;
+                const isPinkyOpen = primaryHand[20].y < primaryHand[18].y;
+                const openCount = countOpenFingers(primaryHand);
+
                 if (isIndexOpen && isPinkyOpen && !isMiddleOpen && !isRingOpen) {
                     match = true;
                     score = isThumbOpen ? 98 : 88;
                     feedback = '✨ Tuyệt vời! Thế tay ILY (Tôi yêu bạn) chuẩn xác!';
                 } else {
-                    score = Math.max(25, openFingersCount * 15);
+                    score = Math.max(25, openCount * 15);
                     feedback = 'Gập 2 ngón giữa lại, mở ngón trỏ và ngón út!';
                 }
             } else if (concept.includes('cảm ơn')) {
-                // Cảm ơn (Thank you): Tay chạm/đưa từ cằm ra trước
+                const primaryHand = multiHandLandmarks[0];
+                const wrist = primaryHand[0];
+                const indexTip = primaryHand[8];
+                const openCount = countOpenFingers(primaryHand);
                 const isNearChin = wrist.y < 0.65 && indexTip.y < 0.55;
-                if (isNearChin && openFingersCount >= 4) {
+
+                if (isNearChin && openCount >= 4) {
                     match = true;
                     score = 94;
                     feedback = '✨ Tư thế chuẩn! Đầu ngón tay chạm cằm đưa nhẹ ra trước!';
@@ -237,36 +284,15 @@ const SplitScreenMirror = () => {
                     score = 40;
                     feedback = '⚠️ Hãy đặt bàn tay ở vùng cằm rồi đưa nhẹ về phía trước!';
                 } else {
-                    score = openFingersCount * 18;
+                    score = openCount * 18;
                     feedback = 'Mở phẳng bàn tay hướng từ cằm ra phía người đối diện.';
                 }
             } else {
-                // CỬ CHỈ "XIN CHÀO" CHUẨN VSL:
-                // 1. Vị trí không gian: Bàn tay phải ở ngang vùng thái dương / mang tai / mắt (y < 0.5)
-                // 2. Thế tay: 4 - 5 ngón mở tự nhiên, hướng lên trên (indexTip.y < wrist.y)
-                const isHandAtHeadLevel = wrist.y < 0.58 && indexTip.y < 0.45;
-                const isHandUpright = indexTip.y < wrist.y;
-
-                if (!isHandAtHeadLevel) {
-                    // Giơ tay nhưng ở vùng ngực, bụng hoặc quá thấp
-                    match = false;
-                    score = Math.min(45, openFingersCount * 10);
-                    feedback = '⚠️ Nâng bàn tay lên ngang thái dương / mắt theo đúng cử chỉ "Xin chào"!';
-                } else if (!isHandUpright) {
-                    match = false;
-                    score = 50;
-                    feedback = '⚠️ Hướng các ngón tay lên trên, lòng bàn tay mở tự nhiên.';
-                } else if (openFingersCount < 4) {
-                    // Đúng vị trí trên đầu nhưng nắm đấm hoặc thiếu ngón
-                    match = false;
-                    score = openFingersCount * 18;
-                    feedback = '⚠️ Hãy xòe mở 4 - 5 ngón tay thẳng cạnh thái dương để chào!';
-                } else {
-                    // ĐẠT CHUẨN CẢ VỊ TRÍ + THẾ TAY XIN CHÀO VSL!
-                    match = true;
-                    score = openFingersCount === 5 ? 98 : 92;
-                    feedback = '✨ Rất chuẩn! Giữ yên tư thế cạnh thái dương 1.5 giây!';
-                }
+                const primaryHand = multiHandLandmarks[0];
+                const openCount = countOpenFingers(primaryHand);
+                match = openCount >= 4 && primaryHand[0].y < 0.65;
+                score = match ? 92 : openCount * 18;
+                feedback = match ? '✨ Giữ yên tư thế chuẩn 1.5 giây!' : 'Đưa tay vào khung hình và mở ngón tay.';
             }
 
             setPoseMatchScore(score);
@@ -311,7 +337,7 @@ const SplitScreenMirror = () => {
                 });
 
                 hands.setOptions({
-                    maxNumHands: 1,
+                    maxNumHands: 2,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.5,
                     minTrackingConfidence: 0.5,
@@ -326,26 +352,26 @@ const SplitScreenMirror = () => {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                        const landmarks = results.multiHandLandmarks[0];
+                        // Draw real skeletal bones and joints for ALL detected hands (up to 2 hands)
+                        results.multiHandLandmarks.forEach((landmarks, index) => {
+                            if (window.drawConnectors && window.drawLandmarks) {
+                                window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, {
+                                    color: index === 0 ? '#10b981' : '#06b6d4',
+                                    lineWidth: 4,
+                                });
+                                window.drawLandmarks(ctx, landmarks, {
+                                    color: '#f43f5e',
+                                    fillColor: '#ffffff',
+                                    lineWidth: 2,
+                                    radius: 4,
+                                });
+                            }
+                        });
 
-                        // Draw real skeletal bones and joints
-                        if (window.drawConnectors && window.drawLandmarks) {
-                            window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, {
-                                color: '#10b981',
-                                lineWidth: 4,
-                            });
-                            window.drawLandmarks(ctx, landmarks, {
-                                color: '#f43f5e',
-                                fillColor: '#ffffff',
-                                lineWidth: 2,
-                                radius: 5,
-                            });
-                        }
-
-                        // Evaluate gesture geometry
-                        evaluateGesture(landmarks);
+                        // Evaluate gesture geometry with all detected hands
+                        evaluateGesture(results.multiHandLandmarks);
                     } else {
-                        evaluateGesture(null);
+                        evaluateGesture([]);
                     }
                     ctx.restore();
                 });
@@ -904,16 +930,16 @@ const SplitScreenMirror = () => {
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
                 <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
                     <Layers className="w-5 h-5 text-indigo-600" />
-                    <span>Quy Chuẩn Ký Hiệu "Xin Chào" Của Người Khiếm Thính</span>
+                    <span>Quy Chuẩn Ký Hiệu "Xin Chào" Của Người Khiếm Thính (Cử Chỉ 2 Tay)</span>
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
                         <span className="font-bold text-rose-600 flex items-center gap-1.5">
-                            <HandMetal className="w-4 h-4" /> 1. Vị Trí Không Gian Bắt Buộc
+                            <HandMetal className="w-4 h-4" /> 1. Vị Trí Cả 2 Bàn Tay
                         </span>
                         <p className="text-slate-600 leading-relaxed">
-                            Bàn tay phải nâng lên <strong>ngang tầm thái dương / mang tai</strong> (không để ở ngực hay bụng). AI sẽ từ chối chấm xanh nếu tay giơ quá thấp.
+                            Nâng <strong>cả hai bàn tay lên ngang 2 bên thái dương / mang tai</strong> (như trong video giảng viên chuẩn). AI sẽ theo dõi đồng thời 42 điểm khớp của cả 2 tay.
                         </p>
                     </div>
 
@@ -922,16 +948,16 @@ const SplitScreenMirror = () => {
                             <CheckCircle2 className="w-4 h-4" /> 2. Thế Bàn Tay (Handshape)
                         </span>
                         <p className="text-slate-600 leading-relaxed">
-                            Các ngón tay mở tự nhiên, lòng bàn tay hướng ra phía trước hoặc hơi nghiêng vào thái dương một góc nhẹ nhàng.
+                            Hai lòng bàn tay mở phẳng hướng nhẹ vào nhau hoặc ra trước, 4-5 ngón tay hướng lên trên, giữ khoảng cách cân đối ở hai bên đầu.
                         </p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
                         <span className="font-bold text-rose-600 flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4" /> 3. Kết Thúc & Chuyển Bài
+                            <Sparkles className="w-4 h-4" /> 3. Chấm Điểm & Giữ Thế 1.5 Giây
                         </span>
                         <p className="text-slate-600 leading-relaxed">
-                            Giữ yên 1.5 giây ➔ Chuông chúc mừng reo lên ➔ Bảng vinh danh hiện ra 3 Sao ⭐⭐⭐ kèm nút <strong>"Luyện Bài Tiếp Theo ➔"</strong>.
+                            Duy trì thế 2 tay ổn định 1.5 giây ➔ Vạch xanh chạy đủ 100% ➔ Chuông reo chúc mừng và nhận thưởng <strong>+50 XP</strong>!
                         </p>
                     </div>
                 </div>

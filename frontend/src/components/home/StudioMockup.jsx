@@ -109,16 +109,25 @@ const StudioMockup = () => {
                             
                             {/* Left Box: MẪU CHUẨN */}
                             <div className="relative rounded-2xl bg-slate-950 p-3 aspect-square flex flex-col justify-between overflow-hidden border border-slate-800 group">
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/80 z-10 pointer-events-none"></div>
+                                {/* Real Video Preview */}
+                                <video
+                                    src="/videos/xin-chao.mp4"
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/70 z-10 pointer-events-none"></div>
 
                                 {/* Top Badges */}
                                 <div className="relative z-20 flex items-center justify-between text-[10px]">
-                                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/30 text-rose-300 font-bold border border-rose-500/40">
+                                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/30 text-rose-300 font-bold border border-rose-500/40 backdrop-blur-sm">
                                         MẪU CHUẨN
                                     </span>
                                     <button
                                         onClick={toggleSpeed}
-                                        className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 font-mono text-slate-300 transition"
+                                        className="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 font-mono text-slate-300 transition backdrop-blur-sm"
                                         title="Chỉnh tốc độ phát"
                                     >
                                         {speed} Speed
@@ -138,7 +147,7 @@ const StudioMockup = () => {
                                         )}
                                     </button>
                                     <p className="text-xs font-bold text-white tracking-tight">"Xin chào"</p>
-                                    <p className="text-[10px] text-slate-400">Giảng viên chuyên biệt</p>
+                                    <p className="text-[10px] text-slate-300 font-medium">Giảng viên chuyên biệt (2 tay)</p>
                                 </div>
 
                                 {/* Bottom Tag */}
@@ -152,42 +161,75 @@ const StudioMockup = () => {
                             <div className="relative rounded-2xl bg-indigo-950/80 p-3 aspect-square flex flex-col justify-between overflow-hidden border-2 border-emerald-500 shadow-md shadow-emerald-500/20 group">
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/60 z-10 pointer-events-none"></div>
 
-                                {/* MediaPipe Hand Landmark Wireframe Simulation */}
-                                <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none">
-                                    <svg viewBox="0 0 100 100" className="w-28 h-28 text-emerald-400 stroke-current animate-pulse">
-                                        {/* Wrist & Palm lines */}
-                                        <line x1="50" y1="85" x2="35" y2="65" strokeWidth="1.5" />
-                                        <line x1="50" y1="85" x2="50" y2="60" strokeWidth="1.5" />
-                                        <line x1="50" y1="85" x2="65" y2="65" strokeWidth="1.5" />
-                                        {/* Thumb */}
-                                        <line x1="35" y1="65" x2="20" y2="55" strokeWidth="1.5" />
-                                        <line x1="20" y1="55" x2="15" y2="40" strokeWidth="1.5" />
-                                        {/* Index */}
-                                        <line x1="38" y1="55" x2="35" y2="35" strokeWidth="1.5" />
-                                        <line x1="35" y1="35" x2="33" y2="20" strokeWidth="1.5" />
-                                        {/* Middle */}
-                                        <line x1="50" y1="55" x2="50" y2="30" strokeWidth="1.5" />
-                                        <line x1="50" y1="30" x2="50" y2="15" strokeWidth="1.5" />
-                                        {/* Ring */}
-                                        <line x1="62" y1="55" x2="65" y2="35" strokeWidth="1.5" />
-                                        <line x1="65" y1="35" x2="67" y2="22" strokeWidth="1.5" />
-                                        {/* Pinky */}
-                                        <line x1="68" y1="65" x2="78" y2="50" strokeWidth="1.5" />
-                                        <line x1="78" y1="50" x2="82" y2="38" strokeWidth="1.5" />
-                                        {/* Joints dots */}
-                                        <circle cx="50" cy="85" r="3" fill="#10b981" />
-                                        <circle cx="33" cy="20" r="2.5" fill="#34d399" />
-                                        <circle cx="50" cy="15" r="2.5" fill="#34d399" />
-                                        <circle cx="67" cy="22" r="2.5" fill="#34d399" />
-                                        <circle cx="82" cy="38" r="2.5" fill="#34d399" />
-                                        <circle cx="15" cy="40" r="2.5" fill="#34d399" />
+                                {/* MediaPipe 2-Hand Landmark Wireframe Simulation */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
+                                    <svg viewBox="0 0 100 100" className="w-full h-full text-emerald-400 stroke-current animate-pulse px-2">
+                                        {/* LEFT HAND (Tay trái) */}
+                                        <g className="text-emerald-400">
+                                            {/* Palm & Wrist */}
+                                            <line x1="25" y1="80" x2="16" y2="60" strokeWidth="1.2" />
+                                            <line x1="25" y1="80" x2="25" y2="55" strokeWidth="1.2" />
+                                            <line x1="25" y1="80" x2="34" y2="60" strokeWidth="1.2" />
+                                            {/* Thumb */}
+                                            <line x1="16" y1="60" x2="8" y2="50" strokeWidth="1.2" />
+                                            <line x1="8" y1="50" x2="5" y2="38" strokeWidth="1.2" />
+                                            {/* Index */}
+                                            <line x1="18" y1="52" x2="16" y2="35" strokeWidth="1.2" />
+                                            <line x1="16" y1="35" x2="15" y2="20" strokeWidth="1.2" />
+                                            {/* Middle */}
+                                            <line x1="25" y1="52" x2="25" y2="30" strokeWidth="1.2" />
+                                            <line x1="25" y1="30" x2="25" y2="15" strokeWidth="1.2" />
+                                            {/* Ring */}
+                                            <line x1="31" y1="52" x2="33" y2="35" strokeWidth="1.2" />
+                                            <line x1="33" y1="35" x2="34" y2="22" strokeWidth="1.2" />
+                                            {/* Pinky */}
+                                            <line x1="34" y1="60" x2="40" y2="48" strokeWidth="1.2" />
+                                            <line x1="40" y1="48" x2="42" y2="35" strokeWidth="1.2" />
+                                            {/* Dots */}
+                                            <circle cx="25" cy="80" r="2.2" fill="#10b981" />
+                                            <circle cx="15" cy="20" r="2" fill="#34d399" />
+                                            <circle cx="25" cy="15" r="2" fill="#34d399" />
+                                            <circle cx="34" cy="22" r="2" fill="#34d399" />
+                                            <circle cx="42" cy="35" r="2" fill="#34d399" />
+                                            <circle cx="5" cy="38" r="2" fill="#34d399" />
+                                        </g>
+
+                                        {/* RIGHT HAND (Tay phải) */}
+                                        <g className="text-cyan-400">
+                                            {/* Palm & Wrist */}
+                                            <line x1="75" y1="80" x2="66" y2="60" strokeWidth="1.2" />
+                                            <line x1="75" y1="80" x2="75" y2="55" strokeWidth="1.2" />
+                                            <line x1="75" y1="80" x2="84" y2="60" strokeWidth="1.2" />
+                                            {/* Pinky */}
+                                            <line x1="66" y1="60" x2="60" y2="48" strokeWidth="1.2" />
+                                            <line x1="60" y1="48" x2="58" y2="35" strokeWidth="1.2" />
+                                            {/* Ring */}
+                                            <line x1="69" y1="52" x2="67" y2="35" strokeWidth="1.2" />
+                                            <line x1="67" y1="35" x2="66" y2="22" strokeWidth="1.2" />
+                                            {/* Middle */}
+                                            <line x1="75" y1="52" x2="75" y2="30" strokeWidth="1.2" />
+                                            <line x1="75" y1="30" x2="75" y2="15" strokeWidth="1.2" />
+                                            {/* Index */}
+                                            <line x1="82" y1="52" x2="84" y2="35" strokeWidth="1.2" />
+                                            <line x1="84" y1="35" x2="85" y2="20" strokeWidth="1.2" />
+                                            {/* Thumb */}
+                                            <line x1="84" y1="60" x2="92" y2="50" strokeWidth="1.2" />
+                                            <line x1="92" y1="50" x2="95" y2="38" strokeWidth="1.2" />
+                                            {/* Dots */}
+                                            <circle cx="75" cy="80" r="2.2" fill="#06b6d4" />
+                                            <circle cx="85" cy="20" r="2" fill="#22d3ee" />
+                                            <circle cx="75" cy="15" r="2" fill="#22d3ee" />
+                                            <circle cx="66" cy="22" r="2" fill="#22d3ee" />
+                                            <circle cx="58" cy="35" r="2" fill="#22d3ee" />
+                                            <circle cx="95" cy="38" r="2" fill="#22d3ee" />
+                                        </g>
                                     </svg>
                                 </div>
 
                                 {/* Top Badges */}
                                 <div className="relative z-20 flex items-center justify-between text-[10px]">
-                                    <span className="px-1.5 py-0.5 rounded-md bg-emerald-500 font-extrabold text-white flex items-center gap-1">
-                                        <Camera className="w-2.5 h-2.5" /> GƯƠNG AI
+                                    <span className="px-1.5 py-0.5 rounded-md bg-emerald-500 font-extrabold text-white flex items-center gap-1 shadow">
+                                        <Camera className="w-2.5 h-2.5" /> GƯƠNG AI (2 TAY)
                                     </span>
                                     <span className="font-mono text-emerald-400 font-bold">1.5s / 1.5s</span>
                                 </div>
@@ -199,14 +241,14 @@ const StudioMockup = () => {
                                         ĐẠT CHUẨN 98%
                                     </div>
                                     <p className="text-[10px] text-emerald-200 mt-1 font-semibold">
-                                        Khớp góc tay 168°
+                                        Khớp 42 điểm (2 tay) 168°
                                     </p>
                                 </div>
 
                                 {/* Bottom Hold-time Progress Bar */}
                                 <div className="relative z-20 space-y-1">
                                     <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-gradient-to-r from-emerald-500 to-teal-300 h-full w-full rounded-full transition-all"></div>
+                                        <div className="bg-gradient-to-r from-emerald-500 via-teal-300 to-cyan-400 h-full w-full rounded-full transition-all"></div>
                                     </div>
                                     <div className="flex justify-between text-[9px] text-slate-300">
                                         <span>Hold-time Validator</span>
@@ -221,7 +263,7 @@ const StudioMockup = () => {
                         <div className="pt-2 flex items-center justify-between text-xs">
                             <span className="text-slate-400 text-[11px] flex items-center gap-1">
                                 <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-                                Chấm 21 khớp tay MediaPipe v2.0
+                                Chấm 42 khớp tay MediaPipe v2.0 (2 Tay)
                             </span>
                             <Link
                                 to="/learning/mirror"
