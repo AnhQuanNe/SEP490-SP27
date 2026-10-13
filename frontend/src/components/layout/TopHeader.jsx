@@ -16,7 +16,8 @@ import {
     SlidersHorizontal,
     Zap,
     Layers,
-    Flame
+    Flame,
+    GraduationCap
 } from 'lucide-react';
 
 const TopHeader = ({
@@ -66,9 +67,9 @@ const TopHeader = ({
         navigate('/login');
     };
 
-    const avatarSrc = user ? getAvatarUrl(user?.avatar) : null;
-    const displayName = user?.name || 'Huy Minh Ha';
-    const displayInitial = displayName.charAt(0).toUpperCase();
+    const avatarSrc = (user?.avatar && typeof getAvatarUrl === 'function') ? getAvatarUrl(user.avatar) : null;
+    const displayName = (user?.name && typeof user.name === 'string') ? user.name : 'Huy Minh Ha';
+    const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : 'H';
 
     return (
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">

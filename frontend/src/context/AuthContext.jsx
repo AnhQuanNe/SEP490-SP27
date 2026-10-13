@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
 
     // Helper tính toán đường dẫn Avatar (hỗ trợ ảnh Google hoặc ảnh lưu trên server)
     const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return null;
+        if (!avatarPath || typeof avatarPath !== 'string') return null;
         if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
             return avatarPath;
         }
