@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import StudioMockup from '../components/home/StudioMockup';
+import ReflexTrainerModal from '../components/common/ReflexTrainerModal';
 import {
     Heart,
     Video,
@@ -26,10 +28,11 @@ import {
 
 const Home = () => {
     const { user, isAuthenticated, getAvatarUrl } = useAuth();
-    const avatarSrc = user ? getAvatarUrl(user.avatar) : null;
+    const avatarSrc = user ? getAvatarUrl(user?.avatar) : null;
 
     // Interactive Demo Sign Selector State
     const [selectedSign, setSelectedSign] = useState(0);
+    const [reflexModalOpen, setReflexModalOpen] = useState(false);
 
     const sampleSigns = [
         {
@@ -80,178 +83,70 @@ const Home = () => {
                         
                         {/* Left Hero Content */}
                         <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-                            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-rose-200 shadow-sm text-xs font-bold text-rose-700">
-                                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                                <span>HeartSign (HSS) • Hệ Sinh Thái Ngôn Ngữ Ký Hiệu AI Toàn Diện</span>
+                            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/80 shadow-2xs text-xs font-bold text-rose-600">
+                                <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+                                <span>Nền tảng học Ngôn ngữ Ký hiệu AI số 1 Việt Nam</span>
                             </div>
 
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
-                                Kết Nối <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">Trái Tim</span> — Xóa Bỏ Rào Cản <span className="text-slate-900">Giao Tiếp</span>
+                                <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">
+                                    Kết Nối Trái Tim
+                                </span>
+                                <br />
+                                <span className="text-slate-900">Xóa Bỏ Mọi Rào Cản Giao Tiếp</span>
                             </h1>
 
                             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                Nền tảng học tập ngôn ngữ ký hiệu tương tác với <strong>Gương ảo AI (MediaPipe)</strong> chấm chuẩn góc ngón tay, kết hợp <strong>Trợ lý giao tiếp hai chiều thời gian thực (Sign ↔ Voice)</strong> và <strong>Không gian đối chiếu phương ngữ 3 miền</strong>.
+                                Trợ lý AI nhận diện cử chỉ 21 điểm khớp tay thời gian thực, kết hợp công nghệ chuyển đổi Hai Chiều giữa Ký hiệu và Tiếng nói tiếng Việt.
                             </p>
 
                             {/* CTA Action Buttons */}
-                            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2">
                                 <Link
                                     to="/learning/mirror"
-                                    className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-rose-500 via-pink-500 to-indigo-600 hover:opacity-95 shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 hover:-translate-y-0.5 transition-all duration-200 text-sm sm:text-base"
+                                    className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:opacity-95 shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 hover:-translate-y-0.5 transition-all duration-200 text-sm sm:text-base"
                                 >
-                                    <Video className="w-5 h-5" />
-                                    <span>Trải nghiệm Gương ảo AI ngay</span>
-                                    <ArrowRight className="w-4 h-4 ml-1" />
+                                    <span>Bắt đầu Học Ngay</span>
+                                    <ArrowRight className="w-4 h-4 ml-0.5" />
                                 </Link>
 
                                 <Link
                                     to="/communicator"
-                                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm hover:border-slate-300 transition-all text-sm sm:text-base"
+                                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-xs hover:border-slate-300 transition-all text-sm sm:text-base"
                                 >
                                     <MessageSquare className="w-5 h-5 text-indigo-600" />
-                                    <span>Trợ lý Dịch 2 Chiều</span>
+                                    <span>Khám phá Dịch 2 Chiều</span>
                                 </Link>
+
+                                <button
+                                    onClick={() => setReflexModalOpen(true)}
+                                    className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-amber-700 bg-amber-50/80 hover:bg-amber-100 border border-amber-200/80 transition-all text-sm cursor-pointer"
+                                >
+                                    <Sparkles className="w-4 h-4 text-amber-600" />
+                                    <span>Luyện Phản Xạ Nhanh</span>
+                                </button>
                             </div>
 
                             {/* Feature Micro-Badges */}
-                            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs text-slate-500 font-medium">
+                            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-5 sm:gap-6 text-xs text-slate-600 font-semibold">
                                 <span className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                    Chấm góc tay chuẩn qua Webcam
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    <span>Chấm 21 góc tay chuẩn qua Webcam</span>
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                    Độ trễ truyền nhận &lt; 100ms
+                                    <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                    <span>Độ trễ truyền nhận &lt; 100ms</span>
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                    Phương ngữ Bắc - Trung - Nam
+                                    <Globe className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                                    <span>Phương ngữ Bắc - Trung - Nam</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Right Hero Interactive Visual Mockup */}
                         <div className="lg:col-span-5 relative">
-                            <div className="relative mx-auto max-w-md lg:max-w-none">
-                                
-                                {/* Split-Screen Preview Card */}
-                                <div className="bg-white rounded-3xl p-5 shadow-2xl shadow-indigo-500/10 border border-slate-200/90 relative z-10 backdrop-blur-sm">
-                                    
-                                    {/* Mockup Header */}
-                                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                                            <span className="text-xs font-bold text-slate-700 ml-2">Phòng tập Gương ảo AI • UC06</span>
-                                        </div>
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                                            Khớp 98%
-                                        </span>
-                                    </div>
-
-                                    {/* Split Screen Simulation */}
-                                    <div className="grid grid-cols-2 gap-3 mt-4">
-                                        
-                                        {/* Left Side: Standard Video */}
-                                        <div className="relative rounded-2xl bg-slate-900 text-white p-3 aspect-square flex flex-col justify-between overflow-hidden group">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 z-10"></div>
-                                            <div className="relative z-20 flex items-center justify-between text-[10px]">
-                                                <span className="px-1.5 py-0.5 rounded bg-black/60 font-semibold text-rose-300">
-                                                    MẪU CHUẨN
-                                                </span>
-                                                <span className="px-1.5 py-0.5 rounded bg-white/20 font-mono">1.0x</span>
-                                            </div>
-                                            <div className="relative z-20 text-center my-auto">
-                                                <div className="w-12 h-12 mx-auto rounded-full bg-rose-600/80 flex items-center justify-center text-white shadow-lg mb-2">
-                                                    <Play className="w-5 h-5 fill-white ml-0.5" />
-                                                </div>
-                                                <p className="text-xs font-bold text-white">"Xin chào"</p>
-                                                <p className="text-[10px] text-slate-300">Giảng viên chuyên biệt</p>
-                                            </div>
-                                            <div className="relative z-20 text-[10px] text-slate-300">
-                                                Ground Truth v2.0
-                                            </div>
-                                        </div>
-
-                                        {/* Right Side: AI Camera Mirror */}
-                                        <div className="relative rounded-2xl bg-indigo-950 text-white p-3 aspect-square flex flex-col justify-between overflow-hidden border-2 border-emerald-500 shadow-md shadow-emerald-500/20">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-transparent to-black/40 z-10"></div>
-                                            
-                                            {/* MediaPipe Bone Overlay Simulation */}
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-                                                <div className="w-24 h-24 border border-dashed border-emerald-400 rounded-full animate-spin"></div>
-                                            </div>
-
-                                            <div className="relative z-20 flex items-center justify-between text-[10px]">
-                                                <span className="px-1.5 py-0.5 rounded bg-emerald-600 font-bold text-white flex items-center gap-1">
-                                                    <Camera className="w-3 h-3" /> GƯƠNG AI
-                                                </span>
-                                                <span className="font-mono text-emerald-400 font-bold">1.5s / 1.5s</span>
-                                            </div>
-
-                                            <div className="relative z-20 text-center my-auto">
-                                                <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/90 text-white text-[11px] font-bold shadow">
-                                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    ĐẠT CHUẨN
-                                                </div>
-                                                <p className="text-[10px] text-emerald-200 mt-1 font-semibold">Góc tay chuẩn 168°</p>
-                                            </div>
-
-                                            {/* Hold-time Progress Bar */}
-                                            <div className="relative z-20 space-y-1">
-                                                <div className="w-full bg-slate-700/60 h-1.5 rounded-full overflow-hidden">
-                                                    <div className="bg-emerald-400 h-full w-full rounded-full transition-all"></div>
-                                                </div>
-                                                <div className="flex justify-between text-[9px] text-slate-300">
-                                                    <span>Hold-time Validator</span>
-                                                    <span className="text-emerald-400 font-bold">+50 XP</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    {/* Bottom Info Bar of Mockup */}
-                                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
-                                                <Sparkles className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-800">MediaPipe Hand Pose</p>
-                                                <p className="text-[10px] text-slate-400">21 Điểm Landmark thời gian thực</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
-                                            Webcam ScaleX(-1)
-                                        </span>
-                                    </div>
-
-                                </div>
-
-                                {/* Floating Stat Badge */}
-                                <div className="absolute -bottom-6 -left-6 bg-white p-3.5 rounded-2xl shadow-xl border border-slate-100 hidden sm:flex items-center gap-3 z-20">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                                        <Flame className="w-5 h-5 fill-amber-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-slate-400 font-medium">Chuỗi ngày học</p>
-                                        <p className="text-sm font-extrabold text-slate-800">Streak 7 Ngày Liên Tục 🔥</p>
-                                    </div>
-                                </div>
-
-                                {/* Floating Voice Subtitle Badge */}
-                                <div className="absolute -top-6 -right-4 bg-slate-900 text-white p-3 rounded-2xl shadow-xl border border-slate-800 hidden sm:flex items-center gap-2.5 z-20">
-                                    <Volume2 className="w-4 h-4 text-rose-400 animate-bounce" />
-                                    <div>
-                                        <p className="text-[10px] text-slate-400">Web Speech TTS</p>
-                                        <p className="text-xs font-bold text-slate-100">"Rất vui được gặp bạn!"</p>
-                                    </div>
-                                </div>
-
-                            </div>
+                            <StudioMockup />
                         </div>
 
                     </div>
@@ -699,6 +594,12 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Gamified Flashcard Reflex Modal */}
+            <ReflexTrainerModal
+                isOpen={reflexModalOpen}
+                onClose={() => setReflexModalOpen(false)}
+            />
 
         </div>
     );
