@@ -25,10 +25,10 @@ const Navbar = () => {
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-sm">
-                                S
+                                V
                             </div>
                             <div>
-                                <span className="text-xl font-bold text-gray-900 tracking-tight">HeartSign</span>
+                                <span className="text-xl font-bold text-gray-900 tracking-tight">VietHeritage</span>
                                 <span className="ml-1 text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-full">SEP490</span>
                             </div>
                         </Link>
