@@ -40,24 +40,8 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['learner', 'deaf', 'educator', 'admin', 'customer', 'staff'],
-            default: 'learner',
-        },
-        xp: {
-            type: Number,
-            default: 0,
-        },
-        streak: {
-            type: Number,
-            default: 1,
-        },
-        level: {
-            type: Number,
-            default: 1,
-        },
-        lastActiveDate: {
-            type: Date,
-            default: Date.now,
+            enum: ['customer', 'staff', 'admin'],
+            default: 'customer',
         },
         isVerified: {
             type: Boolean,
