@@ -12,41 +12,35 @@ async function runTests() {
         // Dọn dẹp dữ liệu test cũ nếu có
         await User.deleteOne({ email: 'testuser@example.com' });
 
-        // 1. Test Register
-        console.log('\n1. Test Đăng ký tài khoản...');
+        // 1. Test Register (Trực tiếp sinh JWT token, không bắt buộc OTP)
+        console.log('\n1. Test Đăng ký tài khoản (Trực tiếp sinh JWT Token)...');
         const regRes = await authService.register({
             name: 'Nguyễn Văn Test',
             email: 'testuser@example.com',
             password: 'password123',
         });
         console.log('✓ Đăng ký thành công:', regRes.message);
+        console.log('✓ Token nhận được ngay khi đăng ký:', regRes.token.substring(0, 25) + '...');
+        console.log('✓ User trả về:', regRes.user.name, '| Email:', regRes.user.email);
 
-        // Kiểm tra User trong MongoDB
-        const savedUser = await User.findOne({ email: 'testuser@example.com' }).select('+password');
-        console.log('✓ User được lưu trong MongoDB:');
-        console.log('  - ID:', savedUser._id);
-        console.log('  - Name:', savedUser.name);
-        console.log('  - Email:', savedUser.email);
-        console.log('  - Mật khẩu đã mã hoá bcrypt:', savedUser.password);
-        console.log('  - Trạng thái xác thực isVerified:', savedUser.isVerified);
-        console.log('  - Mã OTP lưu trong DB:', savedUser.verificationCode);
-
-        // 2. Test Verify Email
-        console.log('\n2. Test Xác thực email với mã OTP...');
-        const verifyRes = await authService.verifyEmail({
-            email: 'testuser@example.com',
-            otp: savedUser.verificationCode,
-        });
-        console.log('✓ Xác thực thành công:', verifyRes.message);
-        console.log('✓ Token nhận được:', verifyRes.token.substring(0, 25) + '...');
-
-        // 3. Test Login
-        console.log('\n3. Test Đăng nhập...');
+        // 2. Test Login trực tiếp ngay sau khi đăng ký (Không cần OTP)
+        console.log('\n2. Test Đăng nhập trực tiếp không cần qua bước OTP...');
         const loginRes = await authService.login({
             email: 'testuser@example.com',
             password: 'password123',
         });
-        console.log('✓ Đăng nhập thành công! User:', loginRes.user.name, '| Role:', loginRes.user.role);
+        console.log('✓ Đăng nhập trực tiếp thành công! User:', loginRes.user.name, '| Role:', loginRes.user.role);
+
+        // 3. Test gửi và xác thực OTP kích hoạt email (Dành cho tính năng sau này khi deploy)
+        console.log('\n3. Test yêu cầu mã OTP kích hoạt email (Tính năng tương lai)...');
+        await authService.resendVerificationCode({ email: 'testuser@example.com' });
+        const userWithOtp = await User.findOne({ email: 'testuser@example.com' });
+        console.log('✓ Đã tạo mã OTP cho tài khoản:', userWithOtp.verificationCode);
+        const verifyRes = await authService.verifyEmail({
+            email: 'testuser@example.com',
+            otp: userWithOtp.verificationCode,
+        });
+        console.log('✓ Xác thực OTP thành công:', verifyRes.message);
 
         // 4. Test Update Profile
         console.log('\n4. Test Cập nhật Profile...');

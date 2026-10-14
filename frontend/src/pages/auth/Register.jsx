@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import authService from '../../services/auth.service';
 import { useAuth } from '../../context/AuthContext';
 import GoogleLoginButton from '../../components/common/GoogleLoginButton';
 import {
@@ -29,7 +28,7 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { loginWithGoogle } = useAuth();
+    const { register, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     // Tính toán độ mạnh mật khẩu (Password Strength)
@@ -84,13 +83,13 @@ const Register = () => {
         setLoading(true);
 
         try {
-            await authService.register({
+            await register({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
             });
 
-            navigate(`/verify-email?email=${encodeURIComponent(formData.email)}&registered=true`);
+            navigate('/');
         } catch (err) {
             setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
         } finally {

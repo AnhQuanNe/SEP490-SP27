@@ -106,9 +106,9 @@ const Home = () => {
                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <Mail className="w-6 h-6" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Đăng Ký Check Mail Liền Tay</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Đăng Ký Vào Luôn Việc</h3>
                     <p className="text-sm text-gray-500 leading-relaxed">
-                        Tạo acc cái rẹt, OTP bay thẳng vào hộp thư nhanh hơn người yêu cũ trở mặt. Mật khẩu băm bcrypt bao hacker đứng ngắm rồi khóc thét!
+                        Tạo tài khoản nhanh gọn, tự động đăng nhập vào ngay hệ thống không cần bước trung gian. Mật khẩu mã hoá an toàn tuyệt đối!
                     </p>
                 </div>
 

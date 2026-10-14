@@ -6,45 +6,37 @@ const { sendVerificationEmail, sendResetPasswordEmail } = require('./email.servi
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
- * Đăng ký tài khoản mới kèm gửi mã xác thực OTP
+ * Đăng ký tài khoản mới (tạo tài khoản và trả về JWT token để vào luôn hệ thống)
  */
 const register = async ({ name, email, password }) => {
     const existingUser = await User.findOne({ email: email.toLowerCase() });
 
-    if (existingUser && existingUser.isVerified) {
+    if (existingUser) {
         throw new Error('Email này đã được sử dụng');
     }
 
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 phút
+    const user = await User.create({
+        name,
+        email: email.toLowerCase(),
+        password,
+        isVerified: false,
+    });
 
-    let user;
-    if (existingUser && !existingUser.isVerified) {
-        // Tài khoản đã đăng ký nhưng chưa xác thực: cập nhật lại thông tin & mã mới
-        existingUser.name = name;
-        existingUser.password = password;
-        existingUser.verificationCode = otp;
-        existingUser.verificationExpires = otpExpires;
-        user = await existingUser.save();
-    } else {
-        user = await User.create({
-            name,
-            email: email.toLowerCase(),
-            password,
-            verificationCode: otp,
-            verificationExpires: otpExpires,
-            isVerified: false,
-        });
-    }
-
-    // Gửi email OTP
-    await sendVerificationEmail(user.email, otp);
+    const token = generateToken(user._id);
 
     return {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        message: 'Đăng ký thành công. Vui lòng kiểm tra mã OTP trong email để kích hoạt tài khoản.',
+        token,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            isVerified: user.isVerified,
+        },
+        message: 'Đăng ký tài khoản thành công',
     };
 };
 
@@ -149,20 +141,7 @@ const login = async ({ email, password }) => {
         throw new Error('Email hoặc mật khẩu không chính xác');
     }
 
-    if (!user.isVerified) {
-        // Tự động sinh mã mới nếu đã hết hạn
-        const otp = generateOTP();
-        user.verificationCode = otp;
-        user.verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
-        await user.save();
-        await sendVerificationEmail(user.email, otp);
-
-        const error = new Error('Tài khoản chưa được xác thực email. Mã xác thực mới đã được gửi đến email của bạn.');
-        error.needVerification = true;
-        error.email = user.email;
-        throw error;
-    }
-
+    // Cho phép đăng nhập ngay không cần kích hoạt OTP
     const token = generateToken(user._id);
 
     return {

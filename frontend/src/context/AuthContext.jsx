@@ -41,6 +41,21 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
+    // Đăng ký tài khoản (tự động lưu token và đăng nhập trực tiếp)
+    const register = async ({ name, email, password }) => {
+        const res = await authService.register({ name, email, password });
+        if (res.success) {
+            const { token: receivedToken, user: receivedUser } = res.data;
+            if (receivedToken) {
+                localStorage.setItem('token', receivedToken);
+                setToken(receivedToken);
+                setUser(receivedUser);
+            }
+            return res.data;
+        }
+        throw new Error(res.message || 'Đăng ký thất bại');
+    };
+
     // Đăng nhập thường
     const login = async ({ email, password }) => {
         const res = await authService.login({ email, password });
@@ -99,6 +114,7 @@ export const AuthProvider = ({ children }) => {
                 loading,
                 isAuthenticated: !!user,
                 login,
+                register,
                 loginWithGoogle,
                 logout,
                 updateUser,
