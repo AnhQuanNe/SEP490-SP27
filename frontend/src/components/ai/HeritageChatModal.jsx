@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
     Bot, 
     X, 
+    Minus,
     Send, 
     Sparkles, 
     BookOpen, 
@@ -211,50 +212,61 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-slate-900 border border-slate-700/80 w-full sm:max-w-2xl sm:rounded-3xl h-[92vh] sm:h-[650px] flex flex-col shadow-2xl relative overflow-hidden text-white">
-                {/* Header */}
-                <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/80 flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20">
-                            <Bot className="w-5 h-5 text-slate-950" />
-                        </div>
-                        <div>
-                            <div className="flex items-center space-x-2">
-                                <h3 className="font-extrabold text-white text-base tracking-tight font-heritage">
-                                    VietHeritage AI
-                                </h3>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                    <span>Học thuật kiểm chứng</span>
-                                </span>
-                            </div>
-                            <p className="text-[11px] text-slate-400">
-                                {contextWork ? (
-                                    <span>Đang phân tích tác phẩm: <strong className="text-amber-300">{contextWork.title}</strong></span>
-                                ) : (
-                                    <span>Trợ lý RAG & Dẫn nguồn tri thức Dân gian</span>
-                                )}
-                            </p>
-                        </div>
+        <div 
+            className="fixed bottom-22 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[420px] h-[580px] max-h-[calc(100vh-105px)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-3xl shadow-2xl shadow-indigo-950/60 flex flex-col overflow-hidden text-white animate-in slide-in-from-bottom-5 zoom-in-95 duration-200"
+            role="dialog"
+            aria-label="VietHeritage AI Assistant"
+        >
+            {/* Header */}
+            <div className="px-4 py-3 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/80 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center space-x-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20">
+                        <Bot className="w-4.5 h-4.5 text-slate-950" />
                     </div>
-
-                    <div className="flex items-center space-x-1">
-                        <button
-                            onClick={handleResetChat}
-                            title="Xóa đoạn chat & Bắt đầu lại"
-                            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                        >
-                            <RotateCcw className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                    <div>
+                        <div className="flex items-center space-x-1.5">
+                            <h3 className="font-extrabold text-white text-sm tracking-tight font-heritage">
+                                VietHeritage AI
+                            </h3>
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                                <span>Kiểm chứng</span>
+                            </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[190px]">
+                            {contextWork ? (
+                                <span>Tác phẩm: <strong className="text-amber-300">{contextWork.title}</strong></span>
+                            ) : (
+                                <span>Trợ lý RAG & Dẫn nguồn Dân gian</span>
+                            )}
+                        </p>
                     </div>
                 </div>
+
+                <div className="flex items-center space-x-0.5">
+                    <button
+                        onClick={handleResetChat}
+                        title="Xóa đoạn chat & Bắt đầu lại"
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                        onClick={onClose}
+                        title="Thu nhỏ cửa sổ chat"
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                    >
+                        <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={onClose}
+                        title="Đóng cửa sổ chat"
+                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
 
                 {/* Subheader: Context badge if any */}
                 {contextWork && (
@@ -410,7 +422,6 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
                         <Send className="w-4 h-4" />
                     </button>
                 </form>
-            </div>
         </div>
     );
 };
