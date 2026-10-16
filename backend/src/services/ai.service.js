@@ -201,6 +201,19 @@ ${specificAnalysis}
     };
 }
 
+const GREETING_PATTERNS = [
+    /^(xin\s+)?chao(\s+(ban|ad|tro\s+ly|ai|bot|nhe|nha|moi\s+nguoi))?$/i,
+    /^(hello|hi|hey|halo|hola)(\s+(bot|ai|there))?$/i,
+    /^(ban\s+la\s+ai|ban\s+ten\s+gi|ban\s+co\s+the\s+lam\s+gi|gioi\s+thieu\s+ve\s+ban)$/i,
+    /^(cam\s+on|thank\s+you|thanks|cam\s+on\s+ban|ok|oke|okie)$/i,
+    /^(tam\s+biet|bye|goodbye)$/i,
+];
+
+function isConversationalGreeting(text) {
+    const clean = removeVietnameseTones(text).trim().toLowerCase();
+    return GREETING_PATTERNS.some((pattern) => pattern.test(clean));
+}
+
 /**
  * Service chính: Trả lời câu hỏi thông minh có RAG & Dẫn nguồn kiểm chứng (UC09)
  */
@@ -210,6 +223,35 @@ const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
     }
 
     const cleanQuery = question.trim();
+
+    // 0. Nhận diện các câu chào hỏi / giới thiệu xã giao thông thường (tránh bị spam văn học)
+    if (!contextSlug && isConversationalGreeting(cleanQuery)) {
+        const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
+        let greetingText = '';
+
+        if (qClean.includes('cam on') || qClean.includes('thank')) {
+            greetingText = `Không có chi! Rất vui được đồng hành cùng bạn khám phá di sản văn hóa và văn học dân gian Việt Nam. Nếu bạn có bất kỳ câu hỏi nào về các tích truyện, nhân vật hay câu ca dao, đừng ngần ngại hỏi tôi nhé! 😊`;
+        } else if (qClean.includes('tam biet') || qClean.includes('bye')) {
+            greetingText = `Tạm biệt bạn! Chúc bạn có những phút giây học tập và trải nghiệm văn hóa thật nhiều niềm vui. Hẹn gặp lại bạn lần sau! 👋`;
+        } else {
+            greetingText = `Chào bạn! Tôi là **VietHeritage AI** — Trợ lý nghiên cứu Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸
+
+Tôi có thể hỗ trợ bạn:
+- **Giải nghĩa ca dao, tục ngữ**: Phân tích nghĩa đen, nghĩa bóng và đạo lý nhân sinh răn dạy đời sau.
+- **Phân tích biểu tượng văn học**: Khám phá ý nghĩa tiếng đàn thần Thạch Sanh, ngựa sắt Thánh Gióng, cuộc chiến Sơn Tinh - Thủy Tinh...
+- **Tra cứu bối cảnh lịch sử**: Cung cấp nguồn tư liệu học thuật kiểm chứng đáng tin cậy.
+
+Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
+        }
+
+        return {
+            answer: greetingText,
+            citations: [],
+            suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
+            sourceType: 'conversational_greeting',
+        };
+    }
+
     let primaryWork = null;
     let candidateWorks = [];
 
@@ -257,9 +299,19 @@ const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
 
         if (candidateWorks.length > 0) {
             primaryWork = candidateWorks[0];
-        } else {
-            // Lấy 2 tác phẩm nổi bật làm context nền
-            candidateWorks = await Work.find({ isFeatured: true, status: 'published' }).limit(2).lean();
+        } else if (!process.env.GEMINI_API_KEY) {
+            // Khi không dùng Gemini và cũng không tìm thấy tác phẩm phù hợp trong DB
+            return {
+                answer: `Tôi đã tra cứu trong kho tư liệu của VietHeritage AI nhưng chưa thấy tài liệu khớp trực tiếp với câu hỏi: *"${cleanQuery}"*.
+
+💡 **Gợi ý cho bạn:**
+1. Thử hỏi về các tác phẩm nổi bật: **Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Truyện Kiều, Nam quốc sơn hà, Tấm Cám**.
+2. Tìm theo chủ đề: *đạo lý chữ Hiếu, lòng yêu nước, tinh thần tương thân tương ái, ước mơ công lý*.
+3. Bấm vào một trong các câu hỏi gợi ý bên dưới để bắt đầu!`,
+                citations: [],
+                suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
+                sourceType: 'no_match_guidance',
+            };
         }
     }
 
