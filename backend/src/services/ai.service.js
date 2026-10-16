@@ -37,7 +37,13 @@ const DEFAULT_SUGGESTIONS = [
     },
 ];
 
-const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.8-flash'];
+const GEMINI_MODELS = [
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-flash-latest',
+    'gemini-3.7-flash',
+    'gemini-3.8-flash',
+];
 
 /**
  * Gọi Google Gemini API với danh sách model hoạt động thực tế
@@ -48,13 +54,13 @@ async function callGeminiApi({ question, contextText, history = [] }) {
 
     const systemInstruction = `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
 Nhiệm vụ của bạn:
-1. Trả lời câu hỏi một cách thông minh, chuẩn xác, tự nhiên, gần gũi, giàu chất nhân văn và truyền cảm.
+1. Trả lời câu hỏi một cách thông minh, chuẩn xác, tự nhiên, gần gũi, giàu chất nhân văn và truyền cảm. Luôn trả lời đầy đủ, trọn vẹn, không bao giờ ngắt quãng hay bỏ dở câu giữa chừng.
 2. Hiểu và giải thích cặn kẽ mọi câu hỏi về:
    - Các tác giả, danh nhân văn hóa Việt Nam (như Đại thi hào Nguyễn Du, Nguyễn Trãi, Hồ Xuân Hương, Chu Văn An, v.v.).
    - Các tác phẩm văn học dân gian, truyện cổ tích, truyền thuyết, thần thoại, ca dao tục ngữ.
    - Các tác phẩm văn học kinh điển (như Truyện Kiều, Nam quốc sơn hà, Hịch tướng sĩ, Bình Ngô đại cáo, v.v.).
    - Ý nghĩa biểu tượng nghệ thuật, phong tục tập quán và bài học đạo lý truyền thống.
-3. Nếu người dùng hỏi các câu hỏi cơ bản như "Nguyễn Du là ai?", hãy giải thích một cách cô đọng, dễ hiểu, nêu bật các đóng góp lớn nhất của ông (tác giả Truyện Kiều, Danh nhân văn hóa thế giới, người nâng tầm ngôn ngữ tiếng Việt).
+3. Nếu người dùng hỏi các câu hỏi cơ bản như "Nguyễn Du là ai?" hoặc mục tiêu của bạn là gì, hãy giải thích một cách cô đọng, dễ hiểu, có bố cục rõ ràng, nêu bật các đóng góp lớn nhất.
 4. Nếu có kho tư liệu tham khảo từ hệ thống bên dưới khớp với câu hỏi, hãy ưu tiên kết hợp tư liệu và dẫn nguồn học thuật.
 5. Luôn giữ phong thái uyên bác, trang nhã, chuẩn mực tiếng Việt.`;
 
@@ -77,11 +83,11 @@ ${contextText}
 [CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy phân tích và trả lời câu hỏi trên dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng (nếu có).`
+Hãy phân tích và trả lời câu hỏi trên dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng (nếu có). Trình bày mạch lạc, đầy đủ, không cắt ngắn.`
         : `[CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn xác, làm nổi bật giá trị văn hóa và văn học Việt Nam.`;
+Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn xác, làm nổi bật giá trị văn hóa và văn học Việt Nam. Trình bày trọn vẹn, sinh động.`;
 
     contents.push({
         role: 'user',
@@ -99,16 +105,20 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
                     system_instruction: { parts: [{ text: systemInstruction }] },
                     contents,
                     generationConfig: {
-                        temperature: 0.5,
-                        maxOutputTokens: 1200,
+                        temperature: 0.6,
+                        maxOutputTokens: 4096,
+                        thinkingConfig: {
+                            thinkingBudget: 0,
+                        },
                     },
                 }),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (candidate) return candidate;
+                const parts = data.candidates?.[0]?.content?.parts || [];
+                const fullAnswer = parts.map((p) => p.text || '').join('').trim();
+                if (fullAnswer) return fullAnswer;
             } else {
                 console.warn(`[Gemini API] Model ${model} failed with status ${response.status}`);
             }
