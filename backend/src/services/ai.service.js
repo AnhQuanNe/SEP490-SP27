@@ -37,73 +37,87 @@ const DEFAULT_SUGGESTIONS = [
     },
 ];
 
+const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.8-flash'];
+
 /**
- * Gọi Google Gemini API nếu có cấu hình GEMINI_API_KEY
+ * Gọi Google Gemini API với danh sách model hoạt động thực tế
  */
 async function callGeminiApi({ question, contextText, history = [] }) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
-    try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-        const systemInstruction = `Bạn là VietHeritage AI — Trợ lý học thuật chuyên sâu về Di sản Văn học & Văn hóa Dân gian Việt Nam.
+    const systemInstruction = `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
 Nhiệm vụ của bạn:
-1. Trả lời câu hỏi của người dùng một cách chuẩn xác, uyên bác, giàu chất nhân văn và truyền cảm.
-2. Ưu tiên dựa trên kho tư liệu văn học được cung cấp dưới đây. Nếu thông tin có trong tư liệu, hãy giải thích cặn kẽ và trích dẫn rõ nguồn học thuật.
-3. Cấu trúc câu trả lời mạch lạc: có luận điểm rõ ràng (1, 2, 3), phân tích bối cảnh lịch sử, ý nghĩa biểu tượng/hình tượng, và bài học nhân sinh thời hiện đại.
-4. Giữ giọng điệu tôn trọng di sản dân tộc, chuẩn mực tiếng Việt.`;
+1. Trả lời câu hỏi một cách thông minh, chuẩn xác, tự nhiên, gần gũi, giàu chất nhân văn và truyền cảm.
+2. Hiểu và giải thích cặn kẽ mọi câu hỏi về:
+   - Các tác giả, danh nhân văn hóa Việt Nam (như Đại thi hào Nguyễn Du, Nguyễn Trãi, Hồ Xuân Hương, Chu Văn An, v.v.).
+   - Các tác phẩm văn học dân gian, truyện cổ tích, truyền thuyết, thần thoại, ca dao tục ngữ.
+   - Các tác phẩm văn học kinh điển (như Truyện Kiều, Nam quốc sơn hà, Hịch tướng sĩ, Bình Ngô đại cáo, v.v.).
+   - Ý nghĩa biểu tượng nghệ thuật, phong tục tập quán và bài học đạo lý truyền thống.
+3. Nếu người dùng hỏi các câu hỏi cơ bản như "Nguyễn Du là ai?", hãy giải thích một cách cô đọng, dễ hiểu, nêu bật các đóng góp lớn nhất của ông (tác giả Truyện Kiều, Danh nhân văn hóa thế giới, người nâng tầm ngôn ngữ tiếng Việt).
+4. Nếu có kho tư liệu tham khảo từ hệ thống bên dưới khớp với câu hỏi, hãy ưu tiên kết hợp tư liệu và dẫn nguồn học thuật.
+5. Luôn giữ phong thái uyên bác, trang nhã, chuẩn mực tiếng Việt.`;
 
-        const contents = [];
+    const contents = [];
 
-        // Thêm lịch sử hội thoại gần nhất (nếu có)
-        if (Array.isArray(history) && history.length > 0) {
-            for (const msg of history.slice(-4)) {
-                contents.push({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }],
-                });
-            }
+    // Thêm lịch sử hội thoại gần nhất (nếu có)
+    if (Array.isArray(history) && history.length > 0) {
+        for (const msg of history.slice(-4)) {
+            contents.push({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }],
+            });
         }
+    }
 
-        const userPrompt = `[KHO TƯ LIỆU THAM KHẢO TỪ HỆ THỐNG]:
+    const userPrompt = contextText && contextText.trim() !== ''
+        ? `[KHO TƯ LIỆU THAM KHẢO TỪ HỆ THỐNG]:
 ${contextText}
 
 [CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy phân tích và trả lời câu hỏi trên kèm dẫn nguồn tài liệu kiểm chứng đã cho.`;
+Hãy phân tích và trả lời câu hỏi trên dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng (nếu có).`
+        : `[CÂU HỎI CỦA NGƯỜI DÙNG]:
+${question}
 
-        contents.push({
-            role: 'user',
-            parts: [{ text: userPrompt }],
-        });
+Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn xác, làm nổi bật giá trị văn hóa và văn học Việt Nam.`;
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: { parts: [{ text: systemInstruction }] },
-                contents,
-                generationConfig: {
-                    temperature: 0.4,
-                    maxOutputTokens: 1024,
-                },
-            }),
-        });
+    contents.push({
+        role: 'user',
+        parts: [{ text: userPrompt }],
+    });
 
-        if (!response.ok) {
-            console.warn(`[Gemini API] Request failed with status ${response.status}`);
-            return null;
+    for (const model of GEMINI_MODELS) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: { parts: [{ text: systemInstruction }] },
+                    contents,
+                    generationConfig: {
+                        temperature: 0.5,
+                        maxOutputTokens: 1200,
+                    },
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (candidate) return candidate;
+            } else {
+                console.warn(`[Gemini API] Model ${model} failed with status ${response.status}`);
+            }
+        } catch (err) {
+            console.warn(`[Gemini API] Lỗi model ${model}:`, err.message);
         }
-
-        const data = await response.json();
-        const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        return candidate || null;
-    } catch (err) {
-        console.warn('[Gemini API] Lỗi khi gọi Gemini, chuyển sang động cơ phân tích nội bộ:', err.message);
-        return null;
     }
+
+    return null;
 }
 
 /**
@@ -158,6 +172,21 @@ Bạn có thể thử tra cứu các tác phẩm kinh điển hiện có trong h
 ### 2. Ý nghĩa nhân văn:
 - Tôn vinh vị thần núi Tản Viên (Đệ nhất Tứ Bất Tử) như biểu tượng che chở, chở che cho cuộc sống ấm no, mùa màng bình yên của cư dân nông nghiệp lúa nước.`;
     }
+    // Phân tích theo tác giả cụ thể (ví dụ: Nguyễn Du, Nguyễn Trãi) hoặc câu hỏi "là ai"
+    else if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
+        specificAnalysis = `
+### 1. Giới thiệu về ${main.author}:
+- **Vị thế văn học:** Là một trong những đại diện tiêu biểu nhất của nền văn học Việt Nam, gắn liền với kiệt tác bất hủ **"${main.title}"** (${main.categoryName}).
+- **Thời kỳ & Địa bàn:** ${main.period} — gắn liền với vùng đất *${main.region}*.
+- **Tầm vóc:** Đóng góp to lớn vào việc bảo tồn, phát triển tiếng Việt và khẳng định bản sắc văn hóa dân tộc.
+
+### 2. Kiệt tác gắn liền tên tuổi:
+- ${main.summary}
+${main.quote ? `\n> *"${main.quote}"*` : ''}
+
+### 3. Ý nghĩa chủ đề & Bài học nhân đạo:
+- ${main.thematicMeaning || 'Đề cao giá trị nhân bản, tiếng nói công lý và lòng trắc ẩn sâu sắc trước số phận con người.'}`;
+    }
     // Mặc định: Phân tích tổng quan dựa trên bối cảnh lịch sử và ý nghĩa chủ đề của tác phẩm
     else {
         specificAnalysis = `
@@ -172,7 +201,8 @@ ${main.quote ? `\n> *"${main.quote}"*` : ''}
 Tác phẩm là lời nhắc nhở thế hệ hôm nay về cội nguồn văn hóa, bài học ứng xử trọng nghĩa khinh tài và lòng tự tôn đối với di sản văn học nghìn năm.`;
     }
 
-    const answer = `Dựa trên nguồn tư liệu học thuật về tác phẩm **"${main.title}"** (${main.categoryName}, khu vực *${main.region}*), VietHeritage AI xin giải đáp như sau:
+    const authorHeader = main.author && main.author !== 'Dân gian' ? ` — Tác giả: **${main.author}**` : '';
+    const answer = `Dựa trên nguồn tư liệu học thuật về tác phẩm **"${main.title}"** (${main.categoryName}${authorHeader}, khu vực *${main.region}*), VietHeritage AI xin giải đáp như sau:
 
 ${specificAnalysis}
 
@@ -185,6 +215,7 @@ ${specificAnalysis}
         category: w.category,
         categoryName: w.categoryName,
         region: w.region,
+        author: w.author,
         source: w.source,
     }));
 
@@ -262,16 +293,17 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
 
     // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database
     if (!primaryWork) {
-        const regex = buildVietnameseRegex(cleanQuery);
+        const fullRegex = buildVietnameseRegex(cleanQuery);
 
-        if (regex) {
+        if (fullRegex) {
             candidateWorks = await Work.find({
                 $or: [
-                    { title: regex },
-                    { tags: regex },
-                    { summary: regex },
-                    { thematicMeaning: regex },
-                    { historicalContext: regex },
+                    { title: fullRegex },
+                    { author: fullRegex },
+                    { tags: fullRegex },
+                    { summary: fullRegex },
+                    { thematicMeaning: fullRegex },
+                    { historicalContext: fullRegex },
                 ],
                 status: 'published',
             })
@@ -279,21 +311,45 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
                 .lean();
         }
 
-        // Nếu tìm theo toàn cụm không ra, tách các từ khóa chính
+        // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa (loại bỏ từ dừng)
         if (candidateWorks.length === 0) {
-            const keywords = cleanQuery
-                .toLowerCase()
-                .split(/\s+/)
-                .filter((w) => w.length > 2 && !['la', 'gi', 'nhu', 'the', 'nao', 'tai', 'sao', 'cua', 'trong', 'va'].includes(w));
+            const STOP_WORDS = new Set([
+                'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
+                'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
+                'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
+                'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
+                'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin'
+            ]);
 
-            if (keywords.length > 0) {
-                const keywordRegexes = keywords.slice(0, 3).map((kw) => buildVietnameseRegex(kw)).filter(Boolean);
-                candidateWorks = await Work.find({
-                    $or: keywordRegexes.flatMap((r) => [{ title: r }, { tags: r }]),
-                    status: 'published',
-                })
-                    .limit(3)
-                    .lean();
+            const rawTokens = cleanQuery.split(/[\s,?.!;:—–"']+/).filter(Boolean);
+            const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
+
+            // Tạo các cụm 2 từ (bigram) hoặc từ đơn có nghĩa
+            const searchTerms = [];
+            for (let i = 0; i < filteredWords.length - 1; i++) {
+                searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
+            }
+            filteredWords.forEach((w) => {
+                if (w.length >= 2) searchTerms.push(w);
+            });
+
+            if (searchTerms.length > 0) {
+                const orConditions = [];
+                for (const term of searchTerms.slice(0, 5)) {
+                    const r = buildVietnameseRegex(term);
+                    if (r) {
+                        orConditions.push({ title: r }, { author: r }, { tags: r });
+                    }
+                }
+
+                if (orConditions.length > 0) {
+                    candidateWorks = await Work.find({
+                        $or: orConditions,
+                        status: 'published',
+                    })
+                        .limit(3)
+                        .lean();
+                }
             }
         }
 
@@ -324,7 +380,7 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
         .map(
             (w, i) => `[Tư liệu ${i + 1}]:
 - Tên tác phẩm: ${w.title} (${w.categoryName})
-- Khu vực / Thời kỳ: ${w.region} — ${w.period}
+${w.author ? `- Tác giả: ${w.author}\n` : ''}- Khu vực / Thời kỳ: ${w.region} — ${w.period}
 - Tóm tắt: ${w.summary}
 - Trích đoạn / Câu tiêu biểu: ${w.quote || 'N/A'}
 - Bối cảnh lịch sử: ${w.historicalContext || 'N/A'}
@@ -346,6 +402,7 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
         category: w.category,
         categoryName: w.categoryName,
         region: w.region,
+        author: w.author,
         source: w.source,
     }));
 
