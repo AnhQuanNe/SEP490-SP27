@@ -28,8 +28,10 @@ import {
     Calendar,
     Award
 } from 'lucide-react';
+import { useAiChat } from '../context/AiChatContext';
 
 const Explore = () => {
+    const { openAiChat } = useAiChat();
     // Data states
     const [works, setWorks] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -718,14 +720,26 @@ const Explore = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                            <button
-                                onClick={() => toggleSaveWork(activeModalWork._id)}
-                                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-100 transition flex items-center gap-1.5"
-                            >
-                                <Bookmark className={`w-3.5 h-3.5 ${savedWorkIds.has(activeModalWork._id) ? 'fill-amber-600 text-amber-600' : ''}`} />
-                                <span>{savedWorkIds.has(activeModalWork._id) ? 'Đã lưu' : 'Lưu tác phẩm'}</span>
-                            </button>
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => toggleSaveWork(activeModalWork._id)}
+                                    className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-100 transition flex items-center gap-1.5"
+                                >
+                                    <Bookmark className={`w-3.5 h-3.5 ${savedWorkIds.has(activeModalWork._id) ? 'fill-amber-600 text-amber-600' : ''}`} />
+                                    <span>{savedWorkIds.has(activeModalWork._id) ? 'Đã lưu' : 'Lưu tác phẩm'}</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        openAiChat(activeModalWork);
+                                        setActiveModalWork(null);
+                                    }}
+                                    className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm border border-amber-500/20"
+                                >
+                                    <Bot className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Hỏi Trợ lý AI về tác phẩm</span>
+                                </button>
+                            </div>
                             <button
                                 onClick={() => setActiveModalWork(null)}
                                 className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"

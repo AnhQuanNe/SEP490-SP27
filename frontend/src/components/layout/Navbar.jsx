@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useAiChat } from '../../context/AiChatContext';
 import { 
     User, 
     LogOut, 
@@ -12,11 +13,14 @@ import {
     Sparkles, 
     Compass, 
     Search,
-    Bookmark
+    Bookmark,
+    Trophy,
+    Bot
 } from 'lucide-react';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout, getAvatarUrl } = useAuth();
+    const { openAiChat } = useAiChat();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
@@ -35,7 +39,8 @@ const Navbar = () => {
         { name: 'Khám phá Tri thức', path: '/kham-pha', isRoute: true },
         { name: 'Văn học Dân gian', path: '/van-hoc-dan-gian', isRoute: true },
         { name: 'Bản đồ Văn học', path: '/ban-do', isRoute: true },
-        { name: 'Trợ lý AI', path: '/#tro-ly-ai', hash: '#tro-ly-ai' },
+        { name: 'Thử tài Di sản', path: '/do-vui', isRoute: true, isHighlight: true },
+        { name: 'Trợ lý AI', isAction: true },
     ];
 
     const [currentHash, setCurrentHash] = useState(window.location.hash);
@@ -53,6 +58,7 @@ const Navbar = () => {
     }, [location]);
 
     const isItemActive = (item) => {
+        if (item.isAction) return false;
         if (item.isRoute) {
             if (item.path === '/') {
                 return location.pathname === '/' && (!currentHash || currentHash === '#' || currentHash === '');
@@ -64,6 +70,13 @@ const Navbar = () => {
     };
 
     const handleNavClick = (item, e) => {
+        if (item.isAction) {
+            if (e) e.preventDefault();
+            openAiChat();
+            setMobileMenuOpen(false);
+            return;
+        }
+
         if (item.isRoute) {
             navigate(item.path);
             setCurrentHash('');

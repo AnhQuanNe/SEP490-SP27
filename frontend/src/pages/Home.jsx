@@ -21,11 +21,14 @@ import {
     Clock,
     Eye,
     ThumbsUp,
-    RefreshCw
+    RefreshCw,
+    Trophy
 } from 'lucide-react';
+import { useAiChat } from '../context/AiChatContext';
 
 const Home = () => {
     const { user, isAuthenticated, getAvatarUrl } = useAuth();
+    const { openAiChat } = useAiChat();
     const avatarSrc = user ? getAvatarUrl(user.avatar) : null;
 
     // Database states
@@ -539,7 +542,7 @@ const Home = () => {
                         </p>
                     </div>
 
-                    {/* Interactive chat mockup card */}
+                    {/* Interactive chat card */}
                     <div className="mt-8 bg-slate-800/80 rounded-2xl p-5 border border-slate-700/80 max-w-3xl space-y-4">
                         <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-xs flex-shrink-0">
@@ -563,8 +566,31 @@ const Home = () => {
                                 </p>
                                 <div className="pt-2 border-t border-indigo-900/60 text-[11px] text-slate-400 flex items-center gap-1.5">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span>Nguồn đối chiếu: Giáo trình Văn học Dân gian Việt Nam (ĐH Sư Phạm) & GS. Nguyễn Đổng Chi.</span>
+                                    <span>Nguồn đối chiếu: Kho tàng truyện cổ tích Việt Nam — GS. Nguyễn Đổng Chi.</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Interactive CTAs */}
+                        <div className="pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-[11px] text-slate-400">
+                                Bạn có câu hỏi riêng? Hãy thử ngay với Trợ lý AI hoặc tham gia đố vui:
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => openAiChat()}
+                                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+                                >
+                                    <Bot className="w-3.5 h-3.5" />
+                                    <span>Hỏi Trợ lý AI ngay</span>
+                                </button>
+                                <Link
+                                    to="/do-vui"
+                                    className="px-4 py-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/60 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                                >
+                                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Thử tài Đố vui</span>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -702,7 +728,17 @@ const Home = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <button
+                                onClick={() => {
+                                    openAiChat(activeModalWork);
+                                    setActiveModalWork(null);
+                                }}
+                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm border border-amber-500/20"
+                            >
+                                <Bot className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Hỏi Trợ lý AI về tác phẩm này</span>
+                            </button>
                             <button
                                 onClick={() => setActiveModalWork(null)}
                                 className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"

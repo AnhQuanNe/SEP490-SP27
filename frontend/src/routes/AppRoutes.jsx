@@ -3,6 +3,7 @@ import Home from '../pages/Home';
 import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
 import LiteratureMap from '../pages/LiteratureMap';
+import HeritageQuiz from '../pages/HeritageQuiz';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -18,6 +19,7 @@ const AppRoutes = () => {
             <Route path="/kham-pha" element={<Explore />} />
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/do-vui" element={<HeritageQuiz />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />

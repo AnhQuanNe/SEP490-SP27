@@ -23,10 +23,13 @@ import {
     Share2,
     SlidersHorizontal,
     Music,
-    ShieldCheck
+    ShieldCheck,
+    Bot
 } from 'lucide-react';
+import { useAiChat } from '../context/AiChatContext';
 
 const FolkLiterature = () => {
+    const { openAiChat } = useAiChat();
     const [works, setWorks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [subCategory, setSubCategory] = useState('all'); // 'all' | 'than-thoai' | 'truyen-thuyet' | 'co-tich' | 'ca-dao' | 'tuc-ngu'
@@ -476,7 +479,17 @@ const FolkLiterature = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <button
+                                onClick={() => {
+                                    openAiChat(activeModalWork);
+                                    setActiveModalWork(null);
+                                }}
+                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm border border-amber-500/20"
+                            >
+                                <Bot className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Hỏi Trợ lý AI về tác phẩm</span>
+                            </button>
                             <button
                                 onClick={() => setActiveModalWork(null)}
                                 className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
