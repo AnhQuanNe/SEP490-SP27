@@ -10,7 +10,7 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <AiChatProvider>
-                    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
+                    <div className="min-h-screen bg-[#faf6ed] flex flex-col font-vietnam text-stone-800 antialiased selection:bg-amber-200 selection:text-red-950">
                         <Navbar />
                         <main className="flex-grow">
                             <AppRoutes />

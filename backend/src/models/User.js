@@ -40,8 +40,13 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['customer', 'staff', 'admin'],
+            enum: ['customer', 'user', 'staff', 'admin'],
             default: 'customer',
+        },
+        status: {
+            type: String,
+            enum: ['active', 'locked'],
+            default: 'active',
         },
         isVerified: {
             type: Boolean,

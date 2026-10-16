@@ -129,7 +129,7 @@ const HeritageQuiz = () => {
                 <div className="text-center space-y-3">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-200">
                         <Trophy className="w-4 h-4 text-amber-700" />
-                        <span>Thử Tài Di Sản — Trí Tuệ Dân Gian (UC10)</span>
+                        <span>Thử Tài Di Sản — Trí Tuệ Dân Gian</span>
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-heritage">
                         Đố Vui Tri Thức & Văn Học Dân Gian
