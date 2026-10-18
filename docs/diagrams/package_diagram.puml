@@ -1,5 +1,6 @@
 @startuml VietHeritage_AI_Package_Diagram
 !theme plain
+allowmixing
 skinparam backgroundColor #FFFFFF
 skinparam handwritten false
 skinparam roundcorner 10
@@ -85,12 +86,12 @@ package "viet-heritage-client (Frontend React SPA)" <<Client>> as ClientPkg {
 
     package "services (Tầng gọi API Client)" as FeServices {
         class "api (Axios Client)" as AxiosClient
-        class authService
-        class literatureService
-        class aiService
-        class quizService
-        class userService
-        class adminService
+        class FeAuthService as "authService"
+        class FeLitService as "literatureService"
+        class FeAiService as "aiService"
+        class FeQuizService as "quizService"
+        class FeUserService as "userService"
+        class FeAdminService as "adminService"
     }
 }
 
@@ -134,15 +135,15 @@ package "viet-heritage-server (Backend Express App)" <<Server>> as ServerPkg {
     }
 
     package "services (Logic nghiệp vụ cốt lõi)" as BeServices {
-        class authService as BeAuthService
-        class literatureService as BeLitService
-        class aiService as BeAiService {
+        class BeAuthService as "authService"
+        class BeLitService as "literatureService"
+        class BeAiService as "aiService" {
             + askAssistant()
             + synthesizeHeritageAnswer()
             + callGeminiApi()
         }
-        class quizService as BeQuizService
-        class emailService as BeEmailService
+        class BeQuizService as "quizService"
+        class BeEmailService as "emailService"
     }
 
     package "models (Mô hình dữ liệu ODM)" as BeModels {
@@ -181,25 +182,33 @@ BeServices ..> BeConfig : <<depends>>
 ' 3. EXTERNAL SYSTEMS & CLOUD SERVICES
 ' ==========================================
 package "Data Storage (Cơ sở dữ liệu)" <<Database>> as DBStore {
-    database "MongoDB Database" as MongoDB {
-        collections "users"
-        collections "works"
-        collections "favorites"
-        collections "contentsubmissions"
-        collections "systemsettings"
-    }
+    database MongoDB [
+        <b>MongoDB Database</b>
+        ====
+        + users collection
+        + works collection
+        + favorites collection
+        + contentsubmissions
+        + systemsettings
+    ]
 }
 
 package "External Cloud Services (Dịch vụ bên thứ ba)" <<External>> as ExtServices {
-    cloud "Google Gemini AI API" as GeminiAI {
-        [gemini-3.5-flash Engine]
-    }
-    cloud "Google Identity Services" as GoogleOAuth {
-        [OAuth 2.0 Auth Server]
-    }
-    cloud "SMTP Mail Service" as MailServer {
-        [Nodemailer / Gmail SMTP]
-    }
+    cloud GeminiAI [
+        <b>Google Gemini AI API</b>
+        ====
+        gemini-3.5-flash Engine
+    ]
+    cloud GoogleOAuth [
+        <b>Google Identity Services</b>
+        ====
+        OAuth 2.0 Auth Server
+    ]
+    cloud MailServer [
+        <b>SMTP Mail Service</b>
+        ====
+        Nodemailer / Gmail SMTP
+    ]
 }
 
 ' ==========================================

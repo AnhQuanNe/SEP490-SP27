@@ -1,5 +1,6 @@
 @startuml VietHeritage_Frontend_Package_Diagram
 !theme plain
+allowmixing
 skinparam backgroundColor #FFFFFF
 skinparam roundcorner 8
 skinparam packageStyle rectangle
