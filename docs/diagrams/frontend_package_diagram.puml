@@ -1,0 +1,81 @@
+@startuml VietHeritage_Frontend_Package_Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam roundcorner 8
+skinparam packageStyle rectangle
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+
+title **PHÂN RÃ KIẾN TRÚC GÓI FRONTEND (FRONTEND REACT SPA PACKAGE ARCHITECTURE)**\nVietHeritage AI — React 19 / Vite / Tailwind CSS
+
+package "Routing & Guards" #E0E7FF {
+    package "routes" as RoutesPkg {
+        class AppRoutes <<Router Provider>>
+        class ProtectedRoute <<Auth Route Guard>>
+    }
+}
+
+package "User Interface (View Layer)" #FEF3C7 {
+    package "pages" as PagesPkg {
+        class Home
+        class Explore
+        class FolkLiterature
+        class LiteratureMap
+        class HeritageQuiz
+        class Profile
+        package "auth" as AuthPages {
+            class Login
+            class Register
+            class ForgotPassword
+            class ResetPassword
+        }
+        class AdminDashboard
+    }
+
+    package "components" as ComponentsPkg {
+        package "layout" as LayoutComp {
+            class Navbar
+            class Footer
+        }
+        package "ai" as AiComp {
+            class HeritageChatModal
+            class FloatingChatBubble
+        }
+        package "common" as CommonComp {
+            class WorkDetailModal
+            class GoogleLoginButton
+        }
+    }
+}
+
+package "State & Context Management" #DCFCE7 {
+    package "context" as ContextPkg {
+        class AuthContext <<User Session State>>
+        class AiChatContext <<AI Modal & Chat State>>
+    }
+}
+
+package "API Client & Network Layer" #F3E8FF {
+    package "services" as ServicesPkg {
+        class "api.js" as AxiosInstance <<Axios Interceptor>>
+        class authService
+        class literatureService
+        class aiService
+        class quizService
+        class userService
+        class adminService
+    }
+}
+
+interface "Backend Express REST API" as BackendAPI #E2E8F0
+
+' Luồng phụ thuộc giữa các tầng Frontend
+RoutesPkg ..> PagesPkg : <<route mapping>>
+PagesPkg ..> ComponentsPkg : <<render views>>
+PagesPkg ..> ContextPkg : <<useContext>>
+ComponentsPkg ..> ContextPkg : <<useContext>>
+PagesPkg ..> ServicesPkg : <<invoke API>>
+ContextPkg ..> ServicesPkg : <<invoke API>>
+ServicesPkg ..> AxiosInstance : <<execute HTTP>>
+AxiosInstance ..> BackendAPI : <<HTTP Request / JSON>>
+
+@enduml

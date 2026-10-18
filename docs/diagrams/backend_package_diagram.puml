@@ -1,0 +1,91 @@
+@startuml VietHeritage_Backend_Package_Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam roundcorner 8
+skinparam packageStyle rectangle
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+
+title **PHÂN RÃ KIẾN TRÚC GÓI BACKEND (BACKEND 3-TIER PACKAGE ARCHITECTURE)**\nVietHeritage AI — Node.js / Express / MongoDB
+
+package "Presentation / API Routing Layer" #E0F2FE {
+    package "routes" as RoutesPkg {
+        class apiRouter <<Entry Point>>
+        class authRoutes
+        class userRoutes
+        class literatureRoutes
+        class aiRoutes
+        class quizRoutes
+        class submissionRoutes
+        class adminRoutes
+    }
+    
+    package "middlewares" as MiddlewaresPkg {
+        class authMiddleware <<JWT Verification>>
+        class uploadMiddleware <<Multer File Handler>>
+    }
+}
+
+package "Application Controller Layer" #FEF3C7 {
+    package "controllers" as ControllersPkg {
+        class authController
+        class userController
+        class literatureController
+        class aiController
+        class quizController
+        class submissionController
+        class adminController
+    }
+}
+
+package "Domain Business Logic Layer" #DCFCE7 {
+    package "services" as ServicesPkg {
+        class authService
+        class userService
+        class literatureService
+        class aiService {
+            + askAssistant(query, context)
+            + synthesizeHeritageAnswer()
+            + callGeminiApi()
+        }
+        class quizService
+        class emailService
+    }
+}
+
+package "Data Access & Persistence Layer" #F3E8FF {
+    package "models" as ModelsPkg {
+        class User <<Mongoose Schema>>
+        class Work <<Mongoose Schema>>
+        class ContentSubmission <<Mongoose Schema>>
+        class Favorite <<Mongoose Schema>>
+        class SearchHistory <<Mongoose Schema>>
+        class SystemSetting <<Mongoose Schema>>
+    }
+}
+
+package "Cross-Cutting Infrastructure" #F1F5F9 {
+    package "config" as ConfigPkg {
+        class databaseConfig <<MongoDB Connection>>
+    }
+    
+    package "utils" as UtilsPkg {
+        class vietnameseUtils <<Vietnamese Accent & Regex>>
+        class authUtils <<Bcrypt & JWT Generator>>
+        class seedLiterature <<Data Initialization>>
+    }
+}
+
+database "MongoDB Local / Atlas" as MongoDatabase #FFFBEB
+
+' Luồng phụ thuộc giữa các tầng (Dependency Flow)
+RoutesPkg ..> MiddlewaresPkg : <<apply security>>
+RoutesPkg ..> ControllersPkg : <<forward request>>
+ControllersPkg ..> ServicesPkg : <<invoke business>>
+ServicesPkg ..> ModelsPkg : <<data operations>>
+ModelsPkg ..> MongoDatabase : <<Mongoose ODM Query>>
+
+ServicesPkg ..> UtilsPkg : <<helper methods>>
+ControllersPkg ..> UtilsPkg : <<helper methods>>
+ServicesPkg ..> ConfigPkg : <<read settings>>
+
+@enduml

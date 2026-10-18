@@ -1,0 +1,222 @@
+@startuml VietHeritage_AI_Package_Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam roundcorner 10
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+
+skinparam package {
+    BackgroundColor #F8FAFC
+    BorderColor #64748B
+    BorderThickness 1.5
+    FontColor #0F172A
+    FontStyle bold
+}
+
+skinparam package<<Client>> {
+    BackgroundColor #F0FDF4
+    BorderColor #16A34A
+}
+
+skinparam package<<Server>> {
+    BackgroundColor #EFF6FF
+    BorderColor #2563EB
+}
+
+skinparam package<<Database>> {
+    BackgroundColor #FEFCE8
+    BorderColor #CA8A04
+}
+
+skinparam package<<External>> {
+    BackgroundColor #FAF5FF
+    BorderColor #9333EA
+}
+
+title **SƠ ĐỒ KIẾN TRÚC GÓI HỆ THỐNG VIETHERITAGE AI (PACKAGE DIAGRAM)**\nĐồ án SEP490 - Nền tảng Số hóa & Lưu trữ Di sản Văn học Việt Nam
+
+' ==========================================
+' 1. CLIENT-SIDE (FRONTEND APPLICATION)
+' ==========================================
+package "viet-heritage-client (Frontend React SPA)" <<Client>> as ClientPkg {
+    
+    package "routes (Điều hướng)" as FeRoutes {
+        class AppRoutes <<Router>>
+        class ProtectedRoute <<Guard>>
+    }
+
+    package "pages (Trang giao diện)" as FePages {
+        class HomeView
+        class ExploreView
+        class FolkLiteratureView
+        class LiteratureMapView
+        class HeritageQuizView
+        class ProfileView
+        class AuthPages {
+            + Login
+            + Register
+            + ForgotPassword
+            + ResetPassword
+        }
+        class AdminDashboardView
+    }
+
+    package "components (Thành phần UI)" as FeComponents {
+        package "layout" as FeLayout {
+            class Navbar
+            class Footer
+        }
+        package "ai" as FeAiUI {
+            class HeritageChatModal
+            class FloatingChatBubble
+        }
+        package "common" as FeCommon {
+            class WorkDetailModal
+            class GoogleLoginButton
+        }
+    }
+
+    package "context (Quản lý trạng thái)" as FeContext {
+        class AuthContext
+        class AiChatContext
+    }
+
+    package "services (Tầng gọi API Client)" as FeServices {
+        class "api (Axios Client)" as AxiosClient
+        class authService
+        class literatureService
+        class aiService
+        class quizService
+        class userService
+        class adminService
+    }
+}
+
+' Quan hệ nội bộ Frontend
+FeRoutes ..> FePages : <<renders>>
+FePages ..> FeComponents : <<includes>>
+FePages ..> FeContext : <<consumes>>
+FeComponents ..> FeContext : <<consumes>>
+FePages ..> FeServices : <<calls>>
+FeContext ..> FeServices : <<calls>>
+FeServices ..> AxiosClient : <<uses>>
+
+' ==========================================
+' 2. SERVER-SIDE (BACKEND REST API)
+' ==========================================
+package "viet-heritage-server (Backend Express App)" <<Server>> as ServerPkg {
+
+    package "routes (Định tuyến API)" as BeRoutes {
+        class apiRouter <<Index>>
+        class authRoutes
+        class userRoutes
+        class literatureRoutes
+        class aiRoutes
+        class quizRoutes
+        class adminRoutes
+    }
+
+    package "middlewares (Xử lý tiền kỳ & Bảo mật)" as BeMiddlewares {
+        class authMiddleware <<JWT>>
+        class uploadMiddleware <<Multer>>
+        class errorMiddleware
+    }
+
+    package "controllers (Điều khiển luồng nghiệp vụ)" as BeControllers {
+        class authController
+        class userController
+        class literatureController
+        class aiController
+        class quizController
+        class adminController
+    }
+
+    package "services (Logic nghiệp vụ cốt lõi)" as BeServices {
+        class authService as BeAuthService
+        class literatureService as BeLitService
+        class aiService as BeAiService {
+            + askAssistant()
+            + synthesizeHeritageAnswer()
+            + callGeminiApi()
+        }
+        class quizService as BeQuizService
+        class emailService as BeEmailService
+    }
+
+    package "models (Mô hình dữ liệu ODM)" as BeModels {
+        class User <<Mongoose Schema>>
+        class Work <<Mongoose Schema>>
+        class ContentSubmission <<Mongoose Schema>>
+        class Favorite <<Mongoose Schema>>
+        class SearchHistory <<Mongoose Schema>>
+        class SystemSetting <<Mongoose Schema>>
+    }
+
+    package "utils (Tiện ích hệ thống)" as BeUtils {
+        class vietnameseUtils {
+            + buildVietnameseRegex()
+            + removeVietnameseTones()
+        }
+        class authUtils
+        class seedLiterature
+    }
+
+    package "config (Cấu hình hệ thống)" as BeConfig {
+        class databaseConfig
+    }
+}
+
+' Quan hệ nội bộ Backend
+BeRoutes ..> BeMiddlewares : <<intercepts>>
+BeRoutes ..> BeControllers : <<delegates>>
+BeControllers ..> BeServices : <<calls>>
+BeServices ..> BeModels : <<queries/updates>>
+BeServices ..> BeUtils : <<uses>>
+BeControllers ..> BeUtils : <<uses>>
+BeServices ..> BeConfig : <<depends>>
+
+' ==========================================
+' 3. EXTERNAL SYSTEMS & CLOUD SERVICES
+' ==========================================
+package "Data Storage (Cơ sở dữ liệu)" <<Database>> as DBStore {
+    database "MongoDB Database" as MongoDB {
+        collections "users"
+        collections "works"
+        collections "favorites"
+        collections "contentsubmissions"
+        collections "systemsettings"
+    }
+}
+
+package "External Cloud Services (Dịch vụ bên thứ ba)" <<External>> as ExtServices {
+    cloud "Google Gemini AI API" as GeminiAI {
+        [gemini-3.5-flash Engine]
+    }
+    cloud "Google Identity Services" as GoogleOAuth {
+        [OAuth 2.0 Auth Server]
+    }
+    cloud "SMTP Mail Service" as MailServer {
+        [Nodemailer / Gmail SMTP]
+    }
+}
+
+' ==========================================
+' 4. CROSS-TIER DEPENDENCIES
+' ==========================================
+' Client gọi Server qua HTTP RESTful
+AxiosClient ..> BeRoutes : "RESTful API\n(HTTP/JSON, JWT Bearer)"
+
+' Server truy xuất Database
+BeModels ..> MongoDB : "Mongoose Driver\n(Query & Persist)"
+
+' Server kết nối Dịch vụ ngoài
+BeAiService ..> GeminiAI : "Generative Language API\n(RAG Context & Prompts)"
+BeAuthService ..> GoogleOAuth : "Verify Google ID Token"
+BeEmailService ..> MailServer : "Send OTP & Verification Link"
+
+' Client xác thực Google GIS
+GoogleLoginButton ..> GoogleOAuth : "Client GIS Authentication"
+
+@enduml
