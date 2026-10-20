@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import literatureService from '../services/literature.service';
+import PoemDisplay from '../components/common/PoemDisplay';
 import {
-    BookOpen,
     Sparkles,
     Search,
     Compass,
@@ -16,9 +16,7 @@ import {
     Scroll,
     Flame,
     ChevronRight,
-    Quote,
     X,
-    Clock,
     Eye,
     ThumbsUp,
     RefreshCw,
@@ -26,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAiChat } from '../context/AiChatContext';
 import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
+import './Home.css';
 
 const Home = () => {
     const { user, isAuthenticated, getAvatarUrl } = useAuth();
@@ -81,7 +80,6 @@ const Home = () => {
             });
             setSearchResults(data.works);
 
-            // Tự động cuộn mượt xuống phần danh sách kết quả (UC06 / UC07)
             setTimeout(() => {
                 const resultsEl = document.getElementById('dan-gian');
                 if (resultsEl) {
@@ -95,7 +93,6 @@ const Home = () => {
         }
     };
 
-    // Filter by category click
     const handleCategoryClick = (catId) => {
         setSelectedCategory(catId);
         if (catId === 'all' && !searchQuery.trim()) {
@@ -105,13 +102,11 @@ const Home = () => {
         }
     };
 
-    // Quick tag click
     const handleTagClick = (tag) => {
         setSearchQuery(tag);
         handleSearch(tag, selectedCategory);
     };
 
-    // Reset search filter
     const handleResetFilter = () => {
         setSearchQuery('');
         setSelectedCategory('all');
@@ -123,22 +118,18 @@ const Home = () => {
     return (
         <div className="space-y-20 pb-20">
             {/* 1. HERO SECTION: RỒNG BAY PHƯỢNG MÚA & HỒN THIÊNG SÔNG NÚI */}
-            <section className="relative overflow-hidden pt-12 pb-24 lg:pt-16 lg:pb-32 bg-gradient-to-b from-[#240606] via-[#160404] to-[#0e0202] text-amber-50 border-b-2 border-amber-500/30">
-                {/* HIỆU ỨNG ĐỘNG RỒNG BAY PHƯỢNG MÚA (TRADITIONAL DRAGON & PHOENIX) */}
+            <section className="home-hero">
                 <div className="absolute inset-0 z-0 pointer-events-none">
                     <DragonPhoenixHeritage variant="hero" />
                 </div>
 
-                {/* Hào quang nền cung đình */}
-                <div className="absolute inset-0 opacity-25 pointer-events-none z-0">
-                    <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-amber-500 blur-3xl"></div>
-                    <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-red-600 blur-3xl"></div>
-                </div>
+                <div className="home-hero-glow-1"></div>
+                <div className="home-hero-glow-2"></div>
 
-                <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="home-hero-container">
                     {/* Top Pill Announcement */}
                     <div className="flex justify-center mb-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/80 border border-amber-500/50 text-amber-300 text-xs font-semibold backdrop-blur-md shadow-md shadow-amber-950/30">
+                        <div className="home-pill-announcement">
                             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
                             <span>❖ RỒNG BAY THĂNG LONG • PHƯỢNG MÚA HOÀNG THÀNH ❖</span>
                         </div>
@@ -146,13 +137,13 @@ const Home = () => {
 
                     {/* Main Headline */}
                     <div className="text-center max-w-4xl mx-auto space-y-6">
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-heritage leading-tight sm:leading-tight drop-shadow-md">
+                        <h1 className="home-hero-title font-heritage drop-shadow-md">
                             Gìn Giữ Hồn Thiêng Sông Núi Qua{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-500 drop-shadow-sm">
+                            <span className="home-title-highlight drop-shadow-sm">
                                 Trí Tuệ Nhân Tạo
                             </span>
                         </h1>
-                        <p className="text-base sm:text-lg text-amber-100/90 max-w-2xl mx-auto leading-relaxed font-light font-vietnam drop-shadow-xs">
+                        <p className="home-hero-desc font-vietnam drop-shadow-xs">
                             Khám phá tinh hoa ngàn năm văn hiến: Ca dao, Tục ngữ, Thần thoại và Truyền thuyết dân tộc Việt Nam qua hệ thống RAG đối chiếu tư liệu học thuật chuẩn mực.
                         </p>
                     </div>
@@ -164,41 +155,33 @@ const Home = () => {
                                 e.preventDefault();
                                 handleSearch();
                             }}
-                            className="bg-[#fffdf9]/95 rounded-2xl p-2.5 sm:p-3.5 shadow-2xl shadow-red-950/60 border-2 border-amber-600/40 backdrop-blur-md relative"
+                            className="home-search-form"
                         >
-                            {/* Góc trang trí hoa văn hoàng gia */}
-                            <span className="absolute -top-1.5 -left-1.5 text-amber-600 text-xs font-bold select-none">❖</span>
-                            <span className="absolute -top-1.5 -right-1.5 text-amber-600 text-xs font-bold select-none">❖</span>
-                            <span className="absolute -bottom-1.5 -left-1.5 text-amber-600 text-xs font-bold select-none">❖</span>
-                            <span className="absolute -bottom-1.5 -right-1.5 text-amber-600 text-xs font-bold select-none">❖</span>
+                            <span className="home-corner-decor -top-1.5 -left-1.5">❖</span>
+                            <span className="home-corner-decor -top-1.5 -right-1.5">❖</span>
+                            <span className="home-corner-decor -bottom-1.5 -left-1.5">❖</span>
+                            <span className="home-corner-decor -bottom-1.5 -right-1.5">❖</span>
 
-                            {/* Category Filter Tabs with dynamic counts from Database */}
-                            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-2.5 scrollbar-none px-1 text-stone-700">
-                                {categories.map((cat) => (
-                                    <button
-                                        type="button"
-                                        key={cat.id}
-                                        onClick={() => handleCategoryClick(cat.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 border ${
-                                            selectedCategory === cat.id
-                                                ? 'bg-red-900 text-amber-100 border-amber-500/80 shadow-sm'
-                                                : 'hover:bg-amber-50 text-stone-700 border-transparent'
-                                        }`}
-                                    >
-                                        <span>{cat.label}</span>
-                                        {cat.count !== undefined && (
-                                            <span
-                                                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                                                    selectedCategory === cat.id
-                                                        ? 'bg-red-950 text-amber-300 border border-amber-500/30'
-                                                        : 'bg-amber-100 text-stone-700'
-                                                }`}
-                                            >
-                                                {cat.count}
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
+                            {/* Category Filter Tabs */}
+                            <div className="home-category-tabs">
+                                {categories.map((cat) => {
+                                    const isActive = selectedCategory === cat.id;
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={cat.id}
+                                            onClick={() => handleCategoryClick(cat.id)}
+                                            className={`home-category-btn ${isActive ? 'home-category-btn-active' : 'home-category-btn-inactive'}`}
+                                        >
+                                            <span>{cat.label}</span>
+                                            {cat.count !== undefined && (
+                                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-red-950 text-amber-300 border border-amber-500/30' : 'bg-amber-100 text-stone-700'}`}>
+                                                    {cat.count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {/* Input Form */}
@@ -210,7 +193,7 @@ const Home = () => {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Tra cứu ca dao, tục ngữ, tích truyện dân gian (vd: Uống nước nhớ nguồn, Thạch Sanh)..."
-                                        className="w-full pl-11 pr-4 py-3 bg-[#faf6ed] hover:bg-[#f6efe2] focus:bg-white text-stone-900 placeholder:text-stone-400 text-sm rounded-xl outline-none focus:ring-2 focus:ring-amber-500/60 transition-all border border-amber-300/70"
+                                        className="home-search-input"
                                     />
                                     {searchQuery && (
                                         <button
@@ -225,7 +208,7 @@ const Home = () => {
                                 <button
                                     type="submit"
                                     disabled={isSearching}
-                                    className="px-6 py-3 bg-gradient-to-r from-red-700 via-red-800 to-amber-700 hover:from-red-600 hover:to-amber-600 text-amber-100 text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-70 border border-amber-400/50 cursor-pointer"
+                                    className="home-search-submit-btn"
                                 >
                                     {isSearching ? (
                                         <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
@@ -255,7 +238,7 @@ const Home = () => {
                             </div>
                         )}
 
-                        {/* Popular Tags from Database */}
+                        {/* Popular Tags */}
                         <div className="flex items-center justify-center flex-wrap gap-2 mt-4 text-xs text-slate-400">
                             <span className="flex items-center gap-1 font-medium text-slate-400">
                                 <Flame className="w-3.5 h-3.5 text-amber-400" />
@@ -265,7 +248,7 @@ const Home = () => {
                                 <button
                                     key={tag}
                                     onClick={() => handleTagClick(tag)}
-                                    className="px-2.5 py-1 rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/60 transition-colors"
+                                    className="px-2.5 py-1 rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
                                 >
                                     {tag}
                                 </button>
@@ -277,8 +260,8 @@ const Home = () => {
 
             {/* 2. USER STATUS BANNER (If Logged In) */}
             {isAuthenticated && (
-                <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10">
-                    <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-lg border border-slate-200/80">
+                <section className="home-user-banner-container">
+                    <div className="home-user-card">
                         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
                             <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-5 text-center sm:text-left">
                                 <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-amber-500 bg-amber-50 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -313,7 +296,6 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* Action shortcuts */}
                             <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
                                 <Link
                                     to="/profile"
@@ -346,14 +328,11 @@ const Home = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="home-pillars-grid">
                     {/* Pillar 1 */}
-                    <Link
-                        to="/kham-pha"
-                        className="card-heritage p-7 rounded-2xl group block text-left relative overflow-hidden"
-                    >
+                    <Link to="/kham-pha" className="home-pillar-box group block">
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="w-12 h-12 rounded-xl bg-amber-100/80 text-red-900 border border-amber-300/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
+                        <div className="home-pillar-icon bg-amber-100/80 text-red-900 border border-amber-300/60 shadow-xs">
                             <Scroll className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -368,9 +347,9 @@ const Home = () => {
                     </Link>
 
                     {/* Pillar 2 */}
-                    <div className="card-heritage p-7 rounded-2xl group relative overflow-hidden">
+                    <div className="home-pillar-box group">
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="w-12 h-12 rounded-xl bg-red-100/70 text-red-900 border border-red-300/50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
+                        <div className="home-pillar-icon bg-red-100/70 text-red-900 border border-red-300/50 shadow-xs">
                             <Bot className="w-6 h-6 text-red-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -379,18 +358,15 @@ const Home = () => {
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
                             Giải nghĩa từ cổ, điển tích điển cố, tóm tắt tác phẩm và hỗ trợ người học cảm thụ các tầng nghĩa biểu tượng một cách khoa học.
                         </p>
-                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1">
+                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1 cursor-pointer" onClick={() => openAiChat()}>
                             Thử nghiệm AI <ArrowRight className="w-3 h-3" />
                         </span>
                     </div>
 
                     {/* Pillar 3 */}
-                    <Link
-                        to="/ban-do"
-                        className="card-heritage p-7 rounded-2xl group block text-left relative overflow-hidden"
-                    >
+                    <Link to="/ban-do" className="home-pillar-box group block">
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="w-12 h-12 rounded-xl bg-emerald-100/70 text-emerald-900 border border-emerald-300/50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
+                        <div className="home-pillar-icon bg-emerald-100/70 text-emerald-900 border border-emerald-300/50 shadow-xs">
                             <Compass className="w-6 h-6 text-emerald-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -405,9 +381,9 @@ const Home = () => {
                     </Link>
 
                     {/* Pillar 4 */}
-                    <div className="card-heritage p-7 rounded-2xl group relative overflow-hidden">
+                    <div className="home-pillar-box group">
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="w-12 h-12 rounded-xl bg-amber-100/70 text-amber-900 border border-amber-300/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
+                        <div className="home-pillar-icon bg-amber-100/70 text-amber-900 border border-amber-300/60 shadow-xs">
                             <Feather className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -452,7 +428,6 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Loading Shimmer Skeleton */}
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {[1, 2, 3, 4].map((i) => (
@@ -483,12 +458,9 @@ const Home = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="home-works-grid">
                         {displayWorks.map((work) => (
-                            <div
-                                key={work._id || work.slug}
-                                className="card-heritage rounded-2xl p-6 transition-all flex flex-col justify-between group relative overflow-hidden"
-                            >
+                            <div key={work._id || work.slug} className="home-work-card group">
                                 <span className="absolute top-2 right-2 text-[9px] text-amber-600 font-bold">❖</span>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between gap-2">
@@ -506,9 +478,8 @@ const Home = () => {
                                     </h3>
 
                                     {work.quote && (
-                                        <div className="p-3 bg-[#faf5eb] rounded-xl border-l-4 border-amber-600 text-xs text-stone-700 italic border border-amber-200/50">
-                                            <Quote className="w-3.5 h-3.5 text-amber-700 mb-1 inline mr-1" />
-                                            {work.quote}
+                                        <div className="home-work-quote-box font-heritage">
+                                            <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
                                         </div>
                                     )}
 
@@ -545,7 +516,7 @@ const Home = () => {
 
             {/* 5. INTERACTIVE AI ASSISTANT DEMO SPOTLIGHT */}
             <section id="tro-ly-ai" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+                <div className="home-ai-banner">
                     <div className="max-w-2xl space-y-4 relative z-10">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
                             <Bot className="w-3.5 h-3.5" />
@@ -559,8 +530,7 @@ const Home = () => {
                         </p>
                     </div>
 
-                    {/* Interactive chat card */}
-                    <div className="mt-8 bg-slate-800/80 rounded-2xl p-5 border border-slate-700/80 max-w-3xl space-y-4">
+                    <div className="home-ai-chat-bubble">
                         <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-xs flex-shrink-0">
                                 Bạn
@@ -588,7 +558,6 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Interactive CTAs */}
                         <div className="pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
                             <span className="text-[11px] text-slate-400">
                                 Bạn có câu hỏi riêng? Hãy thử ngay với Trợ lý AI hoặc tham gia đố vui:
@@ -596,7 +565,7 @@ const Home = () => {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => openAiChat()}
-                                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+                                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
                                 >
                                     <Bot className="w-3.5 h-3.5" />
                                     <span>Hỏi Trợ lý AI ngay</span>
@@ -617,7 +586,7 @@ const Home = () => {
             {/* 6. TRUST & METRICS BANNER */}
             <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div className="home-metrics-grid">
                         <div className="space-y-1">
                             <p className="text-3xl font-extrabold text-slate-900 font-heritage">
                                 {categories.find((c) => c.id === 'all')?.count || 8}+
@@ -640,14 +609,13 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* 7. MODAL CHI TIẾT TÁC PHẨM TỪ DATABASE (UC08 - View Content Details) */}
+            {/* 7. MODAL CHI TIẾT TÁC PHẨM TỪ DATABASE (UC08) */}
             {activeModalWork && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="home-modal-overlay">
                     <div
-                        className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100"
+                        className="home-modal-box"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Modal Header */}
                         <div className="p-6 bg-slate-900 text-white flex items-start justify-between">
                             <div className="space-y-1 pr-6">
                                 <div className="flex items-center gap-2">
@@ -673,17 +641,13 @@ const Home = () => {
                             </button>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm">
-                            {/* Quote */}
                             {activeModalWork.quote && (
                                 <div className="p-4 bg-amber-50 rounded-2xl border-l-4 border-amber-600 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                    <Quote className="w-4 h-4 text-amber-600 mb-1 inline mr-1" />
-                                    {activeModalWork.quote}
+                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
                                 </div>
                             )}
 
-                            {/* Summary */}
                             <div className="space-y-1.5">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                                     Tóm tắt cốt truyện
@@ -693,7 +657,6 @@ const Home = () => {
                                 </p>
                             </div>
 
-                            {/* Full Content */}
                             {activeModalWork.content && (
                                 <div className="space-y-1.5">
                                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
@@ -705,7 +668,6 @@ const Home = () => {
                                 </div>
                             )}
 
-                            {/* Thematic & Historical Context */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {activeModalWork.historicalContext && (
                                     <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-1">
@@ -725,7 +687,6 @@ const Home = () => {
                                 )}
                             </div>
 
-                            {/* Reference Source */}
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                                 <div className="flex items-center gap-1.5">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -744,21 +705,20 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Modal Footer */}
                         <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                             <button
                                 onClick={() => {
                                     openAiChat(activeModalWork);
                                     setActiveModalWork(null);
                                 }}
-                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm border border-amber-500/20"
+                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm border border-amber-500/20 cursor-pointer"
                             >
                                 <Bot className="w-3.5 h-3.5 text-amber-400" />
                                 <span>Hỏi Trợ lý AI về tác phẩm này</span>
                             </button>
                             <button
                                 onClick={() => setActiveModalWork(null)}
-                                className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+                                className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
                             >
                                 Đóng
                             </button>

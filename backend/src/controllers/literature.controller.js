@@ -127,6 +127,7 @@ class LiteratureController {
             res.status(200).json({
                 success: true,
                 ...result,
+                quota: req.guestQuota || null,
             });
         } catch (error) {
             next(error);

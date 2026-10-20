@@ -1,23 +1,25 @@
 import { useState, useEffect } from 'react';
-import { 
-    X, 
-    BookOpen, 
-    Sparkles, 
-    Heart, 
-    ExternalLink, 
-    Quote, 
-    MapPin, 
-    Calendar, 
-    Tag, 
-    Compass, 
-    Loader2, 
-    CheckCircle2, 
-    ShieldCheck, 
-    ArrowRight 
+import {
+    X,
+    BookOpen,
+    Sparkles,
+    Heart,
+    ExternalLink,
+    Quote,
+    MapPin,
+    Calendar,
+    Tag,
+    Compass,
+    Loader2,
+    CheckCircle2,
+    ShieldCheck,
+    ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import literatureService from '../../services/literature.service';
 import favoriteService from '../../services/favorite.service';
+import PoemDisplay from './PoemDisplay';
+import GuestQuotaModal from './GuestQuotaModal';
 
 const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
     const { isAuthenticated } = useAuth();
@@ -25,11 +27,12 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
     const [loading, setLoading] = useState(false);
     const [isFavorited, setIsFavorited] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
-    
+    const [showQuotaModal, setShowQuotaModal] = useState(false);
+
     // AI Explanation state (UC10)
     const [aiExplanation, setAiExplanation] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
-    
+
     // Related works (UC11)
     const [relatedWorks, setRelatedWorks] = useState([]);
 
@@ -103,7 +106,12 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
             setAiExplanation(res.explanation);
         } catch (err) {
             console.error('Lỗi yêu cầu AI giải thích:', err);
-            setAiExplanation('Rất tiếc, hiện tại không thể phân tích nội dung này. Vui lòng thử lại sau.');
+            if (err.code === 'GUEST_QUOTA_EXCEEDED' || err.status === 429) {
+                setShowQuotaModal(true);
+                setAiExplanation('⚠️ Bạn đã sử dụng hết 5 lượt trải nghiệm AI miễn phí hôm nay. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục!');
+            } else {
+                setAiExplanation('Rất tiếc, hiện tại không thể phân tích nội dung này. Vui lòng thử lại sau.');
+            }
         } finally {
             setAiLoading(false);
         }
@@ -144,11 +152,10 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                             type="button"
                             onClick={handleToggleFavorite}
                             disabled={favoriteLoading}
-                            className={`p-2.5 rounded-xl border transition-all ${
-                                isFavorited
+                            className={`p-2.5 rounded-xl border transition-all ${isFavorited
                                     ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm'
                                     : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
-                            }`}
+                                }`}
                             title={isFavorited ? 'Bỏ lưu yêu thích' : 'Lưu vào mục yêu thích'}
                         >
                             <Heart className={`w-5 h-5 ${isFavorited ? 'fill-rose-500' : ''}`} />
@@ -176,9 +183,9 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                             {current.quote && (
                                 <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 relative">
                                     <Quote className="w-7 h-7 text-amber-300 absolute top-3 right-4 opacity-70" />
-                                    <p className="text-base sm:text-lg font-bold text-amber-950 font-heritage leading-relaxed italic pr-8">
-                                        "{current.quote}"
-                                    </p>
+                                    <div className="pr-8">
+                                        <PoemDisplay text={current.quote} size="lg" />
+                                    </div>
                                     <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-medium text-amber-800/80">
                                         {current.author && (
                                             <span>Tác giả: <strong>{current.author}</strong></span>
@@ -373,6 +380,14 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Modal thông báo hết quota giải thích AI cho Guest */}
+            <GuestQuotaModal
+                isOpen={showQuotaModal}
+                onClose={() => setShowQuotaModal(false)}
+                title="Hết Lượt Yêu Cầu AI Giải Thích"
+                message="Bạn đã dùng hết 5 lượt trải nghiệm phân tích AI miễn phí hôm nay. Hãy đăng ký hoặc đăng nhập tài khoản để tiếp tục nhận phân tích chuyên sâu không giới hạn!"
+            />
         </div>
     );
 };

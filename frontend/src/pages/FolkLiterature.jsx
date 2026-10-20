@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import literatureService from '../services/literature.service';
+import PoemDisplay from '../components/common/PoemDisplay';
+import './FolkLiterature.css';
 import {
     BookOpen,
     Sparkles,
@@ -127,7 +129,7 @@ const FolkLiterature = () => {
     const currentQuote = folkQuotes[randomQuoteIndex];
 
     return (
-        <div className="min-h-screen bg-slate-50/70 pb-24">
+        <div className="folk-page">
             {toastMessage && (
                 <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
@@ -136,28 +138,28 @@ const FolkLiterature = () => {
             )}
 
             {/* 1. HERO HEADER BANNER */}
-            <section className="bg-gradient-to-b from-amber-950 via-slate-900 to-slate-950 text-white pt-10 pb-16 relative overflow-hidden">
-                <div className="absolute top-0 right-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <section className="folk-hero">
+                <div className="folk-hero-aura"></div>
+                <div className="folk-hero-aura-amber"></div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="folk-hero-container">
                     {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-6 font-medium">
-                        <Link to="/" className="hover:text-amber-400 transition">Trang chủ</Link>
+                    <div className="folk-breadcrumb">
+                        <Link to="/" className="folk-breadcrumb-link">Trang chủ</Link>
                         <ChevronRight className="w-3.5 h-3.5" />
-                        <span className="text-amber-300 font-semibold">Văn học Dân gian</span>
+                        <span className="folk-breadcrumb-current">Văn học Dân gian</span>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                         <div className="lg:col-span-7 space-y-4">
-                            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                            <div className="folk-badge">
                                 <Scroll className="w-3.5 h-3.5 text-amber-400" />
                                 <span>Kho Tàng Văn Học Dân Gian Việt Nam</span>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-heritage tracking-tight leading-tight">
+                            <h1 className="folk-hero-title font-heritage">
                                 Hồn Thiêng Dân Tộc & Lời Răn Tiền Nhân
                             </h1>
-                            <p className="text-sm sm:text-base text-slate-300 font-light leading-relaxed">
+                            <p className="folk-hero-desc">
                                 Nơi lưu giữ tiếng nói nghìn đời của cha ông qua những câu chuyện thần thoại mở cõi, truyền thuyết quật cường, cổ tích thấm đẫm tình người cùng ngàn câu ca dao tục ngữ mộc mạc mà thâm sâu.
                             </p>
 
@@ -190,8 +192,8 @@ const FolkLiterature = () => {
                         </div>
 
                         {/* Interactive Folk Wisdom Card */}
-                        <div className="lg:col-span-5 bg-gradient-to-tr from-slate-900/90 to-amber-950/70 border border-amber-500/30 rounded-3xl p-6 sm:p-7 backdrop-blur-md shadow-2xl relative">
-                            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                        <div className="lg:col-span-5 folk-wisdom-card">
+                            <div className="folk-wisdom-header">
                                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                                     <Quote className="w-4 h-4 text-amber-400" />
                                     Túi Khôn Dân Gian
@@ -207,7 +209,7 @@ const FolkLiterature = () => {
                             </div>
 
                             <div className="py-6 space-y-3">
-                                <p className="text-base sm:text-lg font-heritage text-amber-100 italic leading-relaxed whitespace-pre-line">
+                                <p className="folk-wisdom-quote font-heritage">
                                     &ldquo;{currentQuote.quote}&rdquo;
                                 </p>
                                 <div className="pt-2">
@@ -226,17 +228,17 @@ const FolkLiterature = () => {
             </section>
 
             {/* 2. GENRE SELECTION PILLS */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200/90 p-4 sm:p-5">
+            <section className="folk-genre-section">
+                <div className="folk-genre-card">
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                         {folkGenres.map((genre) => (
                             <button
                                 key={genre.id}
                                 onClick={() => setSubCategory(genre.id)}
-                                className={`p-3 rounded-xl text-left transition-all flex flex-col justify-between ${
+                                className={`folk-genre-btn ${
                                     subCategory === genre.id
-                                        ? 'bg-amber-600 text-white shadow-md scale-102 font-bold'
-                                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/70'
+                                        ? 'active'
+                                        : 'inactive'
                                 }`}
                             >
                                 <span className="text-xs font-bold block">{genre.label}</span>
@@ -342,8 +344,8 @@ const FolkLiterature = () => {
                                         </p>
 
                                         {work.quote && (
-                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed line-clamp-2">
-                                                &ldquo;{work.quote}&rdquo;
+                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed">
+                                                <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
                                             </div>
                                         )}
 
@@ -425,8 +427,7 @@ const FolkLiterature = () => {
                         <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm">
                             {activeModalWork.quote && (
                                 <div className="p-4 bg-amber-50 rounded-2xl border-l-4 border-amber-600 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                    <Quote className="w-4 h-4 text-amber-600 mb-1 inline mr-1" />
-                                    {activeModalWork.quote}
+                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
                                 </div>
                             )}
 

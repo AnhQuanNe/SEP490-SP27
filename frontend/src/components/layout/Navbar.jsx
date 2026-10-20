@@ -16,7 +16,8 @@ import {
     History, 
     Send,
     Bot,
-    Compass
+    Compass,
+    Trophy
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -41,7 +42,8 @@ const Navbar = () => {
     const navItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
-        { name: 'Tìm kiếm', path: '/kham-pha?mode=semantic', isRoute: true, icon: Search },
+        { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Compass },
+        { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy },
         { name: 'Đóng góp', path: '/dong-gop', isRoute: true },
         { name: 'Trợ lý AI', isAction: true, icon: Sparkles },
     ];
@@ -71,11 +73,8 @@ const Navbar = () => {
         if (item.path === '/') {
             return location.pathname === '/' && !location.search;
         }
-        if (item.path === '/kham-pha?mode=semantic') {
-            return location.pathname === '/kham-pha' && location.search.includes('mode=semantic');
-        }
         if (item.path === '/kham-pha') {
-            return location.pathname === '/kham-pha' && !location.search.includes('mode=semantic');
+            return location.pathname === '/kham-pha';
         }
         if (item.path === '/dong-gop') {
             return location.pathname === '/dong-gop';

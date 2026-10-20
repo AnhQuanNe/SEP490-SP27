@@ -84,6 +84,57 @@ Bài ca dao là lời răn dạy thấm thìa về đạo làm con trong mỗi g
         status: 'published',
     },
     {
+        title: 'Mẹ già như chuối ba hương',
+        slug: 'me-gia-nhu-chuoi-ba-huong',
+        category: 'ca-dao',
+        categoryName: 'Ca dao Dân ca Việt Nam',
+        period: 'Văn học Dân gian',
+        region: 'Toàn quốc',
+        author: 'Dân gian',
+        topic: 'Tình cảm gia đình',
+        summary: 'Hình ảnh so sánh mộc mạc mà đắt giá về sự ngọt ngào, quý giá của người mẹ và lời nhắc nhở con cái phụng dưỡng mẹ khi tuổi xế chiều.',
+        quote: 'Mẹ già như chuối ba hương / Như xôi nếp một, như đường mía lau.',
+        content: `Chuối ba hương là giống chuối thơm ngon ngọt lịm bậc nhất. Xôi nếp một dẻo thơm hạt ngọc làng quê. Đường mía lau ngọt thanh tao, thuần khiết. 
+Ba thứ sản vật quý báu và ngọt ngào nhất của đồng quê Việt Nam được nhân dân chọn lọc để tôn vinh sự chở che, dưỡng dục ngọt ngào vô bờ của mẹ hiền.`,
+        literalMeaning: 'So sánh người mẹ già với những thức quà đồng nội thơm ngon, quý giá và ngọt lành nhất.',
+        figurativeMeaning: 'Khẳng định tình mẹ là điều ngọt ngào, trân quý nhất trong cuộc đời mỗi con người. Mẹ già tuổi cao như chuối chín cây, con cái phải biết nâng niu, hiếu dưỡng từng ngày.',
+        lesson: 'Khuyên nhủ con cái trân trọng từng phút giây bên mẹ già, hết lòng phụng dưỡng báo hiếu cha mẹ khi người còn khỏe.',
+        historicalContext: 'Đúc kết từ văn hóa nông nghiệp thôn dã Bắc Bộ và Nam Bộ, lấy những thức quà thân thuộc nhất để biểu đạt tình mẫu tử thiêng liêng.',
+        thematicMeaning: 'Ca ngợi tình mẫu tử bao la và tinh thần phụng dưỡng mẹ già trong văn hóa gia đình Việt Nam.',
+        source: 'Kho tàng Ca dao người Việt — GS. Vũ Ngọc Phan, NXB Văn học, Tập 2.',
+        tags: ['Mẹ già như chuối ba hương', 'Tình mẹ', 'Hiếu thảo', 'Ca dao', 'Gia đình'],
+        readTime: '3 phút đọc',
+        viewsCount: 2750,
+        likesCount: 910,
+        isFeatured: true,
+        status: 'published',
+    },
+    {
+        title: 'Ơn cha nặng lắm ai ơi',
+        slug: 'on-cha-nang-lam-ai-oi',
+        category: 'ca-dao',
+        categoryName: 'Ca dao Dân ca Việt Nam',
+        period: 'Văn học Dân gian',
+        region: 'Toàn quốc',
+        author: 'Dân gian',
+        topic: 'Tình cảm gia đình',
+        summary: 'Lời tâm sự thiết tha về công lao sinh thành mang nặng đẻ đau của cha mẹ, nhắc nhở bổn phận báo hiếu phụng dưỡng của con cái.',
+        quote: 'Ơn cha nặng lắm ai ơi / Nghĩa mẹ bằng trời mang nặng đẻ đau / Lên non mới biết non cao / Nuôi con mới biết công lao mẹ thầy.',
+        content: `Chỉ khi tự mình leo lên đỉnh núi chênh vênh mới thấu suốt độ cao hiểm trở của ngọn núi. Cũng như vậy, chỉ đến khi con cái trưởng thành, lập gia đình và tự mình nuôi nấng những đứa con thơ thì mới thấm thía hết nỗi nhọc nhằn, cay đắng và đức hy sinh trời biển của cha mẹ.`,
+        literalMeaning: 'Leo núi cao mới thấy sự kỳ vĩ, tự mình nuôi con mới cảm thấu sự gian nan của đấng sinh thành.',
+        figurativeMeaning: 'Công ơn cha mẹ dưỡng dục, che chở là vô bờ bến. Sự thấu hiểu và lòng hiếu thảo chính là thước đo đạo đức làm người.',
+        lesson: 'Giáo dục lòng biết ơn và ý thức trách nhiệm đền đáp công ơn sinh thành của đấng mẹ cha.',
+        historicalContext: 'Lưu truyền rộng rãi trong các khúc hát ru ba miền, khắc sâu vào tâm thức người Việt từ thuở ấu thơ.',
+        thematicMeaning: 'Đạo hiếu và truyền thống phụng dưỡng song thân của văn hóa Á Đông.',
+        source: 'Từ điển Thành ngữ và Tục ngữ Việt Nam — GS. Nguyễn Lân, NXB Văn hóa Thông tin.',
+        tags: ['Ơn cha nặng lắm ai ơi', 'Công cha nghĩa mẹ', 'Hiếu đạo', 'Gia đình', 'Ca dao'],
+        readTime: '4 phút đọc',
+        viewsCount: 2310,
+        likesCount: 780,
+        isFeatured: true,
+        status: 'published',
+    },
+    {
         title: 'Bầu ơi thương lấy bí cùng',
         slug: 'bau-oi-thuong-lay-bi-cung',
         category: 'ca-dao',
@@ -351,18 +402,27 @@ Suốt mười lăm năm chìm nổi giữa dòng đời ô trọc, nàng lần 
     },
 ];
 
+const additionalWorks = require('./seedAdditionalWorks');
+
 async function seedData() {
     try {
         const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/sep490';
         console.log(`[SeedLiterature] Đang kết nối tới MongoDB: ${mongoUri}...`);
         await mongoose.connect(mongoUri);
 
-        console.log('[SeedLiterature] Xóa dữ liệu cũ của bảng Work nếu có...');
-        await Work.deleteMany({});
-
-        console.log(`[SeedLiterature] Đang thêm ${sampleWorks.length} tác phẩm ca dao, tục ngữ & văn học kinh điển...`);
-        const inserted = await Work.insertMany(sampleWorks);
-        console.log(`[SeedLiterature] Thành công nạp ${inserted.length} tác phẩm vào MongoDB!`);
+        const allSeedWorks = [...sampleWorks, ...additionalWorks];
+        console.log(`[SeedLiterature] Đang đồng bộ và nạp ${allSeedWorks.length} tác phẩm ca dao, tục ngữ & văn học kinh điển...`);
+        let upsertedCount = 0;
+        for (const item of allSeedWorks) {
+            await Work.findOneAndUpdate(
+                { slug: item.slug },
+                { $set: item },
+                { upsert: true, returnDocument: 'after' }
+            );
+            upsertedCount++;
+        }
+        const totalNow = await Work.countDocuments();
+        console.log(`[SeedLiterature] Thành công đồng bộ ${upsertedCount} tác phẩm! Tổng tác phẩm trong DB hiện tại: ${totalNow}`);
 
         process.exit(0);
     } catch (error) {

@@ -21,14 +21,18 @@ import {
     RotateCcw,
     Shield,
     BadgeCheck,
-    Check
+    Check,
+    BookOpen,
+    Feather,
+    Award
 } from 'lucide-react';
+import './Profile.css';
 
 const Profile = () => {
     const { user, updateUser, getAvatarUrl } = useAuth();
     const fileInputRef = useRef(null);
 
-    // Tab state: 'info' | 'password'
+    // Tab điều hướng: 'info' | 'password'
     const [activeTab, setActiveTab] = useState('info');
 
     // Form Profile State
@@ -77,7 +81,7 @@ const Profile = () => {
 
     const hasChanges = isNameChanged || isPhoneChanged || isAddressChanged || isAvatarChanged;
 
-    // Tính % hoàn thiện hồ sơ (Gamification)
+    // Tính % hoàn thiện hồ sơ
     const calculateCompleteness = () => {
         let score = 50; // Name + Email luôn có
         if (user?.avatar || selectedAvatarFile) score += 20;
@@ -135,7 +139,7 @@ const Profile = () => {
                 }
             }
 
-            // 2. Cập nhật thông tin chữ nếu có sửa
+            // 2. Cập nhật thông tin nếu có sửa đổi
             if (isNameChanged || isPhoneChanged || isAddressChanged) {
                 const res = await userService.updateProfile({
                     name: profileData.name.trim(),
@@ -148,9 +152,9 @@ const Profile = () => {
             }
 
             updateUser(updatedUser);
-            setProfileMsg({ type: 'success', text: 'Cập nhật thông tin hồ sơ thành công!' });
+            setProfileMsg({ type: 'success', text: 'Cập nhật thông tin hồ sơ di sản thành công!' });
         } catch (err) {
-            setProfileMsg({ type: 'error', text: err.message || 'Cập nhật thất bại' });
+            setProfileMsg({ type: 'error', text: err.message || 'Cập nhật thất bại. Vui lòng thử lại.' });
         } finally {
             setProfileLoading(false);
         }
@@ -162,9 +166,11 @@ const Profile = () => {
         setPasswordMsg({ type: '', text: '' });
     };
 
+    const isPasswordLengthValid = passwordData.newPassword.length >= 6;
+    const isPasswordMatch = passwordData.newPassword.length > 0 && passwordData.newPassword === passwordData.confirmPassword;
     const hasPasswordInput =
-        passwordData.newPassword.length >= 6 &&
-        passwordData.confirmPassword.length >= 6 &&
+        isPasswordLengthValid &&
+        isPasswordMatch &&
         (isGoogleAccount || passwordData.currentPassword.length > 0);
 
     const handleSavePassword = async (e) => {
@@ -192,8 +198,8 @@ const Profile = () => {
                 setPasswordMsg({
                     type: 'success',
                     text: isGoogleAccount
-                        ? 'Thiết lập mật khẩu mới thành công!'
-                        : 'Đổi mật khẩu thành công!',
+                        ? 'Thiết lập mật khẩu tài khoản thành công!'
+                        : 'Cập nhật mật khẩu bảo mật thành công!',
                 });
                 setPasswordData({
                     currentPassword: '',
@@ -210,40 +216,60 @@ const Profile = () => {
 
     const currentAvatarUrl = avatarPreview || getAvatarUrl(user?.avatar);
 
-    return (
-        <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 relative">
-            {/* Ambient Background Glow */}
-            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-r from-blue-400/15 via-indigo-300/15 to-sky-300/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    // Chuyển đổi tên vai trò sang tiếng Việt trang trọng
+    const getRoleDisplayName = (role) => {
+        switch (role?.toLowerCase()) {
+            case 'admin':
+                return 'Quản Trị Viên';
+            case 'editor':
+                return 'Biên Tập Viên';
+            default:
+                return 'Độc Giả Di Sản';
+        }
+    };
 
-            {/* TOP COVER BANNER */}
-            <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-100 mb-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
-                
-                {/* Banner Content */}
-                <div className="relative px-6 sm:px-10 py-10 sm:py-12 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div className="space-y-2">
-                        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-sky-200 border border-white/10">
-                            <Sparkles className="w-3.5 h-3.5 text-sky-300" />
-                            <span>Quản lý hồ sơ & Bảo mật tài khoản</span>
+    return (
+        <div className="profile-page-wrapper">
+            {/* Ambient Background Warm Glow */}
+            <div className="profile-ambient-glow" />
+
+            {/* TOP COVER BANNER - SƠN MÀI HOÀNG GIA & VÀNG HOÀNG KIM */}
+            <div className="profile-hero-banner">
+                {/* Hoa văn hình học trống đồng Đông Sơn in chìm */}
+                <div className="profile-hero-watermark" />
+                <div className="absolute top-0 right-0 w-96 h-full bg-gradient-to-l from-amber-500/10 via-transparent to-transparent pointer-events-none" />
+
+                {/* Nội dung Banner */}
+                <div className="relative px-6 sm:px-10 py-9 sm:py-11 flex flex-col sm:flex-row sm:items-center justify-between gap-6 z-10">
+                    <div className="space-y-2.5 max-w-2xl">
+                        <div className="imperial-pill">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                            <span>❖ Quản Lý Định Danh & Bảo Mật</span>
                         </div>
-                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                            Trung Tâm Tài Khoản
+                        <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white font-heritage flex items-center gap-2">
+                            <span>Trung Tâm Tài Khoản</span>
                         </h1>
-                        <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-                            Cập nhật thông tin định danh cá nhân, ảnh đại diện và tùy chọn bảo mật mật khẩu của bạn.
+                        <p className="text-sm text-amber-100/80 leading-relaxed font-sans">
+                            Không gian quản lý hồ sơ định danh, ảnh đại diện và tùy chọn bảo mật tài khoản người đồng hành cùng VietHeritage.
                         </p>
                     </div>
 
-                    {/* Quick Badge */}
-                    <div className="hidden md:flex flex-col items-end space-y-1.5 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                        <span className="text-xs text-slate-300">Tài khoản thành viên</span>
-                        <div className="flex items-center space-x-2">
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-200 border border-blue-400/30 uppercase">
-                                {user?.role || 'Customer'}
+                    {/* Huy hiệu định danh thành viên */}
+                    <div className="flex flex-col sm:items-end gap-2 bg-black/25 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-amber-400/30 shadow-inner">
+                        <span className="text-[11px] font-semibold text-amber-200/90 tracking-wide uppercase flex items-center gap-1.5">
+                            <span className="text-amber-400">❖</span> Định Danh Thành Viên
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-400/40 uppercase tracking-wider shadow-sm">
+                                {getRoleDisplayName(user?.role)}
                             </span>
-                            {user?.isVerified && (
-                                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 flex items-center">
-                                    <BadgeCheck className="w-3.5 h-3.5 mr-1" /> Đã xác thực
+                            {user?.isVerified ? (
+                                <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-400/40 flex items-center shadow-sm">
+                                    <BadgeCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Đã xác thực
+                                </span>
+                            ) : (
+                                <span className="px-3 py-1 rounded-lg text-xs font-medium bg-amber-950/50 text-amber-300/90 border border-amber-500/30">
+                                    Đang đồng hành
                                 </span>
                             )}
                         </div>
@@ -253,32 +279,36 @@ const Profile = () => {
 
             {/* MAIN DASHBOARD LAYOUT (2 Columns) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* LEFT COLUMN: Profile Identity Card & Navigation */}
+                
+                {/* CỘT TRÁI: Thẻ Định Danh Cá Nhân & Điều Hướng */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 p-6 sm:p-7 relative overflow-hidden">
-                        {/* Avatar Presentation */}
+                    <div className="profile-card p-6 sm:p-7 relative overflow-hidden">
+                        
+                        {/* Khu vực ảnh đại diện (Avatar Ấn Triện) */}
                         <div className="flex flex-col items-center text-center">
                             <div className="relative group mb-4">
-                                <div className="w-32 h-32 rounded-3xl overflow-hidden ring-4 ring-blue-50 shadow-xl bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center border border-gray-200/80 transition-transform duration-300 group-hover:scale-102">
-                                    {currentAvatarUrl ? (
-                                        <img
-                                            src={currentAvatarUrl}
-                                            alt={user?.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-5xl font-black text-blue-600 select-none">
-                                            {user?.name?.charAt(0)?.toUpperCase()}
-                                        </span>
-                                    )}
+                                <div className="profile-avatar-frame">
+                                    <div className="profile-avatar-inner">
+                                        {currentAvatarUrl ? (
+                                            <img
+                                                src={currentAvatarUrl}
+                                                alt={user?.name || 'Ảnh đại diện'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-5xl font-black text-amber-300 select-none font-serif drop-shadow-md">
+                                                {user?.name?.charAt(0)?.toUpperCase() || 'V'}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Floating Camera Trigger */}
+                                {/* Nút chụp/chọn ảnh đại diện */}
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
-                                    title="Chọn ảnh mới"
-                                    className="absolute -bottom-2 -right-2 p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl shadow-lg ring-4 ring-white transition-all hover:scale-110 active:scale-95 focus:outline-none"
+                                    title="Chọn ảnh đại diện mới"
+                                    className="profile-camera-btn"
                                 >
                                     <Camera className="w-4 h-4" />
                                 </button>
@@ -291,35 +321,36 @@ const Profile = () => {
                                 />
                             </div>
 
-                            {/* Revert Avatar Button if new image selected */}
+                            {/* Nút hủy ảnh tạm thời nếu chưa lưu */}
                             {selectedAvatarFile && (
                                 <div className="mb-3 flex items-center space-x-2 animate-in fade-in">
-                                    <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                                         Ảnh mới chưa lưu
                                     </span>
                                     <button
                                         type="button"
                                         onClick={handleCancelAvatar}
-                                        className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                        title="Hủy ảnh"
+                                        className="p-1 text-red-700 hover:bg-red-100 rounded-lg transition"
+                                        title="Hủy ảnh vừa chọn"
                                     >
                                         <RotateCcw className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             )}
 
-                            <h2 className="text-xl font-bold text-gray-900 mt-1 flex items-center justify-center space-x-1.5">
-                                <span>{user?.name}</span>
+                            {/* Tên và Email người dùng */}
+                            <h2 className="text-xl font-bold text-stone-900 mt-1 flex items-center justify-center space-x-1.5 font-heritage">
+                                <span>{user?.name || 'Người dùng VietHeritage'}</span>
                                 {user?.isVerified && (
-                                    <BadgeCheck className="w-5 h-5 text-blue-600" title="Email đã xác thực" />
+                                    <BadgeCheck className="w-5 h-5 text-emerald-700" title="Tài khoản đã xác thực" />
                                 )}
                             </h2>
-                            <p className="text-xs text-gray-500 mt-0.5">{user?.email}</p>
+                            <p className="text-xs text-stone-600 font-medium mt-0.5">{user?.email}</p>
 
-                            {/* Tags & Badges */}
+                            {/* Nhãn đặc tính tài khoản */}
                             <div className="flex flex-wrap gap-2 justify-center mt-3">
                                 {isGoogleAccount && (
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-white text-stone-700 border border-stone-200 shadow-2xs">
                                         <svg className="w-3.5 h-3.5 mr-1.5" viewBox="0 0 24 24">
                                             <path
                                                 fill="#4285F4"
@@ -342,101 +373,111 @@ const Profile = () => {
                                     </span>
                                 )}
                                 {user?.createdAt && (
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-                                        <Calendar className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50/70 text-amber-900 border border-amber-200/80">
+                                        <Calendar className="w-3.5 h-3.5 mr-1 text-amber-700" />
                                         Gia nhập: {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                                     </span>
                                 )}
                             </div>
 
-                            {/* Profile Completeness Bar */}
-                            <div className="w-full mt-6 pt-5 border-t border-gray-100 text-left">
+                            {/* Thanh mức độ hoàn thiện hồ sơ */}
+                            <div className="w-full mt-6 pt-5 border-t border-amber-900/10 text-left">
                                 <div className="flex justify-between items-center text-xs mb-1.5 font-bold">
-                                    <span className="text-gray-600">Độ hoàn thiện hồ sơ</span>
-                                    <span className="text-blue-600">{completeness}%</span>
+                                    <span className="text-stone-700 flex items-center gap-1">
+                                        <Award className="w-3.5 h-3.5 text-amber-700" />
+                                        Mức độ hoàn thiện hồ sơ
+                                    </span>
+                                    <span className="text-red-900 font-extrabold">{completeness}%</span>
                                 </div>
-                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="profile-progress-track">
                                     <div
-                                        className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500"
+                                        className="profile-progress-bar"
                                         style={{ width: `${completeness}%` }}
-                                    ></div>
+                                    />
                                 </div>
                                 {completeness < 100 && (
-                                    <p className="text-[11px] text-gray-400 mt-1.5">
-                                        Điền đầy đủ số điện thoại và địa chỉ để đạt 100%.
+                                    <p className="text-[11px] text-stone-500 mt-2 leading-relaxed">
+                                        Cập nhật đầy đủ số điện thoại và địa chỉ để hoàn thiện 100% hồ sơ độc giả.
                                     </p>
                                 )}
                             </div>
                         </div>
 
-                        {/* Navigation Sidebar Tabs */}
-                        <div className="mt-6 pt-6 border-t border-gray-100 space-y-2">
+                        {/* Menu Tab Điều Hướng */}
+                        <div className="mt-6 pt-6 border-t border-amber-900/10 space-y-2">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('info')}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                                    activeTab === 'info'
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                                        : 'text-gray-600 hover:bg-gray-100/80'
-                                }`}
+                                className={`profile-nav-tab ${activeTab === 'info' ? 'active' : 'inactive'}`}
                             >
                                 <div className="flex items-center space-x-3">
-                                    <User className="w-4 h-4" />
+                                    <User className={`w-4 h-4 ${activeTab === 'info' ? 'text-amber-200' : 'text-stone-500'}`} />
                                     <span>Thông Tin Cá Nhân</span>
                                 </div>
                                 {hasChanges && (
-                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" title="Có thay đổi chưa lưu" />
                                 )}
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('password')}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                                    activeTab === 'password'
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                                        : 'text-gray-600 hover:bg-gray-100/80'
-                                }`}
+                                className={`profile-nav-tab ${activeTab === 'password' ? 'active' : 'inactive'}`}
                             >
                                 <div className="flex items-center space-x-3">
-                                    <KeyRound className="w-4 h-4" />
+                                    <KeyRound className={`w-4 h-4 ${activeTab === 'password' ? 'text-amber-200' : 'text-stone-500'}`} />
                                     <span>Bảo Mật & Mật Khẩu</span>
                                 </div>
                             </button>
                         </div>
+
+                        {/* Câu danh ngôn văn hóa truyền cảm hứng */}
+                        <div className="mt-6 pt-5 border-t border-amber-900/10 text-center">
+                            <p className="text-[11px] italic text-amber-900/80 font-serif">
+                                ❖ &ldquo;Lời hay ý đẹp, lưu giữ muôn đời&rdquo;
+                            </p>
+                            <span className="text-[10px] text-stone-600 block mt-0.5">VietHeritage • Kho Tàng Di Sản</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN: Tab Form Details */}
+                {/* CỘT PHẢI: Khối Biểu Mẫu Nhập Liệu Chi Tiết */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 p-6 sm:p-9 relative overflow-hidden">
+                    <div className="profile-card p-6 sm:p-9 relative overflow-hidden">
+                        
                         {/* TAB 1: THÔNG TIN CÁ NHÂN */}
                         {activeTab === 'info' && (
                             <div>
-                                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-amber-900/10 gap-2">
                                     <div>
-                                        <h3 className="text-xl font-extrabold text-gray-900">Hồ Sơ Cá Nhân</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            Chỉnh sửa tên và thông tin liên hệ của bạn
+                                        <div className="flex items-center gap-2">
+                                            <Feather className="w-5 h-5 text-red-900" />
+                                            <h3 className="text-xl sm:text-2xl font-black text-stone-900 font-heritage">
+                                                Hồ Sơ Độc Giả
+                                            </h3>
+                                        </div>
+                                        <p className="text-xs text-stone-600 mt-1">
+                                            Chỉnh sửa tên danh xưng và thông tin liên hệ của bạn trên nền tảng
                                         </p>
                                     </div>
-                                    <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200">
-                                        ID: {user?._id?.slice(-8) || user?.id?.slice(-8) || 'User'}
+                                    <span className="self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/70 text-amber-900 border border-amber-300">
+                                        Mã Độc Giả: {user?._id?.slice(-8) || user?.id?.slice(-8) || 'User'}
                                     </span>
                                 </div>
 
+                                {/* Thông báo phản hồi */}
                                 {profileMsg.text && (
                                     <div
-                                        className={`mb-6 p-4 rounded-2xl border flex items-start space-x-3 text-sm animate-in fade-in duration-200 ${
+                                        className={`mb-6 flex items-start space-x-3 text-sm animate-in fade-in duration-200 ${
                                             profileMsg.type === 'success'
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                                : 'bg-rose-50 border-rose-200 text-rose-800'
+                                                ? 'profile-alert-success'
+                                                : 'profile-alert-error'
                                         }`}
                                     >
                                         {profileMsg.type === 'success' ? (
                                             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                                         ) : (
-                                            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                                            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                                         )}
                                         <span className="font-semibold">{profileMsg.text}</span>
                                     </div>
@@ -446,11 +487,11 @@ const Profile = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         {/* Họ và tên */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                                Họ và tên <span className="text-rose-500">*</span>
+                                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                                                Họ và tên <span className="text-red-600">*</span>
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                     <User className="w-5 h-5" />
                                                 </div>
                                                 <input
@@ -459,7 +500,8 @@ const Profile = () => {
                                                     required
                                                     value={profileData.name}
                                                     onChange={handleProfileChange}
-                                                    className="block w-full pl-11 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                    placeholder="Nhập họ và tên của bạn"
+                                                    className="profile-input-field pl-11 pr-4"
                                                 />
                                             </div>
                                         </div>
@@ -467,40 +509,40 @@ const Profile = () => {
                                         {/* Email */}
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
-                                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
                                                     Địa chỉ Email
                                                 </label>
                                                 {user?.isVerified ? (
-                                                    <span className="text-xs text-emerald-600 font-semibold flex items-center">
+                                                    <span className="text-xs text-emerald-700 font-semibold flex items-center">
                                                         <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Đã xác thực
                                                     </span>
                                                 ) : (
-                                                    <span className="text-xs text-amber-600 font-semibold">Chưa xác thực</span>
+                                                    <span className="text-xs text-amber-700 font-semibold">Chưa xác thực</span>
                                                 )}
                                             </div>
                                             <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
                                                     <Mail className="w-5 h-5" />
                                                 </div>
                                                 <input
                                                     type="email"
                                                     disabled
                                                     value={user?.email || ''}
-                                                    className="block w-full pl-11 pr-4 py-3 bg-gray-100/80 border border-gray-200 rounded-2xl text-gray-500 text-sm font-medium cursor-not-allowed select-none"
+                                                    className="profile-input-field profile-input-disabled pl-11 pr-4"
                                                 />
                                             </div>
-                                            <p className="mt-1.5 text-[11px] text-gray-400">
-                                                Email là định danh cố định không thể thay đổi.
+                                            <p className="mt-1.5 text-[11px] text-stone-600">
+                                                Email là định danh cố định gắn với tài khoản của bạn.
                                             </p>
                                         </div>
 
                                         {/* Số điện thoại */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
                                                 Số điện thoại
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                     <Phone className="w-5 h-5" />
                                                 </div>
                                                 <input
@@ -509,18 +551,18 @@ const Profile = () => {
                                                     value={profileData.phone}
                                                     onChange={handleProfileChange}
                                                     placeholder="Ví dụ: 0912345678"
-                                                    className="block w-full pl-11 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                    className="profile-input-field pl-11 pr-4"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Địa chỉ cư trú */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
                                                 Địa chỉ cư trú
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                     <MapPin className="w-5 h-5" />
                                                 </div>
                                                 <input
@@ -529,37 +571,33 @@ const Profile = () => {
                                                     value={profileData.address}
                                                     onChange={handleProfileChange}
                                                     placeholder="Ví dụ: Hà Nội, Việt Nam"
-                                                    className="block w-full pl-11 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                    className="profile-input-field pl-11 pr-4"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Action Button Bar */}
-                                    <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+                                    {/* Thanh Nút Thao Tác */}
+                                    <div className="pt-6 border-t border-amber-900/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                                         <div className="text-xs">
                                             {hasChanges ? (
-                                                <span className="inline-flex items-center text-blue-600 font-bold animate-pulse">
-                                                    ● Bạn có thay đổi chưa lưu
+                                                <span className="inline-flex items-center text-amber-800 font-bold animate-pulse">
+                                                    ● Bạn có chỉnh sửa chưa lưu lại
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400">Chưa có thay đổi nào</span>
+                                                <span className="text-stone-600">Dữ liệu hiện tại đã được đồng bộ</span>
                                             )}
                                         </div>
 
                                         <button
                                             type="submit"
                                             disabled={!hasChanges || profileLoading}
-                                            className={`inline-flex items-center px-7 py-3 rounded-2xl font-bold text-sm transition-all duration-200 ${
-                                                hasChanges && !profileLoading
-                                                    ? 'text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg shadow-blue-600/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0'
-                                                    : 'text-gray-400 bg-gray-200 cursor-not-allowed shadow-none'
-                                            }`}
+                                            className="profile-btn-primary w-full sm:w-auto"
                                         >
                                             {profileLoading ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Đang lưu dữ liệu...
+                                                    Đang lưu thay đổi...
                                                 </>
                                             ) : (
                                                 <>
@@ -576,52 +614,62 @@ const Profile = () => {
                         {/* TAB 2: ĐỔI MẬT KHẨU */}
                         {activeTab === 'password' && (
                             <div>
-                                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                                <div className="flex items-center justify-between mb-6 pb-4 border-b border-amber-900/10">
                                     <div>
-                                        <h3 className="text-xl font-extrabold text-gray-900">Bảo Mật & Mật Khẩu</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            Bảo vệ tài khoản bằng mật khẩu mạnh
+                                        <div className="flex items-center gap-2">
+                                            <Shield className="w-5 h-5 text-red-900" />
+                                            <h3 className="text-xl sm:text-2xl font-black text-stone-900 font-heritage">
+                                                Bảo Mật & Mật Khẩu
+                                            </h3>
+                                        </div>
+                                        <p className="text-xs text-stone-600 mt-1">
+                                            Bảo vệ tài khoản với mật khẩu tiêu chuẩn bảo mật cao
                                         </p>
                                     </div>
-                                    <Shield className="w-5 h-5 text-indigo-500" />
+                                    <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200">
+                                        Bảo mật tài khoản
+                                    </span>
                                 </div>
 
+                                {/* Thông báo dành riêng cho tài khoản Google */}
                                 {isGoogleAccount && (
-                                    <div className="mb-6 p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-blue-950 text-sm flex items-start space-x-3">
-                                        <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                    <div className="mb-6 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-stone-800 text-sm flex items-start space-x-3">
+                                        <Sparkles className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="font-bold">Đăng nhập tiện lợi bằng Google</p>
-                                            <p className="mt-1 text-blue-800 text-xs leading-relaxed">
-                                                Tài khoản của bạn hiện đang liên kết với Google. Bạn có thể thiết lập mật khẩu riêng tại đây để sau này có thể đăng nhập bằng cả Email & Mật khẩu thông thường.
+                                            <p className="font-bold text-amber-950">Tài khoản liên kết Google SSO</p>
+                                            <p className="mt-1 text-stone-600 text-xs leading-relaxed">
+                                                Bạn đang đăng nhập qua tài khoản Google. Bạn có thể thiết lập thêm mật khẩu trực tiếp tại đây để đăng nhập bằng cả Email và Mật khẩu khi cần thiết.
                                             </p>
                                         </div>
                                     </div>
                                 )}
 
+                                {/* Thông báo phản hồi đổi mật khẩu */}
                                 {passwordMsg.text && (
                                     <div
-                                        className={`mb-6 p-4 rounded-2xl border flex items-start space-x-3 text-sm animate-in fade-in duration-200 ${
+                                        className={`mb-6 flex items-start space-x-3 text-sm animate-in fade-in duration-200 ${
                                             passwordMsg.type === 'success'
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                                : 'bg-rose-50 border-rose-200 text-rose-800'
+                                                ? 'profile-alert-success'
+                                                : 'profile-alert-error'
                                         }`}
                                     >
                                         {passwordMsg.type === 'success' ? (
                                             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                                         ) : (
-                                            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                                            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                                         )}
                                         <span className="font-semibold">{passwordMsg.text}</span>
                                     </div>
                                 )}
 
                                 <form onSubmit={handleSavePassword} className="space-y-5 max-w-lg">
+                                    {/* Mật khẩu hiện tại (nếu là tài khoản thông thường) */}
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                            Mật khẩu hiện tại
+                                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                                            Mật khẩu hiện tại {!isGoogleAccount && <span className="text-red-600">*</span>}
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                 <Lock className="w-5 h-5" />
                                             </div>
                                             <input
@@ -631,24 +679,25 @@ const Profile = () => {
                                                 value={passwordData.currentPassword}
                                                 onChange={handlePasswordChange}
                                                 placeholder={isGoogleAccount ? 'Để trống nếu chưa từng đặt mật khẩu' : '••••••••'}
-                                                className="block w-full pl-11 pr-11 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                className="profile-input-field pl-11 pr-11"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowCurrentPass(!showCurrentPass)}
-                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 transition-colors focus:outline-none cursor-pointer"
                                             >
                                                 {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>
                                         </div>
                                     </div>
 
+                                    {/* Mật khẩu mới */}
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                            Mật khẩu mới
+                                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                                            Mật khẩu mới <span className="text-red-600">*</span>
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                 <KeyRound className="w-5 h-5" />
                                             </div>
                                             <input
@@ -658,24 +707,25 @@ const Profile = () => {
                                                 value={passwordData.newPassword}
                                                 onChange={handlePasswordChange}
                                                 placeholder="Tối thiểu 6 ký tự"
-                                                className="block w-full pl-11 pr-11 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                className="profile-input-field pl-11 pr-11"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowNewPass(!showNewPass)}
-                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 transition-colors focus:outline-none cursor-pointer"
                                             >
                                                 {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>
                                         </div>
                                     </div>
 
+                                    {/* Xác nhận mật khẩu mới */}
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                            Xác nhận mật khẩu mới
+                                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                                            Xác nhận mật khẩu mới <span className="text-red-600">*</span>
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-red-800 transition-colors">
                                                 <KeyRound className="w-5 h-5" />
                                             </div>
                                             <input
@@ -685,37 +735,47 @@ const Profile = () => {
                                                 value={passwordData.confirmPassword}
                                                 onChange={handlePasswordChange}
                                                 placeholder="Nhập lại mật khẩu mới"
-                                                className="block w-full pl-11 pr-11 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                                className="profile-input-field pl-11 pr-11"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPass(!showConfirmPass)}
-                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 transition-colors focus:outline-none cursor-pointer"
                                             >
                                                 {showConfirmPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-gray-100 flex justify-end">
+                                    {/* Hướng dẫn tiêu chuẩn mật khẩu */}
+                                    <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/60 text-xs space-y-1.5">
+                                        <span className="font-bold text-stone-700 block mb-1">Quy định bảo mật:</span>
+                                        <div className={`flex items-center gap-1.5 ${isPasswordLengthValid ? 'text-emerald-700 font-semibold' : 'text-stone-600'}`}>
+                                            <Check className="w-3.5 h-3.5" />
+                                            <span>Mật khẩu mới có ít nhất 6 ký tự</span>
+                                        </div>
+                                        <div className={`flex items-center gap-1.5 ${isPasswordMatch ? 'text-emerald-700 font-semibold' : 'text-stone-600'}`}>
+                                            <Check className="w-3.5 h-3.5" />
+                                            <span>Xác nhận mật khẩu trùng khớp với mật khẩu mới</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Nút lưu mật khẩu */}
+                                    <div className="pt-4 border-t border-amber-900/10 flex justify-end">
                                         <button
                                             type="submit"
                                             disabled={!hasPasswordInput || passwordLoading}
-                                            className={`inline-flex items-center px-7 py-3 rounded-2xl font-bold text-sm transition-all duration-200 ${
-                                                hasPasswordInput && !passwordLoading
-                                                    ? 'text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg shadow-blue-600/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0'
-                                                    : 'text-gray-400 bg-gray-200 cursor-not-allowed shadow-none'
-                                            }`}
+                                            className="profile-btn-primary w-full sm:w-auto"
                                         >
                                             {passwordLoading ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Đang xử lý...
+                                                    Đang cập nhật...
                                                 </>
                                             ) : (
                                                 <>
                                                     <Lock className="w-4 h-4 mr-2" />
-                                                    {isGoogleAccount ? 'Lưu Mật Khẩu' : 'Cập Nhật Mật Khẩu'}
+                                                    {isGoogleAccount ? 'Lưu Mật Khẩu Mới' : 'Cập Nhật Mật Khẩu'}
                                                 </>
                                             )}
                                         </button>

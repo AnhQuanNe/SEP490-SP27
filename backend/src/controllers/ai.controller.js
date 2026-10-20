@@ -23,6 +23,7 @@ const ask = async (req, res) => {
         res.status(200).json({
             success: true,
             data: result,
+            quota: req.guestQuota || null,
         });
     } catch (error) {
         console.error('[AI Controller] Lỗi xử lý câu hỏi:', error.message);
@@ -68,6 +69,7 @@ const explain = async (req, res) => {
         res.status(200).json({
             success: true,
             data: result,
+            quota: req.guestQuota || null,
         });
     } catch (error) {
         console.error('[AI Controller] Lỗi giải thích tác phẩm:', error.message);

@@ -1,192 +1,107 @@
 const Work = require('../models/Work');
+const QuizProgress = require('../models/QuizProgress');
+const QuizQuestion = require('../models/QuizQuestion');
+const quizQuestionsData = require('../seeds/quizQuestions.data');
 
 /**
- * Ngân hàng câu hỏi trắc nghiệm Di sản Văn học Dân gian Việt Nam
+ * Danh mục toàn bộ các Huy hiệu Thành tích (Achievement Badges)
  */
-const QUIZ_QUESTION_BANK = [
+const ALL_ACHIEVEMENT_BADGES = [
     {
-        id: 'q1',
-        category: 'co-tich',
-        categoryName: 'Truyện cổ tích',
-        difficulty: 'de',
-        relatedWorkSlug: 'thach-sanh',
-        question: 'Trong truyện cổ tích Thạch Sanh, vật phẩm kỳ diệu nào đã thức tỉnh lòng trắc ẩn của quân giặc 18 nước chư hầu mà không cần đổ máu?',
-        options: [
-            'Búa thần đốn củi của cha để lại',
-            'Cung tên vàng bắn rụng đại bàng',
-            'Tiếng đàn thần giải oan và cảm hóa',
-            'Chiếc gương thần nhìn thấu tâm can',
-        ],
-        correctIndex: 2,
-        explanation: 'Tiếng đàn của Thạch Sanh gảy lên bên bờ sông giáp ranh khiến quân sĩ 18 nước chư hầu xúc động, nhớ cha mẹ, vợ con ở quê nhà nên bủn rủn tay chân, không đánh mà tan. Đây là biểu tượng của tinh thần yêu chuộng hòa bình của dân tộc.',
+        id: 'first_quiz',
+        title: 'Tân thủ Di sản',
+        description: 'Hoàn thành lượt thi trắc nghiệm đầu tiên',
+        icon: 'BookOpen',
+        category: 'general',
+        criterion: 'Hoàn thành 1 lượt trắc nghiệm bất kỳ',
     },
     {
-        id: 'q2',
-        category: 'co-tich',
-        categoryName: 'Truyện cổ tích',
-        difficulty: 'trung-binh',
-        relatedWorkSlug: 'thach-sanh',
-        question: 'Hình tượng "Niêu cơm thần" trong Thạch Sanh tượng trưng cho phẩm chất và khát vọng gì của nhân dân Việt Nam?',
-        options: [
-            'Khát vọng no ấm, lòng hiếu khách và đức tính vị tha vô tận',
-            'Sự thịnh vượng của vương triều nhà vua đương thời',
-            'Phép thuật thần thông của thái tử con trời Ngọc Hoàng',
-            'Nền nông nghiệp lúa nước phát triển vượt bậc',
-        ],
-        correctIndex: 0,
-        explanation: 'Niêu cơm nhỏ xíu nhưng ăn mãi không bao giờ vơi tượng trưng cho tiềm lực dồi dào, đức tính hiếu khách, lòng nhân ái bao la và khát vọng thái bình muôn thuở của nhân dân lao động.',
+        id: 'master_ca_dao',
+        title: 'Am hiểu Ca dao',
+        description: 'Trả lời đúng từ 5 câu Ca dao & Tục ngữ trở lên',
+        icon: 'Sparkles',
+        category: 'ca-dao',
+        criterion: 'Đúng >= 5 câu thể loại Ca dao - Tục ngữ',
     },
     {
-        id: 'q3',
+        id: 'master_tuc_ngu',
+        title: 'Bậc thầy Tục ngữ',
+        description: 'Trả lời đúng từ 10 câu Ca dao & Tục ngữ',
+        icon: 'Award',
+        category: 'ca-dao',
+        criterion: 'Đúng >= 10 câu thể loại Ca dao - Tục ngữ',
+    },
+    {
+        id: 'master_co_tich',
+        title: 'Học giả Cổ tích',
+        description: 'Trả lời đúng từ 5 câu Truyện cổ tích trở lên',
+        icon: 'Crown',
+        category: 'co-tich',
+        criterion: 'Đúng >= 5 câu thể loại Truyện cổ tích',
+    },
+    {
+        id: 'master_truyen_thuyet',
+        title: 'Hào khí Truyền thuyết',
+        description: 'Trả lời đúng từ 5 câu Thần thoại & Truyền thuyết',
+        icon: 'Flame',
         category: 'truyen-thuyet',
-        categoryName: 'Truyền thuyết lịch sử',
-        difficulty: 'de',
-        relatedWorkSlug: 'thanh-giong',
-        question: 'Tại sao sau khi đánh tan giặc Ân, tráng sĩ làng Gióng lại cởi bỏ áo giáp sắt rồi cưỡi ngựa bay thẳng về trời?',
-        options: [
-            'Vì bị thương nặng trong lúc giao tranh dữ dội',
-            'Vì sợ triều đình truy hỏi gốc tích thần tiên',
-            'Thể hiện tinh thần xả thân vì nước vô tư, không màng danh lợi bổng lộc',
-            'Để tìm lại mẹ già đã khuất núi',
-        ],
-        correctIndex: 2,
-        explanation: 'Hành động cởi giáp bay về trời nâng hình tượng Gióng thành vị anh hùng vô tư, thuần khiết — xả thân vì Tổ quốc khi lâm nguy và trở về cõi bất tử khi non sông đã sạch bóng quân thù.',
+        criterion: 'Đúng >= 5 câu Thần thoại & Truyền thuyết',
     },
     {
-        id: 'q4',
-        category: 'than-thoai',
-        categoryName: 'Thần thoại & Khởi nguyên',
-        difficulty: 'de',
-        relatedWorkSlug: 'son-tinh-thuy-tinh',
-        question: 'Cuộc giao tranh bất phân thắng bại hàng năm giữa Sơn Tinh và Thủy Tinh phản ánh hiện thực lịch sử nào của cư dân Văn Lang?',
-        options: [
-            'Nạn cháy rừng kinh hoàng ở vùng núi Tản Viên',
-            'Hiện tượng lũ lụt hàng năm ở đồng bằng sông Hồng và ý chí trị thủy kiên cường',
-            'Cuộc chiến tranh giành lãnh thổ giữa các bộ tộc đồng bằng và miền núi',
-            'Thời tiết mùa đông giá rét khắc nghiệt ở miền Bắc',
-        ],
-        correctIndex: 1,
-        explanation: '"Nước dâng lên bao nhiêu, núi cao lên bấy nhiêu" là hình ảnh hoành tráng ca ngợi ý chí kiên cường, quật khởi của tổ tiên người Việt cổ trong công cuộc đắp đê, ngăn lũ, trị thủy bảo vệ mùa màng.',
-    },
-    {
-        id: 'q5',
+        id: 'master_trung_dai',
+        title: 'Uyên bác Văn học Trung đại',
+        description: 'Trả lời đúng từ 5 câu Văn học Trung đại trở lên',
+        icon: 'Scroll',
         category: 'trung-dai',
-        categoryName: 'Văn học Trung đại',
-        difficulty: 'trung-binh',
-        relatedWorkSlug: 'nam-quoc-son-ha',
-        question: 'Bài thơ "Nam quốc sơn hà" vang lên trên sông Như Nguyệt năm 1077 được coi là bản Tuyên ngôn Độc lập đầu tiên của nước ta vì lý do cốt lõi nào?',
-        options: [
-            'Vì bài thơ được viết bằng chữ Hán chuẩn mực nhất',
-            'Vì khẳng định chủ quyền lãnh thổ thiêng liêng đã được định phận tại "Thiên thư"',
-            'Vì là bài thơ dài nhất thời kỳ triều đại nhà Lý',
-            'Vì bài thơ do chính vua Lý Thái Tổ trực tiếp sáng tác',
-        ],
-        correctIndex: 1,
-        explanation: '"Nam quốc sơn hà Nam đế cư / Tiệt nhiên định phận tại thiên thư" dõng dạc tuyên ngôn quyền độc lập tự chủ và ranh giới bờ cõi của nước Nam là chân lý thiêng liêng bất khả xâm phạm.',
+        criterion: 'Đúng >= 5 câu thể loại Văn học Trung đại',
     },
     {
-        id: 'q6',
-        category: 'ca-dao',
-        categoryName: 'Ca dao - Tục ngữ',
-        difficulty: 'de',
-        relatedWorkSlug: 'ca-dao-dong-bang-bac-bo',
-        question: 'Hoàn thành câu ca dao răn dạy về chữ Hiếu và ơn nghĩa sinh thành: "Công cha như núi Thái Sơn / Nghĩa mẹ như nước trong nguồn ..."',
-        options: [
-            'chảy xiết',
-            'chảy ra',
-            'mát trong',
-            'dâng đầy',
-        ],
-        correctIndex: 1,
-        explanation: '"Công cha như núi Thái Sơn / Nghĩa mẹ như nước trong nguồn chảy ra" là câu ca dao kinh điển ví công đức trời biển của đấng sinh thành như dòng suối vô tận không bao giờ cạn.',
+        id: 'perfect_score',
+        title: 'Trạng nguyên Toàn năng',
+        description: 'Đạt điểm tuyệt đối 100/100 trong một bài thi',
+        icon: 'Trophy',
+        category: 'special',
+        criterion: 'Đạt điểm số 100 trong một lượt thi',
     },
     {
-        id: 'q7',
-        category: 'trung-dai',
-        categoryName: 'Văn học Trung đại',
-        difficulty: 'trung-binh',
-        relatedWorkSlug: 'truyen-kieu',
-        question: 'Tác phẩm "Truyện Kiều" (Đoạn trường tân thanh) của Đại thi hào Nguyễn Du viết theo thể thơ truyền thống nào của dân tộc?',
-        options: [
-            'Thơ Song thất lục bát',
-            'Thơ Lục bát',
-            'Thơ Thất ngôn bát cú Đường luật',
-            'Thơ Tự do',
-        ],
-        correctIndex: 1,
-        explanation: 'Truyện Kiều gồm 3.254 câu thơ lục bát, là đỉnh cao chói lọi nhất của nghệ thuật thơ ca và ngôn ngữ tiếng Việt trong lịch sử văn học dân tộc.',
+        id: 'daily_master',
+        title: 'Chiến binh Bền bỉ',
+        description: 'Hoàn thành Thử thách Hàng ngày (Daily Challenge)',
+        icon: 'Calendar',
+        category: 'daily',
+        criterion: 'Vượt qua Thử thách Ngày đạt từ 60 điểm trở lên',
     },
     {
-        id: 'q8',
-        category: 'co-tich',
-        categoryName: 'Truyện cổ tích',
-        difficulty: 'trung-binh',
-        relatedWorkSlug: 'tam-cam',
-        question: 'Trong truyện Tấm Cám, quá trình hóa thân liên tiếp của cô Tấm (chim Vàng Anh -> cây Xoan đào -> khung cửi -> quả Thị) biểu thị điều gì?',
-        options: [
-            'Tấm biết nhiều phép biến hóa thần thông của Bụt',
-            'Sức sống mãnh liệt, bất diệt của cái Thiện và tinh thần đấu tranh không khoan nhượng',
-            'Mẹ con Cám có lòng bao dung cho Tấm cơ hội chuộc lỗi',
-            'Ước mơ sống ẩn dật nơi thôn quê thanh bình',
-        ],
-        correctIndex: 1,
-        explanation: 'Những lần hóa thân chứng minh cái Thiện dù bị trù dập đến đâu vẫn tái sinh mạnh mẽ hơn, quyết liệt hơn để giành lại hạnh phúc và trừng trị cái ác.',
-    },
-    {
-        id: 'q9',
-        category: 'trung-dai',
-        categoryName: 'Văn học Trung đại',
-        difficulty: 'kho',
-        relatedWorkSlug: 'hich-tuong-si',
-        question: 'Trong "Hịch tướng sĩ", câu nói "Ta thường tới bữa quên ăn, nửa đêm vỗ gối, ruột đau như cắt, nước mắt đầm đìa..." bộc lộ tâm tư gì của Trần Hưng Đạo?',
-        options: [
-            'Nỗi xót xa khi nhìn thấy gia đình ly tán vì chiến tranh',
-            'Lòng căm thù giặc tột cùng và nỗi đau đáu vì vận mệnh giang sơn xã tắc',
-            'Cảm giác mệt mỏi sau nhiều ngày hành quân gian khổ',
-            'Nỗi ân hận vì chưa kịp huấn luyện binh sĩ chu đáo',
-        ],
-        correctIndex: 1,
-        explanation: 'Đoạn văn bộc lộ tấm lòng yêu nước thương dân nồng nàn, ý chí quyết tâm đền nợ nước, trả thù nhà cao độ của vị Tiết chế Quốc công trước họa xâm lăng của quân Nguyên Mông.',
-    },
-    {
-        id: 'q10',
-        category: 'ca-dao',
-        categoryName: 'Ca dao - Tục ngữ',
-        difficulty: 'de',
-        relatedWorkSlug: 'ca-dao-dong-bang-bac-bo',
-        question: 'Câu tục ngữ "Bầu ơi thương lấy bí cùng / Tuy rằng khác giống nhưng chung một giàn" mang ý nghĩa giáo dục cốt lõi nào?',
-        options: [
-            'Kinh nghiệm trồng trọt hoa màu đan xen của nông dân',
-            'Tinh thần đoàn kết, tương thân tương ái giữa những người cùng một quê hương xứ sở',
-            'Cần phải tiết kiệm lương thực phòng khi mất mùa',
-            'Khuyên mọi người nên sống khép mình, không giao thiệp',
-        ],
-        correctIndex: 1,
-        explanation: 'Câu ca dao mượn hình ảnh hai giống cây thân leo cùng chung giàn để nhắc nhở con người dù khác nhau về hoàn cảnh vẫn cần yêu thương, đùm bọc lẫn nhau.',
+        id: 'quiz_veteran',
+        title: 'Bách gia Chư tử',
+        description: 'Hoàn thành từ 5 lượt thi trắc nghiệm trở lên',
+        icon: 'Medal',
+        category: 'milestone',
+        criterion: 'Hoàn thành >= 5 bài thi trắc nghiệm',
     },
 ];
 
 /**
- * Lấy danh sách câu hỏi trắc nghiệm (ẩn đáp án đúng để client chơi)
+ * Lấy chuỗi ngày YYYY-MM-DD theo múi giờ Việt Nam
  */
-const getQuestions = async ({ category = 'all', count = 5 }) => {
-    let pool = [...QUIZ_QUESTION_BANK];
-
-    if (category && category !== 'all') {
-        pool = pool.filter((q) => q.category === category);
+function getVietnamDateString() {
+    try {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date());
+    } catch {
+        return new Date().toISOString().slice(0, 10);
     }
+}
 
-    // Nếu không đủ số lượng câu trong category thì lấy từ toàn bộ pool
-    if (pool.length < count) {
-        pool = [...QUIZ_QUESTION_BANK];
-    }
-
-    // Shuffle câu hỏi
-    const shuffled = pool.sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, Math.min(count, pool.length));
-
-    // Lấy thông tin tóm tắt của Work liên quan
-    const slugs = selected.map((q) => q.relatedWorkSlug).filter(Boolean);
+/**
+ * Helper gắn thông tin Work liên quan và ẩn đáp án đúng trước khi gửi về client
+ */
+async function attachRelatedWorks(questions) {
+    const slugs = questions.map((q) => q.relatedWorkSlug).filter(Boolean);
     const relatedWorks = await Work.find({ slug: { $in: slugs } })
         .select('title slug category categoryName')
         .lean();
@@ -196,33 +111,139 @@ const getQuestions = async ({ category = 'all', count = 5 }) => {
         workMap[w.slug] = w;
     }
 
-    // Ẩn correctIndex và explanation trước khi trả về cho client
-    return selected.map((q) => ({
-        id: q.id,
+    return questions.map((q) => ({
+        id: q.questionId || q.id,
         category: q.category,
         categoryName: q.categoryName,
         difficulty: q.difficulty,
         question: q.question,
         options: q.options,
-        relatedWork: workMap[q.relatedWorkSlug] || null,
+        relatedWork: q.relatedWork || workMap[q.relatedWorkSlug] || null,
     }));
+}
+
+/**
+ * Lấy danh sách câu hỏi trắc nghiệm từ Database (MongoDB)
+ * Hỗ trợ: 'all', category cụ thể, 'personalized' (cá nhân hóa cho user) và 'daily' (thử thách ngày)
+ */
+const getQuestions = async ({ category = 'all', count = 5, userId = null }) => {
+    const requestedCount = Math.max(1, Number(count) || 5);
+    const today = getVietnamDateString();
+
+    // 1. CHẾ ĐỘ DAILY CHALLENGE (Thử thách ngày: seed cố định theo ngày YYYY-MM-DD)
+    if (category === 'daily') {
+        const pool = await QuizQuestion.find({ isActive: true }).lean();
+        if (pool.length === 0) return [];
+
+        let seed = 0;
+        for (let i = 0; i < today.length; i++) {
+            seed += today.charCodeAt(i) * (i + 1);
+        }
+
+        // Sắp xếp xác định theo seed của ngày
+        const dailyPool = [...pool].sort((a, b) => {
+            const hA = (seed * (a.questionId?.charCodeAt(1) || 1)) % 100;
+            const hB = (seed * (b.questionId?.charCodeAt(1) || 1)) % 100;
+            return hA - hB;
+        });
+
+        const selected = dailyPool.slice(0, Math.min(requestedCount, dailyPool.length));
+        return attachRelatedWorks(selected);
+    }
+
+    // 2. CHẾ ĐỘ PERSONALIZED QUIZ (Cá nhân hóa cho Registered User dựa trên lịch sử điểm)
+    if (category === 'personalized' && userId) {
+        try {
+            const progress = await QuizProgress.findOne({ user: userId });
+            if (progress && progress.categoryStats) {
+                const stats = progress.categoryStats;
+                const categoryPerformances = [];
+                const allCats = ['co-tich', 'truyen-thuyet', 'than-thoai', 'ca-dao', 'trung-dai'];
+
+                for (const cat of allCats) {
+                    const cStat = stats.get ? stats.get(cat) : stats[cat];
+                    const total = cStat?.total || 0;
+                    const correct = cStat?.correct || 0;
+                    const accuracy = total > 0 ? correct / total : 0;
+                    categoryPerformances.push({ cat, total, accuracy });
+                }
+
+                // Ưu tiên chủ đề làm ít câu nhất hoặc tỷ lệ đúng thấp nhất
+                categoryPerformances.sort((a, b) => a.accuracy - b.accuracy || a.total - b.total);
+                const weakCategory = categoryPerformances[0]?.cat || 'ca-dao';
+
+                const weakQuestions = await QuizQuestion.aggregate([
+                    { $match: { category: weakCategory, isActive: true } },
+                    { $sample: { size: 3 } },
+                ]);
+
+                const remaining = Math.max(0, requestedCount - weakQuestions.length);
+                const otherQuestions = await QuizQuestion.aggregate([
+                    { $match: { category: { $ne: weakCategory }, isActive: true } },
+                    { $sample: { size: remaining } },
+                ]);
+
+                const combined = [...weakQuestions, ...otherQuestions].sort(() => 0.5 - Math.random());
+                if (combined.length > 0) {
+                    return attachRelatedWorks(combined);
+                }
+            }
+        } catch (err) {
+            console.warn('[Personalized Quiz] Lỗi tính cá nhân hóa từ DB:', err.message);
+        }
+    }
+
+    // 3. CHẾ ĐỘ THEO THỂ LOẠI CỤ THỂ HOẶC TOÀN BỘ (Sử dụng MongoDB $sample bốc ngẫu nhiên cực nhanh)
+    const match = { isActive: true };
+    if (category && category !== 'all' && category !== 'personalized' && category !== 'daily') {
+        match.category = category;
+    }
+
+    let selected = await QuizQuestion.aggregate([
+        { $match: match },
+        { $sample: { size: requestedCount } },
+    ]);
+
+    // Dự phòng trường hợp DB trống dữ liệu (fallback sang seed data)
+    if (!selected || selected.length === 0) {
+        let pool = [...quizQuestionsData];
+        if (category && category !== 'all') {
+            pool = pool.filter((q) => q.category === category);
+        }
+        selected = pool.sort(() => 0.5 - Math.random()).slice(0, requestedCount);
+    }
+
+    return attachRelatedWorks(selected);
 };
 
 /**
- * Chấm điểm bài thi và trả về kết quả kèm danh hiệu & giải thích
+ * Chấm điểm bài thi và lưu tiến độ cho Registered User (Guest không lưu)
  */
-const submitQuiz = async ({ answers }) => {
+const submitQuiz = async ({ answers, userId = null, mode = 'standard', category = 'all' }) => {
     if (!Array.isArray(answers)) {
         throw new Error('Dữ liệu bài nộp không hợp lệ');
     }
 
+    // Tra cứu danh sách câu hỏi trực tiếp từ Database
+    const questionIds = answers.map((a) => a.questionId).filter(Boolean);
+    const dbQuestions = await QuizQuestion.find({ questionId: { $in: questionIds } }).lean();
+
     const questionMap = {};
-    for (const q of QUIZ_QUESTION_BANK) {
-        questionMap[q.id] = q;
+    for (const q of dbQuestions) {
+        questionMap[q.questionId] = q;
+    }
+
+    // Dự phòng fallback sang file seed nếu chưa kịp query DB
+    for (const seedQ of quizQuestionsData) {
+        if (!questionMap[seedQ.questionId]) {
+            questionMap[seedQ.questionId] = seedQ;
+        }
     }
 
     let correctCount = 0;
     const details = [];
+    const categoryCorrectDelta = {};
+    const categoryTotalDelta = {};
 
     for (const ans of answers) {
         const original = questionMap[ans.questionId];
@@ -231,8 +252,14 @@ const submitQuiz = async ({ answers }) => {
         const isCorrect = original.correctIndex === ans.selectedIndex;
         if (isCorrect) correctCount += 1;
 
+        const cat = original.category || 'other';
+        categoryTotalDelta[cat] = (categoryTotalDelta[cat] || 0) + 1;
+        if (isCorrect) {
+            categoryCorrectDelta[cat] = (categoryCorrectDelta[cat] || 0) + 1;
+        }
+
         details.push({
-            questionId: original.id,
+            questionId: original.questionId,
             question: original.question,
             category: original.category,
             categoryName: original.categoryName,
@@ -242,6 +269,8 @@ const submitQuiz = async ({ answers }) => {
             correctAnswer: original.options[original.correctIndex],
             isCorrect,
             explanation: original.explanation,
+            culturalContext: original.culturalContext || '',
+            academicSource: original.academicSource || '',
             relatedWorkSlug: original.relatedWorkSlug,
         });
     }
@@ -249,7 +278,7 @@ const submitQuiz = async ({ answers }) => {
     const totalQuestions = answers.length || 1;
     const score = Math.round((correctCount / totalQuestions) * 100);
 
-    // Xác định Danh hiệu Di sản (Heritage Badge)
+    // Xác định Danh hiệu Di sản của bài thi (Session Badge)
     let badge = {
         title: 'Tập Sự Tri Thức',
         description: 'Hãy tiếp tục đọc thêm các câu chuyện dân gian để mở rộng kho tàng tri thức!',
@@ -287,6 +316,134 @@ const submitQuiz = async ({ answers }) => {
         };
     }
 
+    // NẾU LÀ GUEST (userId === null) -> Trả về kết quả ngay, KHÔNG lưu vào Database
+    if (!userId) {
+        return {
+            totalQuestions,
+            correctCount,
+            score,
+            passed: score >= 60,
+            badge,
+            details,
+            isGuest: true,
+            newlyUnlockedBadges: [],
+        };
+    }
+
+    // NẾU LÀ REGISTERED USER -> Lưu tiến độ (Learning Progress & Badges) vào MongoDB
+    let newlyUnlockedBadges = [];
+    const today = getVietnamDateString();
+
+    try {
+        let progress = await QuizProgress.findOne({ user: userId });
+        if (!progress) {
+            progress = new QuizProgress({
+                user: userId,
+                totalQuizzes: 0,
+                totalQuestions: 0,
+                totalCorrect: 0,
+                categoryStats: new Map(),
+                badges: [],
+                history: [],
+                dailyChallenge: { lastCompletedDate: null, streak: 0 },
+            });
+        }
+
+        // 1. Cập nhật tổng số
+        progress.totalQuizzes += 1;
+        progress.totalQuestions += totalQuestions;
+        progress.totalCorrect += correctCount;
+
+        // 2. Cập nhật categoryStats
+        for (const cat of Object.keys(categoryTotalDelta)) {
+            const current = progress.categoryStats.get(cat) || { total: 0, correct: 0 };
+            progress.categoryStats.set(cat, {
+                total: (current.total || 0) + (categoryTotalDelta[cat] || 0),
+                correct: (current.correct || 0) + (categoryCorrectDelta[cat] || 0),
+            });
+        }
+
+        // 3. Xử lý Daily Challenge nếu ở chế độ 'daily'
+        let isDailySuccess = false;
+        if (mode === 'daily' && score >= 60) {
+            isDailySuccess = true;
+            if (progress.dailyChallenge.lastCompletedDate !== today) {
+                progress.dailyChallenge.lastCompletedDate = today;
+                progress.dailyChallenge.streak = (progress.dailyChallenge.streak || 0) + 1;
+            }
+        }
+
+        // 4. Kiểm tra mở khóa Huy hiệu Thành tích mới (Achievement Badges)
+        const earnedIds = new Set(progress.badges.map((b) => b.id));
+
+        for (const bDef of ALL_ACHIEVEMENT_BADGES) {
+            if (earnedIds.has(bDef.id)) continue;
+
+            let isUnlocked = false;
+
+            if (bDef.id === 'first_quiz' && progress.totalQuizzes >= 1) isUnlocked = true;
+            if (bDef.id === 'perfect_score' && score === 100) isUnlocked = true;
+            if (bDef.id === 'quiz_veteran' && progress.totalQuizzes >= 5) isUnlocked = true;
+            if (bDef.id === 'daily_master' && isDailySuccess) isUnlocked = true;
+
+            // Kiểm tra tích lũy câu đúng theo thể loại
+            if (bDef.id === 'master_ca_dao') {
+                const cStat = progress.categoryStats.get('ca-dao');
+                if (cStat && cStat.correct >= 5) isUnlocked = true;
+            }
+            if (bDef.id === 'master_tuc_ngu') {
+                const cStat = progress.categoryStats.get('ca-dao');
+                if (cStat && cStat.correct >= 10) isUnlocked = true;
+            }
+            if (bDef.id === 'master_co_tich') {
+                const cStat = progress.categoryStats.get('co-tich');
+                if (cStat && cStat.correct >= 5) isUnlocked = true;
+            }
+            if (bDef.id === 'master_truyen_thuyet') {
+                const truyenThuyetStat = progress.categoryStats.get('truyen-thuyet')?.correct || 0;
+                const thanThoaiStat = progress.categoryStats.get('than-thoai')?.correct || 0;
+                if (truyenThuyetStat + thanThoaiStat >= 5) isUnlocked = true;
+            }
+            if (bDef.id === 'master_trung_dai') {
+                const cStat = progress.categoryStats.get('trung-dai');
+                if (cStat && cStat.correct >= 5) isUnlocked = true;
+            }
+
+            if (isUnlocked) {
+                const newBadge = {
+                    id: bDef.id,
+                    title: bDef.title,
+                    description: bDef.description,
+                    category: bDef.category,
+                    icon: bDef.icon,
+                    earnedAt: new Date(),
+                };
+                progress.badges.push(newBadge);
+                newlyUnlockedBadges.push(newBadge);
+            }
+        }
+
+        // 5. Lưu lại 15 lượt thi gần nhất vào lịch sử
+        if (!progress.history) progress.history = [];
+        progress.history.unshift({
+            date: new Date(),
+            mode,
+            category,
+            totalQuestions,
+            correctCount,
+            score,
+            badgeTitle: badge.title,
+        });
+
+        if (progress.history.length > 15) {
+            progress.history = progress.history.slice(0, 15);
+        }
+
+        await progress.save();
+    } catch (saveErr) {
+        console.error('[Quiz Progress] Lỗi lưu tiến độ người dùng:', saveErr.message);
+    }
+
     return {
         totalQuestions,
         correctCount,
@@ -294,10 +451,145 @@ const submitQuiz = async ({ answers }) => {
         passed: score >= 60,
         badge,
         details,
+        isGuest: false,
+        newlyUnlockedBadges,
+    };
+};
+
+/**
+ * Lấy toàn bộ thông tin tiến độ, thống kê theo thể loại & huy hiệu của Registered User
+ */
+const getUserProgress = async (userId) => {
+    let progress = await QuizProgress.findOne({ user: userId }).lean();
+
+    if (!progress) {
+        return {
+            totalQuizzes: 0,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            overallAccuracy: 0,
+            categoryStats: [],
+            badges: [],
+            allBadges: ALL_ACHIEVEMENT_BADGES.map((b) => ({ ...b, earned: false })),
+            dailyChallenge: { completedToday: false, streak: 0 },
+            history: [],
+        };
+    }
+
+    const today = getVietnamDateString();
+    const overallAccuracy =
+        progress.totalQuestions > 0 ? Math.round((progress.totalCorrect / progress.totalQuestions) * 100) : 0;
+
+    const categoryNames = {
+        'co-tich': 'Truyện cổ tích',
+        'truyen-thuyet': 'Truyền thuyết',
+        'than-thoai': 'Thần thoại',
+        'ca-dao': 'Ca dao - Tục ngữ',
+        'trung-dai': 'Văn học Trung đại',
+    };
+
+    const categoryStatsList = Object.keys(categoryNames).map((catKey) => {
+        const stat = progress.categoryStats?.[catKey] || { total: 0, correct: 0 };
+        return {
+            id: catKey,
+            category: catKey,
+            name: categoryNames[catKey],
+            categoryName: categoryNames[catKey],
+            total: stat.total || 0,
+            correct: stat.correct || 0,
+            accuracy: stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0,
+        };
+    });
+
+    const earnedBadgeIds = new Set((progress.badges || []).map((b) => b.id));
+    const allBadgesWithStatus = ALL_ACHIEVEMENT_BADGES.map((bDef) => {
+        const isUnlocked = earnedBadgeIds.has(bDef.id);
+        return {
+            ...bDef,
+            earned: isUnlocked,
+            isUnlocked: isUnlocked,
+            earnedAt: progress.badges?.find((b) => b.id === bDef.id)?.earnedAt || null,
+        };
+    });
+
+    return {
+        totalQuizzes: progress.totalQuizzes,
+        totalQuestions: progress.totalQuestions,
+        totalCorrect: progress.totalCorrect,
+        overallAccuracy,
+        categoryStats: categoryStatsList,
+        badges: progress.badges,
+        allBadges: allBadgesWithStatus,
+        dailyChallenge: {
+            completedToday: progress.dailyChallenge?.lastCompletedDate === today,
+            streak: progress.dailyChallenge?.streak || 0,
+        },
+        history: progress.history || [],
+    };
+};
+
+/**
+ * AI Explanation cho một câu hỏi trắc nghiệm
+ * Cung cấp phân tích đa tầng chuyên sâu: ý nghĩa nhân văn, bối cảnh lịch sử, bài học và nguồn học thuật
+ */
+const getAiQuestionExplanation = async ({ questionId, selectedAnswer = null }) => {
+    // Tìm câu hỏi trong MongoDB, đồng thời populate thông tin tác phẩm liên quan
+    let q = await QuizQuestion.findOne({ questionId }).populate('relatedWork').lean();
+
+    // Fallback sang seed data nếu chưa tìm thấy trong DB
+    if (!q) {
+        q = quizQuestionsData.find((item) => item.questionId === questionId);
+    }
+
+    if (!q) {
+        throw new Error('Không tìm thấy câu hỏi trong ngân hàng dữ liệu');
+    }
+
+    // Tra cứu thêm chi tiết tác phẩm liên quan nếu chưa có trong relatedWork
+    let relatedDetail = q.relatedWork || null;
+    if (!relatedDetail && q.relatedWorkSlug) {
+        relatedDetail = await Work.findOne({ slug: q.relatedWorkSlug }).lean();
+    }
+
+    const isCorrect = selectedAnswer === q.options[q.correctIndex];
+
+    const deepAnalysis = `
+### 1. Phân tích cốt lõi & Đáp án chính xác:
+- **Đáp án đúng:** **"${q.options[q.correctIndex]}"**
+${isCorrect ? '✅ Bạn đã chọn hoàn toàn chính xác!' : `⚠️ Bạn đã chọn: *"${selectedAnswer || 'Chưa trả lời'}"*`}
+- **Ý nghĩa trọng tâm:** ${q.explanation}
+
+### 2. Chiều sâu Bối cảnh Văn hóa & Lịch sử:
+${q.culturalContext || 'Tác phẩm phản ánh chân thực nhân sinh quan, thế giới quan và tâm hồn thuần hậu, giàu đức hy sinh của dân tộc Việt Nam qua hàng ngàn năm dựng nước và giữ nước.'}
+${relatedDetail?.historicalContext ? `\n> *${relatedDetail.historicalContext}*` : ''}
+
+### 3. Bài học Đạo lý & Triết lý Nhân sinh:
+${relatedDetail?.thematicMeaning || 'Câu chuyện nhắc nhở thế hệ hôm nay luôn trân trọng đạo lý truyền thống, gìn giữ cội nguồn bản sắc và sống ân nghĩa, bao dung.'}
+
+---
+*Nguồn tư liệu đối chiếu học thuật:* **${q.academicSource || relatedDetail?.source || 'Viện Nghiên cứu Hán Nôm & Viện Văn học Việt Nam'}**`;
+
+    return {
+        questionId: q.questionId,
+        question: q.question,
+        correctAnswer: q.options[q.correctIndex],
+        deepExplanation: deepAnalysis,
+        academicSource: q.academicSource || relatedDetail?.source || 'Tư liệu Văn học Dân gian Việt Nam',
+        relatedWork: relatedDetail
+            ? {
+                  title: relatedDetail.title,
+                  slug: relatedDetail.slug,
+                  categoryName: relatedDetail.categoryName,
+              }
+            : null,
     };
 };
 
 module.exports = {
+    QUIZ_QUESTION_BANK: quizQuestionsData,
+    ALL_ACHIEVEMENT_BADGES,
     getQuestions,
     submitQuiz,
+    getUserProgress,
+    getAiQuestionExplanation,
 };

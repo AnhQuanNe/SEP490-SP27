@@ -66,6 +66,7 @@ export const literatureService = {
             semanticConcept: response.semanticConcept,
             conceptDescription: response.conceptDescription,
             pagination: response.pagination || { total: 0, page: 1, limit, totalPages: 1 },
+            quota: response.quota || null,
         };
     },
 
