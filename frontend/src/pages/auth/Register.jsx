@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import GoogleLoginButton from '../../components/common/GoogleLoginButton';
+import DragonPhoenixHeritage from '../../components/common/DragonPhoenixHeritage';
 import {
     User,
     Mail,
@@ -12,8 +13,7 @@ import {
     CheckCircle2,
     Sparkles,
     Loader2,
-    ArrowRight,
-    Shield
+    ArrowRight
 } from 'lucide-react';
 
 const Register = () => {
@@ -51,11 +51,11 @@ const Register = () => {
             case 2:
                 return { text: 'Trung bình', color: 'bg-amber-500', width: 'w-2/4', textColor: 'text-amber-600' };
             case 3:
-                return { text: 'Khá', color: 'bg-blue-500', width: 'w-3/4', textColor: 'text-blue-600' };
+                return { text: 'Khá', color: 'bg-yellow-600', width: 'w-3/4', textColor: 'text-yellow-700' };
             case 4:
-                return { text: 'Rất mạnh', color: 'bg-emerald-500', width: 'w-full', textColor: 'text-emerald-600' };
+                return { text: 'Rất mạnh', color: 'bg-emerald-600', width: 'w-full', textColor: 'text-emerald-700' };
             default:
-                return { text: '', color: 'bg-gray-200', width: 'w-0', textColor: 'text-gray-400' };
+                return { text: '', color: 'bg-stone-200', width: 'w-0', textColor: 'text-stone-400' };
         }
     };
 
@@ -113,30 +113,44 @@ const Register = () => {
     const isMatch = formData.confirmPassword && formData.password === formData.confirmPassword;
 
     return (
-        <div className="min-h-[88vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Ambient Background Glows */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-blue-400/20 via-indigo-300/20 to-sky-200/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
-            <div className="absolute -bottom-10 left-10 w-72 h-72 bg-purple-300/15 rounded-full blur-2xl pointer-events-none -z-10"></div>
+        <div className="min-h-[88vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-b from-[#240606] via-[#160404] to-[#0e0202]">
+            {/* 1. Rồng Bay Phượng Múa & Họa tiết Di sản nền */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
+                <DragonPhoenixHeritage variant="hero" />
+            </div>
 
-            <div className="max-w-md w-full bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/10 border border-white/60 p-8 sm:p-10 relative overflow-hidden transition-all duration-300">
-                {/* Top decorative gradient line */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-400 absolute top-0 left-0"></div>
+            {/* Ambient Background Glows */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-amber-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+            <div className="absolute -bottom-10 left-10 w-80 h-80 bg-red-600/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+            {/* 2. Form Card mang phong cách Chiếu Thư & Cung Đình */}
+            <div className="relative z-10 max-w-md w-full bg-[#fffdf9]/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-red-950/70 border-2 border-amber-600/40 p-8 sm:p-10 overflow-hidden transition-all duration-300">
+                {/* 4 họa tiết góc truyền thống ❖ */}
+                <span className="absolute -top-1.5 -left-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                <span className="absolute -top-1.5 -right-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                <span className="absolute -bottom-1.5 -left-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                <span className="absolute -bottom-1.5 -right-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
+
+                {/* Dải vân màu hoàng cung trên đỉnh thẻ */}
+                <div className="h-1.5 w-full bg-gradient-to-r from-red-800 via-amber-500 to-red-800 absolute top-0 left-0"></div>
 
                 {/* Header */}
                 <div className="text-center space-y-2 mb-8">
-                    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100 mb-1">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Bắt đầu miễn phí</span>
+                    <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-[#450a0a]/80 text-[#fcd34d] text-xs font-semibold border border-amber-500/50 shadow-md shadow-red-950/40 mb-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+                        <span>❖ KẾ THỪA VĂN HIẾN • ĐỒNG HÀNH DI SẢN ❖</span>
                     </div>
-                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Tạo Tài Khoản</h2>
-                    <p className="text-sm text-gray-500">
-                        Đăng ký nhanh chóng trong 30 giây
+                    <h2 className="text-3xl font-extrabold text-stone-900 tracking-tight font-heritage">
+                        Tạo Tài Khoản
+                    </h2>
+                    <p className="text-sm text-stone-600 font-vietnam">
+                        Đăng ký nhanh chóng để lưu trữ và đóng góp tri thức
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start space-x-3 text-rose-700 text-sm animate-in fade-in duration-200">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-rose-500" />
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-3 text-red-800 text-sm animate-in fade-in duration-200">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
                         <span className="font-medium leading-relaxed">{error}</span>
                     </div>
                 )}
@@ -144,11 +158,11 @@ const Register = () => {
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     {/* Họ và tên */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 font-vietnam">
                             Họ và tên
                         </label>
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-700/80 group-focus-within:text-amber-800 transition-colors">
                                 <User className="w-5 h-5" />
                             </div>
                             <input
@@ -158,18 +172,18 @@ const Register = () => {
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="Nguyễn Văn A"
-                                className="block w-full pl-11 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                className="block w-full pl-11 pr-4 py-3 bg-[#faf6ed] border border-amber-300/80 rounded-2xl focus:bg-white focus:ring-4 focus:ring-amber-500/20 focus:border-amber-600 text-sm font-medium text-stone-900 placeholder:text-stone-400 transition-all duration-200"
                             />
                         </div>
                     </div>
 
                     {/* Email */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 font-vietnam">
                             Địa chỉ Email
                         </label>
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-700/80 group-focus-within:text-amber-800 transition-colors">
                                 <Mail className="w-5 h-5" />
                             </div>
                             <input
@@ -179,18 +193,18 @@ const Register = () => {
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder="name@example.com"
-                                className="block w-full pl-11 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                className="block w-full pl-11 pr-4 py-3 bg-[#faf6ed] border border-amber-300/80 rounded-2xl focus:bg-white focus:ring-4 focus:ring-amber-500/20 focus:border-amber-600 text-sm font-medium text-stone-900 placeholder:text-stone-400 transition-all duration-200"
                             />
                         </div>
                     </div>
 
                     {/* Mật khẩu */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 font-vietnam">
                             Mật khẩu
                         </label>
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-700/80 group-focus-within:text-amber-800 transition-colors">
                                 <Lock className="w-5 h-5" />
                             </div>
                             <input
@@ -200,12 +214,12 @@ const Register = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="Tối thiểu 6 ký tự"
-                                className="block w-full pl-11 pr-11 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                className="block w-full pl-11 pr-11 py-3 bg-[#faf6ed] border border-amber-300/80 rounded-2xl focus:bg-white focus:ring-4 focus:ring-amber-500/20 focus:border-amber-600 text-sm font-medium text-stone-900 placeholder:text-stone-400 transition-all duration-200"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-amber-800/60 hover:text-amber-950 transition-colors focus:outline-none"
                             >
                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -214,13 +228,13 @@ const Register = () => {
                         {/* Password Strength Meter */}
                         {formData.password && (
                             <div className="mt-2 space-y-1">
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-stone-200 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full ${strength.color} transition-all duration-300 rounded-full ${strength.width}`}
                                     ></div>
                                 </div>
                                 <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-gray-400">Độ mạnh mật khẩu:</span>
+                                    <span className="text-stone-500">Độ an toàn mật khẩu:</span>
                                     <span className={`font-bold ${strength.textColor}`}>{strength.text}</span>
                                 </div>
                             </div>
@@ -229,11 +243,11 @@ const Register = () => {
 
                     {/* Xác nhận mật khẩu */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 font-vietnam">
                             Xác nhận mật khẩu
                         </label>
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-700/80 group-focus-within:text-amber-800 transition-colors">
                                 <Lock className="w-5 h-5" />
                             </div>
                             <input
@@ -243,16 +257,16 @@ const Register = () => {
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 placeholder="Nhập lại mật khẩu"
-                                className="block w-full pl-11 pr-11 py-3 bg-gray-50/70 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 text-sm font-medium transition-all duration-200"
+                                className="block w-full pl-11 pr-11 py-3 bg-[#faf6ed] border border-amber-300/80 rounded-2xl focus:bg-white focus:ring-4 focus:ring-amber-500/20 focus:border-amber-600 text-sm font-medium text-stone-900 placeholder:text-stone-400 transition-all duration-200"
                             />
                             <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center space-x-1">
                                 {isMatch && (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 mr-1 animate-in zoom-in-50 duration-200" />
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mr-1 animate-in zoom-in-50 duration-200" />
                                 )}
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                    className="text-amber-800/60 hover:text-amber-950 transition-colors focus:outline-none"
                                 >
                                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
@@ -263,7 +277,7 @@ const Register = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-2 py-3 px-5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 flex items-center justify-center space-x-2"
+                        className="w-full mt-2 py-3.5 px-5 rounded-2xl font-bold text-sm text-[#fef3c7] bg-gradient-to-r from-[#991b1b] via-[#b91c1c] to-[#b45309] hover:from-[#b91c1c] hover:to-[#d97706] border border-amber-400/50 shadow-lg shadow-red-950/40 hover:shadow-red-950/60 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer"
                     >
                         {loading ? (
                             <>
@@ -280,11 +294,11 @@ const Register = () => {
                 </form>
 
                 <div className="relative flex py-5 items-center">
-                    <div className="flex-grow border-t border-gray-200/80"></div>
-                    <span className="flex-shrink mx-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <div className="flex-grow border-t border-amber-900/15"></div>
+                    <span className="flex-shrink mx-4 text-xs font-semibold text-stone-500 uppercase tracking-wider">
                         Hoặc đăng ký nhanh
                     </span>
-                    <div className="flex-grow border-t border-gray-200/80"></div>
+                    <div className="flex-grow border-t border-amber-900/15"></div>
                 </div>
 
                 {/* Google Sign-Up */}
@@ -297,11 +311,11 @@ const Register = () => {
                 </div>
 
                 {/* Footer link */}
-                <p className="text-center text-sm text-gray-500 mt-6 pt-4 border-t border-gray-100">
+                <p className="text-center text-sm text-stone-600 mt-6 pt-4 border-t border-amber-900/10">
                     Đã có tài khoản?{' '}
                     <Link
                         to="/login"
-                        className="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                        className="font-bold text-red-800 hover:text-amber-800 hover:underline transition-colors"
                     >
                         Đăng nhập ngay
                     </Link>

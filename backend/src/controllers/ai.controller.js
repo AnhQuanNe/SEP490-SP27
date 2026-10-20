@@ -80,7 +80,39 @@ const explain = async (req, res) => {
     }
 };
 
+/**
+ * Trợ lý AI hỗ trợ người dùng phân tích 4 tầng nghĩa khi đóng góp nội dung mới
+ */
+const draftSubmission = async (req, res) => {
+    try {
+        const { title, category } = req.body;
+        if (!title || typeof title !== "string" || title.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Vui lòng cung cấp câu ca dao hoặc tục ngữ để AI phân tích",
+            });
+        }
+
+        const result = await aiService.draftSubmissionAssist({
+            title: title.trim(),
+            category: category || "ca-dao",
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        console.error("[AI Controller] Lỗi hỗ trợ soạn bài đóng góp:", error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Lỗi khi AI phân tích ngữ liệu đóng góp",
+        });
+    }
+};
+
 module.exports = {
+    draftSubmission,
     ask,
     explain,
     getSuggestions,

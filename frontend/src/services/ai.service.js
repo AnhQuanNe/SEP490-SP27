@@ -31,6 +31,17 @@ export const aiService = {
         const response = await api.get('/ai/quota');
         return response;
     },
+
+    /**
+     * Trợ lý AI hỗ trợ người dùng phân tích 4 tầng nghĩa khi đóng góp câu ca dao, tục ngữ
+     */
+    async draftSubmission({ title, category = 'ca-dao' }) {
+        const response = await api.post('/ai/draft-submission', {
+            title,
+            category,
+        });
+        return response.data;
+    },
 };
 
 export default aiService;

@@ -16,5 +16,9 @@ router.post('/explain', optionalAuth, checkGuestQuota, aiController.explain);
 // Lấy danh sách câu hỏi gợi ý khám phá nhanh
 router.get('/suggestions', aiController.getSuggestions);
 
+
+// Trợ lý AI hỗ trợ người dùng phân tích 4 tầng nghĩa khi đóng góp nội dung mới
+router.post('/draft-submission', optionalAuth, aiController.draftSubmission);
+
 module.exports = router;
 
