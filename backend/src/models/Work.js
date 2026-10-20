@@ -30,7 +30,7 @@ const workSchema = new mongoose.Schema(
         },
         period: {
             type: String,
-            required: [true, 'Vui lòng nhập giai đoạn/thời kỳ văn học'],
+            default: 'Văn học Dân gian',
             trim: true,
         },
         region: {
@@ -64,6 +64,27 @@ const workSchema = new mongoose.Schema(
             trim: true,
         },
         thematicMeaning: {
+            type: String,
+            default: '',
+            trim: true,
+        },
+        topic: {
+            type: String,
+            default: 'Văn hóa & Đạo lý',
+            trim: true,
+            index: true,
+        },
+        literalMeaning: {
+            type: String,
+            default: '',
+            trim: true,
+        },
+        figurativeMeaning: {
+            type: String,
+            default: '',
+            trim: true,
+        },
+        lesson: {
             type: String,
             default: '',
             trim: true,
@@ -107,7 +128,7 @@ const workSchema = new mongoose.Schema(
     }
 );
 
-// Tạo text index phục vụ tìm kiếm toàn văn bản cho UC07
+// Tạo text index phục vụ tìm kiếm toàn văn bản cho UC07 & UC09
 workSchema.index({
     title: 'text',
     summary: 'text',
@@ -115,6 +136,11 @@ workSchema.index({
     tags: 'text',
     author: 'text',
     region: 'text',
+    topic: 'text',
+    literalMeaning: 'text',
+    figurativeMeaning: 'text',
+    lesson: 'text',
+    thematicMeaning: 'text',
 });
 
 module.exports = mongoose.model('Work', workSchema);

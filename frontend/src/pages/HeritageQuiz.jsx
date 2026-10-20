@@ -1,22 +1,37 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-    HelpCircle, 
-    Award, 
-    CheckCircle2, 
-    XCircle, 
-    RotateCcw, 
-    BookOpen, 
-    ArrowRight, 
-    Sparkles, 
-    Crown, 
-    Loader2, 
+import {
+    HelpCircle,
+    Award,
+    CheckCircle2,
+    XCircle,
+    RotateCcw,
+    BookOpen,
+    ArrowRight,
+    Sparkles,
+    Crown,
+    Loader2,
     Trophy,
     ChevronRight,
-    Compass
+    Compass,
+    Calendar,
+    Target,
+    BarChart3,
+    Medal,
+    Flame,
+    Scroll,
+    Lock,
+    Zap,
+    History,
+    Check,
+    X,
+    ExternalLink
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import quizService from '../services/quiz.service';
 import literatureService from '../services/literature.service';
+import PoemDisplay from '../components/common/PoemDisplay';
+import './HeritageQuiz.css';
 
 const CATEGORIES = [
     { id: 'all', name: 'Toàn bộ Thể loại' },
@@ -28,8 +43,14 @@ const CATEGORIES = [
 ];
 
 const HeritageQuiz = () => {
+    const { isAuthenticated, user } = useAuth();
+
+    // Mode: 'standard' | 'daily' | 'personalized' | 'progress'
+    const [activeTab, setActiveTab] = useState('standard');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [questionCount, setQuestionCount] = useState(5);
+
+    // Quiz game states
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,10 +59,44 @@ const HeritageQuiz = () => {
     const [hasAnsweredCurrent, setHasAnsweredCurrent] = useState(false);
     const [quizResult, setQuizResult] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // AI Explanation states
+    const [aiExplainingId, setAiExplainingId] = useState(null);
+    const [aiExplanationData, setAiExplanationData] = useState({});
+    const [activeAiModal, setActiveAiModal] = useState(null); // { question, data }
+
+    // User Learning Progress states
+    const [progressData, setProgressData] = useState(null);
+    const [progressLoading, setProgressLoading] = useState(false);
+
+    // Unlocked badge modal
+    const [newlyUnlockedModal, setNewlyUnlockedModal] = useState(null); // array of badges
+
+    // Related work detail modal
     const [selectedWorkModal, setSelectedWorkModal] = useState(null);
 
-    // Bắt đầu lượt thi mới
-    const startQuiz = async (category = selectedCategory, count = questionCount) => {
+    // Tải thông tin tiến độ học tập nếu là Registered User
+    const loadProgress = async () => {
+        if (!isAuthenticated) return;
+        setProgressLoading(true);
+        try {
+            const data = await quizService.getProgress();
+            setProgressData(data);
+        } catch (err) {
+            console.warn('Lỗi tải tiến độ học tập:', err.message);
+        } finally {
+            setProgressLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            loadProgress();
+        }
+    }, [isAuthenticated]);
+
+    // Bắt đầu một lượt thi mới theo chế độ
+    const startQuiz = async (mode = activeTab, cat = selectedCategory, count = questionCount) => {
         setLoading(true);
         setQuizResult(null);
         setCurrentIndex(0);
@@ -50,9 +105,16 @@ const HeritageQuiz = () => {
         setHasAnsweredCurrent(false);
 
         try {
+            let targetCategory = cat;
+            if (mode === 'daily') {
+                targetCategory = 'daily';
+            } else if (mode === 'personalized') {
+                targetCategory = 'personalized';
+            }
+
             const data = await quizService.getQuestions({
-                category,
-                count,
+                category: targetCategory,
+                count: mode === 'daily' ? 5 : count,
             });
             setQuestions(data);
         } catch (err) {
@@ -63,8 +125,12 @@ const HeritageQuiz = () => {
     };
 
     useEffect(() => {
-        startQuiz('all', 5);
-    }, []);
+        if (activeTab !== 'progress') {
+            startQuiz(activeTab, selectedCategory, questionCount);
+        } else if (isAuthenticated) {
+            loadProgress();
+        }
+    }, [activeTab]);
 
     const currentQuestion = questions[currentIndex];
 
@@ -101,8 +167,20 @@ const HeritageQuiz = () => {
             try {
                 const result = await quizService.submitQuiz({
                     answers: userAnswers,
+                    mode: activeTab,
+                    category: activeTab === 'standard' ? selectedCategory : activeTab,
                 });
                 setQuizResult(result);
+
+                // Nếu có huy hiệu mới mở khóa, bật popup chúc mừng
+                if (result.newlyUnlockedBadges && result.newlyUnlockedBadges.length > 0) {
+                    setNewlyUnlockedModal(result.newlyUnlockedBadges);
+                }
+
+                // Cập nhật lại tiến độ học tập ngầm
+                if (isAuthenticated) {
+                    loadProgress();
+                }
             } catch (err) {
                 console.error('Lỗi nộp bài quiz:', err);
             } finally {
@@ -111,7 +189,36 @@ const HeritageQuiz = () => {
         }
     };
 
-    // Xem chi tiết tác phẩm liên quan nếu người dùng bấm vào
+    // Yêu cầu AI giải thích đa tầng cho một câu hỏi
+    const handleRequestAiExplanation = async (question) => {
+        const qId = question.id || question.questionId;
+        if (aiExplanationData[qId]) {
+            setActiveAiModal({
+                question: question.question,
+                data: aiExplanationData[qId],
+            });
+            return;
+        }
+
+        setAiExplainingId(qId);
+        try {
+            const exp = await quizService.getAiExplanation({
+                questionId: qId,
+                selectedAnswer: question.userAnswer || (currentSelection !== null ? currentQuestion.options[currentSelection] : null),
+            });
+            setAiExplanationData((prev) => ({ ...prev, [qId]: exp }));
+            setActiveAiModal({
+                question: question.question,
+                data: exp,
+            });
+        } catch (err) {
+            console.error('Lỗi lấy AI Explanation:', err);
+        } finally {
+            setAiExplainingId(null);
+        }
+    };
+
+    // Xem chi tiết tác phẩm liên quan nếu có
     const handleOpenRelatedWork = async (slug) => {
         if (!slug) return;
         try {
@@ -123,37 +230,83 @@ const HeritageQuiz = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto space-y-8">
-                {/* Header Banner */}
-                <div className="text-center space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-200">
+        <div className="quiz-page">
+            <div className="quiz-container">
+                {/* 1. Header Banner */}
+                <div className="quiz-header">
+                    <div className="quiz-badge">
                         <Trophy className="w-4 h-4 text-amber-700" />
-                        <span>Thử Tài Di Sản — Trí Tuệ Dân Gian (UC10)</span>
+                        <span>Thử Tài Di Sản — Trí Tuệ Dân Gian</span>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-heritage">
+                    <h1 className="quiz-title font-heritage">
                         Đố Vui Tri Thức & Văn Học Dân Gian
                     </h1>
-                    <p className="text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                        Thử thách vốn hiểu biết về các biểu tượng thần thoại, tích truyện cổ tích, lòng yêu nước trong văn học trung đại và đạo lý ca dao tục ngữ Việt Nam.
+                    <p className="quiz-subtitle">
+                        Khám phá vẻ đẹp thần thoại, truyện cổ tích và đạo lý ca dao tục ngữ qua các thử thách trí tuệ, cá nhân hóa theo tiến độ và giải thích học thuật từ Trợ lý AI.
                     </p>
                 </div>
 
-                {/* Filter controls */}
-                {!quizResult && (
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto no-scrollbar">
+                {/* 2. Top Navigation Tabs: 4 Chế độ chơi & Tiến độ */}
+                <div className="quiz-tabs-wrapper">
+                    <button
+                        onClick={() => setActiveTab('standard')}
+                        className={`quiz-tab-btn ${activeTab === 'standard' ? 'active-standard' : ''}`}
+                    >
+                        <Compass className="w-4 h-4" />
+                        <span>Đố vui Tự do</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('daily')}
+                        className={`quiz-tab-btn ${activeTab === 'daily' ? 'active-daily' : ''}`}
+                    >
+                        <Calendar className="w-4 h-4" />
+                        <span>Thử thách Ngày</span>
+                        {progressData?.dailyChallenge?.completedToday && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white ml-0.5" title="Đã hoàn thành hôm nay" />
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('personalized')}
+                        className={`quiz-tab-btn ${activeTab === 'personalized' ? 'active-personalized' : ''}`}
+                    >
+                        <Target className="w-4 h-4" />
+                        <span>Luyện tập Cá nhân hóa</span>
+                        {!isAuthenticated && (
+                            <span className="ml-1 p-0.5 rounded-full bg-amber-200/80 text-amber-900" title="Yêu cầu đăng nhập">
+                                <Lock className="w-3 h-3" />
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('progress')}
+                        className={`quiz-tab-btn ${activeTab === 'progress' ? 'active-progress' : ''}`}
+                    >
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Tiến độ & Huy hiệu</span>
+                        {progressData?.badges?.length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 ml-1">
+                                {progressData.badges.length}
+                            </span>
+                        )}
+                    </button>
+                </div>
+
+                {/* 3. Filter controls (Chỉ hiện ở tab standard khi chưa nộp bài) */}
+                {activeTab === 'standard' && !quizResult && !loading && (
+                    <div className="quiz-filter-bar">
+                        <div className="quiz-cat-tabs no-scrollbar">
                             {CATEGORIES.map((cat) => (
                                 <button
                                     key={cat.id}
                                     onClick={() => {
                                         setSelectedCategory(cat.id);
-                                        startQuiz(cat.id, questionCount);
+                                        startQuiz('standard', cat.id, questionCount);
                                     }}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-                                        selectedCategory === cat.id
-                                            ? 'bg-slate-900 text-white shadow-sm'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    className={`quiz-cat-btn ${
+                                        selectedCategory === cat.id ? 'active' : 'inactive'
                                     }`}
                                 >
                                     {cat.name}
@@ -169,7 +322,7 @@ const HeritageQuiz = () => {
                                         key={num}
                                         onClick={() => {
                                             setQuestionCount(num);
-                                            startQuiz(selectedCategory, num);
+                                            startQuiz('standard', selectedCategory, num);
                                         }}
                                         className={`px-3 py-1 rounded-md text-xs font-bold transition ${
                                             questionCount === num
@@ -182,7 +335,7 @@ const HeritageQuiz = () => {
                                 ))}
                             </div>
                             <button
-                                onClick={() => startQuiz(selectedCategory, questionCount)}
+                                onClick={() => startQuiz('standard', selectedCategory, questionCount)}
                                 title="Đổi đề bài khác"
                                 className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                             >
@@ -192,38 +345,367 @@ const HeritageQuiz = () => {
                     </div>
                 )}
 
+                {/* 4. Tab Header Notice nếu đang ở Daily Challenge hoặc Personalized */}
+                {!quizResult && !loading && activeTab === 'daily' && (
+                    <div className="bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-amber-500/15 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-950">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="font-extrabold text-sm text-slate-900 font-heritage flex items-center gap-2">
+                                    <span>Thử Thách Ngày — Bộ Đề Hôm Nay</span>
+                                    {progressData?.dailyChallenge?.completedToday ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                                            ✓ Đã hoàn thành
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold border border-amber-300 animate-pulse">
+                                            Đang mở
+                                        </span>
+                                    )}
+                                </p>
+                                <p className="text-[11px] text-slate-600">
+                                    {isAuthenticated
+                                        ? `Chuỗi ngày bền bỉ hiện tại: ${progressData?.dailyChallenge?.streak || 0} ngày liên tiếp`
+                                        : 'Bạn đang chơi thử với vai trò Khách. Đăng nhập để tích lũy chuỗi ngày và nhận huy hiệu!'}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => startQuiz('daily', 'daily', 5)}
+                            className="text-[11px] font-bold text-amber-800 hover:underline flex items-center gap-1"
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Làm lại</span>
+                        </button>
+                    </div>
+                )}
+
+                {!quizResult && !loading && activeTab === 'personalized' && (
+                    <div className="bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-indigo-500/15 border border-indigo-500/30 rounded-2xl p-4 text-xs text-indigo-950">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-600/20">
+                                    <Target className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-extrabold text-sm text-slate-900 font-heritage flex items-center gap-1.5">
+                                        <span>Bộ Đề Cá Nhân Hóa Theo Năng Lực</span>
+                                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                    </p>
+                                    <p className="text-[11px] text-slate-600">
+                                        {isAuthenticated
+                                            ? 'Hệ thống tự động phân tích các chủ đề bạn trả lời chưa cao để tăng cường câu hỏi rèn luyện.'
+                                            : 'Chế độ luyện tập nâng cao dành riêng cho Thành viên đã đăng nhập.'}
+                                    </p>
+                                </div>
+                            </div>
+                            {isAuthenticated && (
+                                <button
+                                    onClick={() => startQuiz('personalized', 'personalized', 5)}
+                                    className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1"
+                                >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Tạo đề mới</span>
+                                </button>
+                            )}
+                        </div>
+                        {!isAuthenticated && (
+                            <div className="mt-3 pt-3 border-t border-indigo-200/60 flex items-center justify-between">
+                                <span className="text-[11px] text-indigo-900 font-medium">Đăng nhập để hệ thống cá nhân hóa đề thi riêng cho bạn!</span>
+                                <Link
+                                    to="/login"
+                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[11px] transition shadow-xs"
+                                >
+                                    Đăng nhập ngay
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Loading state */}
                 {loading && (
                     <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm space-y-4">
                         <Loader2 className="w-8 h-8 text-amber-600 animate-spin mx-auto" />
-                        <p className="text-sm font-semibold text-slate-700">Đang chuẩn bị đề thi Di sản...</p>
+                        <p className="text-sm font-semibold text-slate-700">Đang khởi tạo đề thi Di sản...</p>
                     </div>
                 )}
 
-                {/* GAME SCREEN */}
-                {!loading && !quizResult && currentQuestion && (
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-6 sm:p-10 space-y-6 animate-in fade-in duration-200">
-                        {/* Progress Header */}
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                            <div className="flex items-center gap-2">
-                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                    Câu {currentIndex + 1} / {questions.length}
-                                </span>
-                                <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                                    • {currentQuestion.categoryName}
-                                </span>
+                {/* 5. TAB TIẾN ĐỘ HỌC TẬP & HUY HIỆU (LEARNING PROGRESS & BADGES) */}
+                {activeTab === 'progress' && (
+                    <div className="space-y-6 animate-in fade-in duration-200">
+                        {!isAuthenticated ? (
+                            /* Guest Notice */
+                            <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-5 border border-amber-500/30 shadow-xl">
+                                <div className="w-16 h-16 rounded-2xl bg-amber-500 text-slate-950 mx-auto flex items-center justify-center font-bold shadow-lg shadow-amber-500/30">
+                                    <Trophy className="w-8 h-8" />
+                                </div>
+                                <div className="max-w-md mx-auto space-y-2">
+                                    <h3 className="text-2xl font-black text-amber-300 font-heritage">
+                                        Khám Phá Tiến Độ & Tủ Huy Hiệu
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-vietnam">
+                                        Đăng nhập tài khoản để tự động lưu điểm số mỗi lần chơi, theo dõi biểu đồ tỷ lệ trả lời đúng theo từng chủ đề và sưu tầm bộ huy hiệu danh giá!
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-center gap-3 pt-2">
+                                    <Link
+                                        to="/register"
+                                        className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/25 transition"
+                                    >
+                                        Đăng ký miễn phí
+                                    </Link>
+                                    <Link
+                                        to="/login"
+                                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs sm:text-sm font-medium border border-slate-700 transition"
+                                    >
+                                        Đăng nhập
+                                    </Link>
+                                </div>
                             </div>
-                            <div className="w-36 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        ) : (
+                            /* Registered User Progress Dashboard */
+                            <div className="space-y-6">
+                                {/* Overview Metrics Cards */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                                        <div className="flex items-center justify-between text-slate-500 mb-1">
+                                            <span className="text-[11px] font-semibold">Lượt thi</span>
+                                            <Compass className="w-4 h-4 text-indigo-500" />
+                                        </div>
+                                        <p className="text-2xl font-black text-slate-900 font-heritage">
+                                            {progressData?.totalQuizzes || 0}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">bài đã hoàn thành</p>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                                        <div className="flex items-center justify-between text-slate-500 mb-1">
+                                            <span className="text-[11px] font-semibold">Câu đúng</span>
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                        </div>
+                                        <p className="text-2xl font-black text-emerald-600 font-heritage">
+                                            {progressData?.totalCorrect || 0} / {progressData?.totalQuestions || 0}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">câu trả lời chuẩn xác</p>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                                        <div className="flex items-center justify-between text-slate-500 mb-1">
+                                            <span className="text-[11px] font-semibold">Tỷ lệ đúng</span>
+                                            <Zap className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <p className="text-2xl font-black text-amber-600 font-heritage">
+                                            {progressData?.overallAccuracy || 0}%
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">độ chính xác tổng quan</p>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                                        <div className="flex items-center justify-between text-slate-500 mb-1">
+                                            <span className="text-[11px] font-semibold">Huy hiệu</span>
+                                            <Trophy className="w-4 h-4 text-amber-600" />
+                                        </div>
+                                        <p className="text-2xl font-black text-slate-900 font-heritage">
+                                            {progressData?.badges?.length || 0} / {progressData?.allBadges?.length || 9}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">đã mở khóa</p>
+                                    </div>
+                                </div>
+
+                                {/* Category Performance Bars */}
+                                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                                    <h3 className="text-base font-extrabold text-slate-900 font-heritage flex items-center gap-2">
+                                        <BarChart3 className="w-4 h-4 text-indigo-600" />
+                                        <span>Tỷ lệ Trả lời Đúng Theo Thể loại</span>
+                                    </h3>
+
+                                    <div className="space-y-3 pt-1">
+                                        {progressData?.categoryStats?.map((cat) => (
+                                            <div key={cat.id || cat.category} className="space-y-1.5">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="font-bold text-slate-800">
+                                                        {cat.name || cat.categoryName || cat.category}
+                                                    </span>
+                                                    <span className="text-slate-500 font-semibold">
+                                                        {cat.correct}/{cat.total} câu ({cat.accuracy}%)
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all duration-500 ${
+                                                            cat.accuracy >= 80
+                                                                ? 'bg-emerald-500'
+                                                                : cat.accuracy >= 50
+                                                                ? 'bg-amber-500'
+                                                                : 'bg-indigo-500'
+                                                        }`}
+                                                        style={{ width: `${cat.total > 0 ? cat.accuracy : 0}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Achievement Badges Showcase */}
+                                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-base font-extrabold text-slate-900 font-heritage flex items-center gap-2">
+                                            <Trophy className="w-4 h-4 text-amber-500" />
+                                            <span>Tủ Huy Hiệu Thành Tích Di Sản</span>
+                                        </h3>
+                                        <span className="text-xs text-slate-500 font-medium">
+                                            Đã đạt: {progressData?.badges?.length || 0}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                                        {progressData?.allBadges?.map((b) => {
+                                            const unlocked = Boolean(b.isUnlocked || b.earned);
+                                            return (
+                                                <div
+                                                    key={b.id}
+                                                    className={`p-4 rounded-2xl border transition-all flex items-start gap-3 ${
+                                                        unlocked
+                                                            ? 'bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 border-amber-300 shadow-xs'
+                                                            : 'bg-slate-50/70 border-slate-200 opacity-60'
+                                                    }`}
+                                                >
+                                                    <div
+                                                        className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                                            unlocked
+                                                                ? 'bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 shadow-sm shadow-amber-500/30'
+                                                                : 'bg-slate-200 text-slate-400'
+                                                        }`}
+                                                    >
+                                                        {unlocked ? (
+                                                            <Award className="w-5 h-5 text-slate-950" />
+                                                        ) : (
+                                                            <Lock className="w-4 h-4 text-slate-400" />
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-0.5">
+                                                        <p className={`font-bold text-xs ${unlocked ? 'text-slate-900' : 'text-slate-600'}`}>
+                                                            {b.title}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-500 leading-tight">
+                                                            {b.description}
+                                                        </p>
+                                                        <p className="text-[10px] text-amber-800/80 font-medium pt-0.5">
+                                                            {unlocked ? (
+                                                                <span className="text-emerald-700 font-bold">✓ Đã mở khóa</span>
+                                                            ) : (
+                                                                <span>ĐK: {b.criterion}</span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Recent History */}
+                                {progressData?.history?.length > 0 && (
+                                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                                        <h3 className="text-base font-extrabold text-slate-900 font-heritage flex items-center gap-2">
+                                            <History className="w-4 h-4 text-slate-600" />
+                                            <span>Lịch Sử Các Lần Thi Gần Nhất</span>
+                                        </h3>
+                                        <div className="divide-y divide-slate-100 text-xs">
+                                            {progressData.history.slice(0, 6).map((h, i) => (
+                                                <div key={i} className="py-2.5 flex items-center justify-between">
+                                                    <div className="space-y-0.5">
+                                                        <p className="font-bold text-slate-800">
+                                                            {h.mode === 'daily'
+                                                                ? 'Thử thách Ngày'
+                                                                : h.mode === 'personalized'
+                                                                ? 'Luyện tập Cá nhân'
+                                                                : `Đố vui (${h.category})`}
+                                                            <span className="ml-2 font-normal text-slate-500">
+                                                                — {h.badgeTitle}
+                                                            </span>
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400">
+                                                            {new Date(h.completedAt).toLocaleString('vi-VN')}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="font-black text-amber-700 text-sm font-heritage">
+                                                            {h.score}/100đ
+                                                        </span>
+                                                        <p className="text-[10px] text-emerald-600 font-medium">
+                                                            Đúng {h.correctCount}/{h.totalQuestions} câu
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 6. GAME SCREEN (Đang làm bài) */}
+                {!loading && !quizResult && currentQuestion && activeTab !== 'progress' && (
+                    <div className="quiz-card animate-in fade-in duration-200">
+                        {/* Progress Header & Visual Stepper */}
+                        <div className="pb-5 border-b border-slate-100 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                                        Câu {currentIndex + 1} / {questions.length}
+                                    </span>
+                                    <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                                        • {currentQuestion.categoryName}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-amber-800">
+                                        Tiến độ: {Math.round(((currentIndex + 1) / questions.length) * 100)}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Full-width Progress Bar */}
+                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/80 p-0.5">
                                 <div
-                                    className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-300"
+                                    className="h-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 rounded-full transition-all duration-300 shadow-sm"
                                     style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
                                 />
+                            </div>
+
+                            {/* Visual Question Stepper Pills */}
+                            <div className="flex items-center gap-1.5 pt-1 overflow-x-auto no-scrollbar">
+                                {questions.map((q, idx) => {
+                                    const isDone = idx < userAnswers.length;
+                                    const isCurrent = idx === currentIndex;
+                                    return (
+                                        <div
+                                            key={q.id || idx}
+                                            className={`flex-1 min-w-[28px] h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
+                                                isCurrent
+                                                    ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-400 scale-105'
+                                                    : isDone
+                                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                                    : 'bg-slate-100 text-slate-400 border border-slate-200'
+                                            }`}
+                                        >
+                                            {idx + 1}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         {/* Question Text */}
                         <div className="space-y-2">
-                            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 font-heritage leading-relaxed">
+                            <h2 className="quiz-question-title font-heritage">
                                 {currentQuestion.question}
                             </h2>
                         </div>
@@ -257,6 +739,30 @@ const HeritageQuiz = () => {
                                 );
                             })}
                         </div>
+
+                        {/* AI Explanation Fast Preview when answered */}
+                        {hasAnsweredCurrent && (
+                            <div className="mt-2 p-3.5 bg-gradient-to-r from-amber-50/90 to-indigo-50/70 rounded-2xl border border-amber-300/60 flex items-center justify-between text-xs animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                    <span className="font-medium text-slate-800">
+                                        Muốn hiểu sâu nguồn gốc, ý nghĩa bối cảnh câu hỏi này?
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => handleRequestAiExplanation(currentQuestion)}
+                                    disabled={aiExplainingId === currentQuestion.id}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+                                >
+                                    {aiExplainingId === currentQuestion.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                    )}
+                                    <span>Hỏi AI giải thích ✨</span>
+                                </button>
+                            </div>
+                        )}
 
                         {/* Action Bar */}
                         <div className="pt-4 flex items-center justify-between">
@@ -308,8 +814,8 @@ const HeritageQuiz = () => {
                     </div>
                 )}
 
-                {/* RESULTS SCREEN */}
-                {quizResult && (
+                {/* 7. RESULTS SCREEN */}
+                {quizResult && activeTab !== 'progress' && (
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8 animate-in zoom-in-95 duration-200">
                         {/* Hero Score Badge */}
                         <div className="text-center space-y-4 max-w-md mx-auto">
@@ -344,30 +850,62 @@ const HeritageQuiz = () => {
                                 </div>
                             </div>
 
+                            {/* Guest Notice Callout */}
+                            {quizResult.isGuest && (
+                                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-left text-xs text-amber-900 space-y-1.5">
+                                    <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                                        Bạn đang chơi với tư cách Khách
+                                    </p>
+                                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                                        Kết quả lượt chơi này không được lưu lại. Hãy đăng ký tài khoản để tích lũy tỷ lệ trả lời đúng và mở khóa toàn bộ tủ huy hiệu thành tích!
+                                    </p>
+                                    <div className="pt-1 flex items-center gap-2">
+                                        <Link
+                                            to="/register"
+                                            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[11px] transition shadow-xs"
+                                        >
+                                            Đăng ký ngay
+                                        </Link>
+                                        <Link
+                                            to="/login"
+                                            className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-800 rounded-lg font-medium text-[11px] border border-slate-300 transition"
+                                        >
+                                            Đăng nhập
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="pt-2 flex items-center justify-center gap-3">
                                 <button
-                                    onClick={() => startQuiz(selectedCategory, questionCount)}
+                                    onClick={() => startQuiz(activeTab, selectedCategory, questionCount)}
                                     className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
                                 >
                                     <RotateCcw className="w-3.5 h-3.5" />
                                     <span>Thử thách lượt mới</span>
                                 </button>
-                                <Link
-                                    to="/kham-pha"
+                                <button
+                                    onClick={() => setActiveTab('progress')}
                                     className="px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
                                 >
-                                    <Compass className="w-3.5 h-3.5" />
-                                    <span>Khám phá thêm</span>
-                                </Link>
+                                    <BarChart3 className="w-3.5 h-3.5" />
+                                    <span>Xem tiến độ</span>
+                                </button>
                             </div>
                         </div>
 
-                        {/* Detailed Question Review */}
+                        {/* Detailed Question Review with AI Explanation Button */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                            <h3 className="text-lg font-bold text-slate-900 font-heritage flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-amber-600" />
-                                <span>Phân tích & Giải nghĩa Chi tiết từng câu:</span>
-                            </h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-slate-900 font-heritage flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-amber-600" />
+                                    <span>Phân tích & Giải nghĩa Chi tiết từng câu:</span>
+                                </h3>
+                                <span className="text-xs text-slate-500 font-medium">
+                                    Click "Hỏi AI" để xem bối cảnh và nguồn học thuật
+                                </span>
+                            </div>
 
                             <div className="space-y-4">
                                 {quizResult.details.map((item, idx) => (
@@ -418,13 +956,15 @@ const HeritageQuiz = () => {
                                             </div>
 
                                             {/* Explanation */}
-                                            <div className="bg-white/80 rounded-xl p-3 border border-slate-200 text-slate-600 text-xs leading-relaxed">
-                                                <p className="font-semibold text-slate-900 mb-1">
+                                            <div className="bg-white/90 rounded-xl p-3 border border-slate-200 text-slate-600 text-xs leading-relaxed space-y-2">
+                                                <p className="font-semibold text-slate-900">
                                                     Ý nghĩa văn hóa & Đạo lý:
                                                 </p>
                                                 <p>{item.explanation}</p>
-                                                {item.relatedWorkSlug && (
-                                                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+
+                                                {/* Action Bar for Question: Related Work & AI Deep Explain */}
+                                                <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                                                    {item.relatedWorkSlug ? (
                                                         <button
                                                             onClick={() => handleOpenRelatedWork(item.relatedWorkSlug)}
                                                             className="text-indigo-600 hover:text-indigo-800 font-bold text-[11px] flex items-center gap-1"
@@ -432,8 +972,21 @@ const HeritageQuiz = () => {
                                                             <BookOpen className="w-3 h-3" />
                                                             <span>Xem tác phẩm liên quan</span>
                                                         </button>
-                                                    </div>
-                                                )}
+                                                    ) : <span />}
+
+                                                    <button
+                                                        onClick={() => handleRequestAiExplanation(item)}
+                                                        disabled={aiExplainingId === item.questionId}
+                                                        className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-[11px] rounded-lg flex items-center gap-1.5 shadow-xs transition"
+                                                    >
+                                                        {aiExplainingId === item.questionId ? (
+                                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                                        ) : (
+                                                            <Sparkles className="w-3 h-3 text-slate-950" />
+                                                        )}
+                                                        <span>AI Giảng giải Đa tầng & Dẫn nguồn ✨</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -443,6 +996,112 @@ const HeritageQuiz = () => {
                     </div>
                 )}
             </div>
+
+            {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích đa tầng & Dẫn nguồn học thuật) */}
+            {activeAiModal && (
+                <div
+                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200"
+                    role="dialog"
+                >
+                    <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-amber-500/40 relative max-h-[85vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+                                    <Sparkles className="w-5 h-5 text-slate-950" />
+                                </div>
+                                <div>
+                                    <h3 className="font-extrabold text-white text-base font-heritage">
+                                        VietHeritage AI — Phân Tích Đa Tầng
+                                    </h3>
+                                    <p className="text-[11px] text-amber-300">
+                                        Nguồn học thuật & Bối cảnh lịch sử dân gian
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setActiveAiModal(null)}
+                                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Question Reference */}
+                        <div className="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60 text-xs space-y-1">
+                            <span className="font-bold text-amber-400 text-[11px]">Câu hỏi phân tích:</span>
+                            <p className="text-slate-200 font-medium">{activeAiModal.question}</p>
+                        </div>
+
+                        {/* Explanation Content */}
+                        <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam">
+                            {activeAiModal.data?.deepExplanation}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
+                            <span className="text-[11px] text-slate-400">
+                                Dữ liệu kiểm chứng bởi VietHeritage Knowledge Base
+                            </span>
+                            <button
+                                onClick={() => setActiveAiModal(null)}
+                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+                            >
+                                Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: CHÚC MỪNG MỞ KHÓA HUY HIỆU MỚI (NEWLY UNLOCKED BADGES) */}
+            {newlyUnlockedModal && newlyUnlockedModal.length > 0 && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+                    role="dialog"
+                >
+                    <div className="bg-gradient-to-b from-slate-900 to-amber-950 text-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 shadow-2xl border border-amber-500/50 animate-in zoom-in-95 duration-200">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 via-amber-500 to-amber-600 mx-auto flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/30 ring-8 ring-amber-500/20 animate-bounce">
+                            <Trophy className="w-10 h-10 text-slate-950" />
+                        </div>
+                        <div className="space-y-1">
+                            <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">
+                                Chúc Mừng Bạn!
+                            </span>
+                            <h3 className="text-2xl font-black text-white font-heritage">
+                                Đã Mở Khóa Huy Hiệu Mới!
+                            </h3>
+                            <p className="text-xs text-slate-300">
+                                Thành tích xuất sắc của bạn đã được ghi danh vào bảng vàng Di sản.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2 pt-2">
+                            {newlyUnlockedModal.map((b) => (
+                                <div
+                                    key={b.id}
+                                    className="bg-amber-500/15 border border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 text-left"
+                                >
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold flex-shrink-0">
+                                        <Award className="w-5 h-5 text-slate-950" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white text-xs">{b.title}</p>
+                                        <p className="text-[11px] text-amber-200/80">{b.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => setNewlyUnlockedModal(null)}
+                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition"
+                        >
+                            Tuyệt vời! Tiếp tục
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Quick Work Detail Modal if user clicked read more */}
             {selectedWorkModal && (
@@ -469,9 +1128,9 @@ const HeritageQuiz = () => {
                         </div>
 
                         {selectedWorkModal.quote && (
-                            <blockquote className="border-l-4 border-amber-600 bg-amber-50/50 p-3 italic text-xs text-slate-700 rounded-r-xl">
-                                &quot;{selectedWorkModal.quote}&quot;
-                            </blockquote>
+                            <div className="border-l-4 border-amber-600 bg-amber-50/70 p-3.5 rounded-r-xl">
+                                <PoemDisplay text={selectedWorkModal.quote} size="sm" showQuotes={true} />
+                            </div>
                         )}
 
                         <div className="space-y-2 text-xs leading-relaxed text-slate-700">

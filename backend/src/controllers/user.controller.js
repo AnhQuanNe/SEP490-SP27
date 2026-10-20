@@ -61,6 +61,8 @@ const updateProfile = async (req, res) => {
  */
 const changePassword = async (req, res) => {
     try {
+        const { currentPassword, newPassword } = req.body;
+
         if (!newPassword || newPassword.length < 6) {
             return res.status(400).json({
                 success: false,

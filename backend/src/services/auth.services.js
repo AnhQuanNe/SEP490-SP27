@@ -131,6 +131,10 @@ const login = async ({ email, password }) => {
         throw new Error('Email hoặc mật khẩu không chính xác');
     }
 
+    if (user.status === 'locked') {
+        throw new Error('Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.');
+    }
+
     // Nếu là user đăng nhập bằng Google và chưa từng đặt password
     if (!user.password) {
         throw new Error('Tài khoản này được đăng ký bằng Google. Vui lòng đăng nhập với Google');

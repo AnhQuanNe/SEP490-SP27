@@ -34,6 +34,7 @@ api.interceptors.response.use(
                 error.message ||
                 'Đã có lỗi xảy ra. Vui lòng thử lại!',
             status: error.response?.status,
+            code: error.response?.data?.code || null,
             data: error.response?.data,
         };
         return Promise.reject(customError);

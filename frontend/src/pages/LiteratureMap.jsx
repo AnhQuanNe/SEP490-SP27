@@ -1,26 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import literatureService from '../services/literature.service';
+import PoemDisplay from '../components/common/PoemDisplay';
 import {
     MapPin,
     Compass,
-    Sparkles,
-    BookOpen,
-    ArrowRight,
     CheckCircle2,
     Bookmark,
     Eye,
     ThumbsUp,
     X,
-    Quote,
-    Layers,
     Navigation,
     Mountain,
     Waves,
     Sun,
     ChevronRight,
-    Map
+    ArrowRight
 } from 'lucide-react';
+import './LiteratureMap.css';
 
 const LiteratureMap = () => {
     const [selectedRegion, setSelectedRegion] = useState('Bắc');
@@ -60,40 +57,41 @@ const LiteratureMap = () => {
             borderColor: 'border-emerald-400',
             bgGlow: 'bg-emerald-500/10',
             landmarks: [
-                { name: 'Sông Lam - Núi Hồng (Nghệ Tĩnh)', desc: 'Quê hương Đại thi hào Nguyễn Du, cái nôi của hát ví giặm và Truyện Kiều' },
-                { name: 'Cố đô Huế & Sông Hương', desc: 'Không gian thơ ca cung đình, nhã nhạc và văn học bác học thế kỷ XIX' },
-                { name: 'Đèo Ngang', desc: 'Thắng cảnh đi vào kiệt tác thi ca "Qua Đèo Ngang" của Bà Huyện Thanh Quan' },
+                { name: 'Sông Hương & Núi Ngự (Huế)', desc: 'Không gian nhã nhạc cung đình, ca dao hò mái nhì mái đẩy' },
+                { name: 'Núi Hồng - Sông Lam (Hà Tĩnh)', desc: 'Quê hương Đại thi hào Nguyễn Du, cái nôi kiệt tác Truyện Kiều' },
+                { name: 'Đèo Ngang (Quảng Bình)', desc: 'Cảm hứng bất hủ qua bài thơ Bà Huyện Thanh Quan' },
+                { name: 'Ngũ Hành Sơn (Đà Nẵng)', desc: 'Địa linh truyền tích non nước hữu tình xứ Quảng' },
             ],
-            identity: 'Mang âm hưởng kiên cường vượt gian khó bão giông, kết hợp sự tao nhã đài các của văn hóa cung đình và sự tinh tế trong thi pháp.',
+            identity: 'Văn học Miền Trung giàu tính tự sự, đượm nét hoài cổ phong trần, gắn kết giữa văn hóa cung đình bác học và ca dao thổ nhưỡng kiên cường trước bão táp.',
         },
         'Nam': {
-            name: 'Nam Bộ & Đất Phương Nam',
-            subtitle: 'Hào sảng, phóng khoáng, giàu tình nghĩa miệt vườn sông nước',
+            name: 'Nam Bộ & Miền Tây Đất Mới',
+            subtitle: 'Hào sảng đất phương Nam, phóng khoáng nghĩa tình sông nước Cửu Long',
             icon: Sun,
-            accentColor: 'from-indigo-600 to-purple-800',
-            borderColor: 'border-indigo-400',
-            bgGlow: 'bg-indigo-500/10',
+            accentColor: 'from-orange-500 to-amber-700',
+            borderColor: 'border-orange-400',
+            bgGlow: 'bg-orange-500/10',
             landmarks: [
-                { name: 'Đồng bằng Sông Cửu Long', desc: 'Cái nôi của truyện cười dân gian Bác Ba Phi, đờn ca tài tử' },
-                { name: 'Bến Nghé - Sài Gòn', desc: 'Vùng đất mở cõi, gắn với áng văn tế nghĩa sĩ Cần Giuộc của Nguyễn Đình Chiểu' },
-                { name: 'Đất Rừng U Minh (Cà Mau)', desc: 'Không gian thiên nhiên hùng vĩ gắn liền huyền thoại khẩn hoang' },
+                { name: 'Đồng Tháp Mười', desc: 'Không gian ca dao tráng lệ: Tháp Mười đẹp nhất bông sen' },
+                { name: 'Bến Nghé - Sài Gòn xưa', desc: 'Vùng đất khởi sắc của văn học tài tử và chí khí Lục Vân Tiên' },
+                { name: 'Rừng U Minh & Cà Mau', desc: 'Bối cảnh truyện cổ tích mở cõi và thần thoại Bác Ba Phi' },
+                { name: 'Sông Tiền & Sông Hậu', desc: 'Mạch nguồn của những câu hò sông nước mênh mang, trù phú' },
             ],
-            identity: 'Đặc trưng bởi ngôn ngữ bình dân, tinh thần trọng nghĩa khinh tài, hào sảng phóng khoáng của những lưu dân mở cõi.',
+            identity: 'Văn học Nam Bộ mộc mạc, hào sảng, thẳng thắn, trọng nghĩa khinh tài với tinh thần cởi mở của những lưu dân khai hoang mở cõi kiên cường.',
         },
     };
 
-    // Fetch works for the selected region
     useEffect(() => {
         const fetchRegionalWorks = async () => {
+            setIsLoading(true);
             try {
-                setIsLoading(true);
-                const data = await literatureService.searchWorks({
+                const res = await literatureService.searchWorks({
                     region: selectedRegion,
-                    limit: 15,
+                    limit: 12,
                 });
-                setWorks(data.works || []);
+                setWorks(res.works || []);
             } catch (err) {
-                console.error('Lỗi tải tác phẩm theo vùng miền:', err);
+                console.error('Lỗi lấy tác phẩm theo vùng miền:', err);
             } finally {
                 setIsLoading(false);
             }
@@ -102,15 +100,15 @@ const LiteratureMap = () => {
         fetchRegionalWorks();
     }, [selectedRegion]);
 
-    const toggleSave = (id) => {
+    const toggleSave = (workId) => {
         setSavedWorkIds((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-                showToast('Đã xóa khỏi danh sách lưu');
+            if (next.has(workId)) {
+                next.delete(workId);
+                showToast('Đã xóa khỏi sổ tay lưu trữ');
             } else {
-                next.add(id);
-                showToast('Đã lưu tác phẩm vào sổ tay di sản!');
+                next.add(workId);
+                showToast('Đã lưu tác phẩm vào sổ tay');
             }
             return next;
         });
@@ -120,117 +118,113 @@ const LiteratureMap = () => {
     const RegionIcon = currentRegionData.icon;
 
     return (
-        <div className="min-h-screen bg-slate-50/70 pb-24">
+        <div className="litmap-page">
             {toastMessage && (
-                <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200">
+                <div className="litmap-toast">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <span className="text-xs font-semibold">{toastMessage}</span>
                 </div>
             )}
 
             {/* 1. HERO HEADER */}
-            <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white pt-10 pb-16 relative overflow-hidden">
-                <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <section className="litmap-hero">
+                <div className="litmap-hero-aura"></div>
+                <div className="litmap-hero-container">
                     {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-6 font-medium">
-                        <Link to="/" className="hover:text-amber-400 transition">Trang chủ</Link>
+                    <div className="litmap-breadcrumb">
+                        <Link to="/" className="litmap-breadcrumb-link">Trang chủ</Link>
                         <ChevronRight className="w-3.5 h-3.5" />
                         <span className="text-amber-300 font-semibold">Bản đồ Văn học</span>
                     </div>
 
-                    <div className="max-w-3xl space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold">
+                    <div className="litmap-hero-content">
+                        <div className="litmap-badge">
                             <Compass className="w-3.5 h-3.5 text-amber-400" />
                             <span>Không Gian Văn Hóa & Địa Danh Văn Học 3 Miền</span>
                         </div>
-                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-heritage tracking-tight leading-tight">
+                        <h1 className="litmap-hero-title font-heritage">
                             Bản Đồ Văn Học Việt Nam
                         </h1>
-                        <p className="text-sm sm:text-base text-slate-300 font-light leading-relaxed">
+                        <p className="litmap-hero-desc">
                             Mỗi tấc đất, dòng sông, ngọn núi trên dải đất hình chữ S đều thấm đượm những áng thi ca, tích xưa và huyền thoại. Hãy chọn từng miền đất để khám phá di sản văn học gắn liền với địa danh văn hóa.
                         </p>
                     </div>
 
                     {/* Region Switcher Tabs */}
-                    <div className="mt-8 flex items-center gap-3 flex-wrap">
+                    <div className="litmap-tabs-container">
                         {[
                             { id: 'Bắc', name: 'Miền Bắc', sub: 'Kinh Kỳ & Đất Tổ' },
                             { id: 'Trung', name: 'Miền Trung', sub: 'Lam Hồng & Cố Đô' },
                             { id: 'Nam', name: 'Miền Nam', sub: 'Hào sảng Đất Phương Nam' },
-                        ].map((reg) => (
-                            <button
-                                key={reg.id}
-                                onClick={() => setSelectedRegion(reg.id)}
-                                className={`px-5 py-3 rounded-2xl text-left transition-all flex items-center gap-3 border ${
-                                    selectedRegion === reg.id
-                                        ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-xl scale-105'
-                                        : 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/10'
-                                }`}
-                            >
-                                <MapPin className={`w-4 h-4 ${selectedRegion === reg.id ? 'text-slate-950' : 'text-amber-400'}`} />
-                                <div>
-                                    <span className="text-xs font-bold block">{reg.name}</span>
-                                    <span className={`text-[10px] ${selectedRegion === reg.id ? 'text-slate-800' : 'text-slate-400'}`}>
-                                        {reg.sub}
-                                    </span>
-                                </div>
-                            </button>
-                        ))}
+                        ].map((reg) => {
+                            const isActive = selectedRegion === reg.id;
+                            return (
+                                <button
+                                    key={reg.id}
+                                    onClick={() => setSelectedRegion(reg.id)}
+                                    className={`litmap-tab-btn ${isActive ? 'litmap-tab-btn-active' : 'litmap-tab-btn-inactive'}`}
+                                >
+                                    <MapPin className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
+                                    <div>
+                                        <span className="litmap-tab-title">{reg.name}</span>
+                                        <span className={`litmap-tab-sub ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>
+                                            {reg.sub}
+                                        </span>
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
             {/* 2. REGION SPOTLIGHT & LANDMARKS */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
-                <div className="bg-white rounded-3xl shadow-xl border border-slate-200/90 p-6 sm:p-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <section className="litmap-spotlight-section">
+                <div className="litmap-spotlight-card">
+                    <div className="litmap-spotlight-grid">
                         {/* Region Identity Card */}
-                        <div className="lg:col-span-5 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shadow-sm">
+                        <div className="litmap-identity-col">
+                            <div className="litmap-region-header">
+                                <div className="litmap-region-icon-wrapper">
                                     <RegionIcon className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Khu vực văn hóa</span>
-                                    <h2 className="text-2xl font-bold font-heritage text-slate-900">
+                                    <span className="litmap-region-tag">Khu vực văn hóa</span>
+                                    <h2 className="litmap-region-title font-heritage">
                                         {currentRegionData.name}
                                     </h2>
                                 </div>
                             </div>
-                            <p className="text-xs font-semibold text-slate-500">
+                            <p className="litmap-region-subtitle">
                                 {currentRegionData.subtitle}
                             </p>
-                            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                            <p className="litmap-region-identity-text">
                                 {currentRegionData.identity}
                             </p>
                         </div>
 
                         {/* Landmark Nodes */}
-                        <div className="lg:col-span-7 space-y-3">
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="litmap-landmarks-col">
+                            <div className="litmap-landmarks-header">
+                                <h3 className="litmap-landmarks-heading">
                                     <Navigation className="w-4 h-4 text-amber-600" />
                                     Địa danh văn hóa nổi bật trong tác phẩm
                                 </h3>
                                 <span className="text-[11px] text-slate-400">Không gian thực địa</span>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="litmap-landmarks-grid">
                                 {currentRegionData.landmarks.map((lm, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="p-4 rounded-2xl bg-slate-50/80 hover:bg-amber-50/60 border border-slate-200 hover:border-amber-300 transition-all group"
-                                    >
-                                        <div className="flex items-start gap-2.5">
-                                            <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">
+                                    <div key={idx} className="litmap-landmark-card group">
+                                        <div className="litmap-landmark-inner">
+                                            <div className="litmap-landmark-index">
                                                 {idx + 1}
                                             </div>
                                             <div className="space-y-1">
-                                                <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-900 transition-colors">
+                                                <h4 className="litmap-landmark-name">
                                                     {lm.name}
                                                 </h4>
-                                                <p className="text-[11px] text-slate-500 leading-relaxed">
+                                                <p className="litmap-landmark-desc">
                                                     {lm.desc}
                                                 </p>
                                             </div>
@@ -244,18 +238,18 @@ const LiteratureMap = () => {
             </section>
 
             {/* 3. REGIONAL WORKS LIST */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-                <div className="flex items-center justify-between mb-6">
+            <section className="litmap-works-section">
+                <div className="litmap-works-header">
                     <div>
-                        <h2 className="text-xl font-extrabold text-slate-900 font-heritage">
+                        <h2 className="litmap-works-title font-heritage">
                             Tác Phẩm & Tích Xưa Vùng {currentRegionData.name}
                         </h2>
-                        <p className="text-xs text-slate-500">
+                        <p className="litmap-works-subtitle">
                             Hiển thị các tác phẩm gắn liền với địa phương và xuất xứ {selectedRegion} Bộ
                         </p>
                     </div>
 
-                    <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                    <span className="litmap-works-count">
                         Có <strong>{works.length}</strong> tư liệu được kết nối bản đồ
                     </span>
                 </div>
@@ -271,7 +265,7 @@ const LiteratureMap = () => {
                         ))}
                     </div>
                 ) : works.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto space-y-3">
+                    <div className="litmap-empty-box">
                         <MapPin className="w-10 h-10 text-amber-500 mx-auto" />
                         <h3 className="text-base font-bold text-slate-900 font-heritage">
                             Chưa có tác phẩm cụ thể cho vùng này
@@ -279,77 +273,69 @@ const LiteratureMap = () => {
                         <p className="text-xs text-slate-500">
                             Các tư liệu vùng miền đang tiếp tục được cập nhật vào kho tàng.
                         </p>
-                        <Link
-                            to="/kham-pha"
-                            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold inline-block"
-                        >
+                        <Link to="/kham-pha" className="litmap-empty-btn">
                             Khám phá toàn bộ thư viện
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="litmap-works-grid">
                         {works.map((work) => {
                             const isSaved = savedWorkIds.has(work._id);
                             return (
-                                <article
-                                    key={work._id}
-                                    className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col justify-between overflow-hidden group"
-                                >
-                                    <div className="p-6 space-y-3.5">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
+                                <article key={work._id} className="litmap-card group">
+                                    <div className="litmap-card-body">
+                                        <div className="litmap-card-top">
+                                            <span className="litmap-card-cat-badge">
                                                 {work.categoryName || work.category}
                                             </span>
-                                            <span className="text-[11px] text-amber-800 font-semibold flex items-center gap-1">
+                                            <span className="litmap-card-region-badge">
                                                 <MapPin className="w-3 h-3 text-amber-600" />
                                                 {work.region}
                                             </span>
                                         </div>
 
-                                        <h3 className="text-lg font-bold text-slate-900 font-heritage group-hover:text-amber-800 transition-colors">
+                                        <h3 className="litmap-card-title font-heritage">
                                             {work.title}
                                         </h3>
 
-                                        <p className="text-xs text-slate-500 font-medium">
+                                        <p className="litmap-card-meta">
                                             {work.author || 'Dân gian'} • <span className="text-slate-400">{work.period}</span>
                                         </p>
 
                                         {work.quote && (
-                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed line-clamp-2">
-                                                &ldquo;{work.quote}&rdquo;
+                                            <div className="litmap-card-quote font-heritage">
+                                                <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
                                             </div>
                                         )}
 
-                                        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                                        <p className="litmap-card-summary">
                                             {work.summary}
                                         </p>
                                     </div>
 
-                                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-3 text-slate-400 font-medium">
-                                            <span className="flex items-center gap-1">
+                                    <div className="litmap-card-footer">
+                                        <div className="litmap-card-stats">
+                                            <span className="litmap-card-stat">
                                                 <Eye className="w-3.5 h-3.5" />
                                                 {work.viewsCount || 0}
                                             </span>
-                                            <span className="flex items-center gap-1">
+                                            <span className="litmap-card-stat">
                                                 <ThumbsUp className="w-3.5 h-3.5" />
                                                 {work.likesCount || 0}
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="litmap-card-actions">
                                             <button
                                                 onClick={() => toggleSave(work._id)}
-                                                className={`p-2 rounded-lg transition ${
-                                                    isSaved ? 'text-amber-600 bg-amber-100' : 'text-slate-400 hover:text-amber-600'
-                                                }`}
+                                                className={`litmap-btn-bookmark ${isSaved ? 'litmap-btn-bookmark-saved' : 'litmap-btn-bookmark-unsaved'}`}
                                                 title="Lưu vào sổ tay"
                                             >
                                                 <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-600' : ''}`} />
                                             </button>
                                             <button
                                                 onClick={() => setActiveModalWork(work)}
-                                                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-sm"
+                                                className="litmap-btn-detail"
                                             >
                                                 <span>Xem chi tiết</span>
                                                 <ArrowRight className="w-3 h-3" />
@@ -365,12 +351,9 @@ const LiteratureMap = () => {
 
             {/* 4. MODAL CHI TIẾT TÁC PHẨM */}
             {activeModalWork && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div
-                        className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 bg-slate-950 text-white flex items-start justify-between border-b border-slate-800">
+                <div className="litmap-modal-overlay">
+                    <div className="litmap-modal-box" onClick={(e) => e.stopPropagation()}>
+                        <div className="litmap-modal-header">
                             <div className="space-y-1.5 pr-6">
                                 <div className="flex items-center gap-2">
                                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -395,37 +378,36 @@ const LiteratureMap = () => {
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm">
+                        <div className="litmap-modal-body">
                             {activeModalWork.quote && (
-                                <div className="p-4 bg-amber-50 rounded-2xl border-l-4 border-amber-600 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                    <Quote className="w-4 h-4 text-amber-600 mb-1 inline mr-1" />
-                                    {activeModalWork.quote}
+                                <div className="litmap-modal-quote-box font-heritage">
+                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
                                 </div>
                             )}
 
                             <div className="space-y-1.5">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                                <h4 className="litmap-modal-section-title">
                                     Tóm tắt cốt truyện / nội dung
                                 </h4>
-                                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                                <p className="litmap-modal-summary-text">
                                     {activeModalWork.summary}
                                 </p>
                             </div>
 
                             {activeModalWork.content && (
                                 <div className="space-y-1.5">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                                    <h4 className="litmap-modal-section-title">
                                         Toàn văn tác phẩm
                                     </h4>
-                                    <div className="p-4 bg-slate-50 rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-line border border-slate-200 max-h-72 overflow-y-auto">
+                                    <div className="litmap-modal-fullcontent">
                                         {activeModalWork.content}
                                     </div>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="litmap-modal-info-grid">
                                 {activeModalWork.historicalContext && (
-                                    <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-1">
+                                    <div className="litmap-modal-info-card-indigo">
                                         <h5 className="text-[11px] font-bold text-indigo-900 uppercase">Dấu ấn địa phương & lịch sử</h5>
                                         <p className="text-xs text-indigo-950/80 leading-relaxed">
                                             {activeModalWork.historicalContext}
@@ -433,7 +415,7 @@ const LiteratureMap = () => {
                                     </div>
                                 )}
                                 {activeModalWork.thematicMeaning && (
-                                    <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-1">
+                                    <div className="litmap-modal-info-card-emerald">
                                         <h5 className="text-[11px] font-bold text-emerald-900 uppercase">Ý nghĩa biểu tượng văn hóa</h5>
                                         <p className="text-xs text-emerald-950/80 leading-relaxed">
                                             {activeModalWork.thematicMeaning}
@@ -450,7 +432,7 @@ const LiteratureMap = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                        <div className="litmap-modal-footer">
                             <button
                                 onClick={() => setActiveModalWork(null)}
                                 className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"

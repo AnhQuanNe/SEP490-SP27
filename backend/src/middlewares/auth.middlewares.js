@@ -36,6 +36,13 @@ const protect = async (req, res, next) => {
             });
         }
 
+        if (user.status === 'locked') {
+            return res.status(403).json({
+                success: false,
+                message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên',
+            });
+        }
+
         req.user = user;
         next();
     } catch (error) {
@@ -47,11 +54,33 @@ const protect = async (req, res, next) => {
 };
 
 /**
+ * Middleware tùy chọn xác thực người dùng (nếu có token thì gắn user, nếu không thì vẫn cho qua)
+ */
+const optionalAuth = async (req, res, next) => {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+    if (!token) return next();
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_sep490');
+        const user = await User.findById(decoded.id);
+        if (user && user.status !== 'locked') {
+            req.user = user;
+        }
+    } catch (error) {
+        // Token không hợp lệ thì bỏ qua trong optional auth
+    }
+    next();
+};
+
+/**
  * Middleware kiểm tra phân quyền (Role-based access control)
  */
 const authorize = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
+        if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
                 message: 'Bạn không có quyền thực hiện thao tác này',
@@ -64,4 +93,6 @@ const authorize = (...roles) => {
 module.exports = {
     protect,
     authorize,
+    optionalAuth,
 };
+

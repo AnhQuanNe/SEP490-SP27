@@ -69,9 +69,84 @@ class LiteratureController {
                 page,
                 limit,
             });
+
+            // Lưu lịch sử tìm kiếm nếu người dùng đã đăng nhập (UC13)
+            if (req.user && q && q.trim() !== '') {
+                try {
+                    const SearchHistory = require('../models/SearchHistory');
+                    await SearchHistory.create({
+                        user: req.user._id,
+                        query: q.trim(),
+                        searchType: 'keyword',
+                        resultsCount: result.pagination.total,
+                    });
+                } catch (historyErr) {
+                    console.error('[SearchHistory] Lỗi lưu lịch sử:', historyErr.message);
+                }
+            }
+
             res.status(200).json({
                 success: true,
                 ...result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @route   GET /api/literature/semantic-search
+     * @desc    Tìm kiếm theo ý nghĩa bằng ngôn ngữ tự nhiên (UC09)
+     * @access  Public / Optional Auth
+     */
+    async semanticSearch(req, res, next) {
+        try {
+            const { q, page, limit } = req.query;
+            const result = await literatureService.semanticSearch({
+                query: q,
+                page,
+                limit,
+                userId: req.user?._id,
+            });
+
+            // Lưu lịch sử tìm kiếm ngữ nghĩa nếu người dùng đã đăng nhập (UC13)
+            if (req.user && q && q.trim() !== '') {
+                try {
+                    const SearchHistory = require('../models/SearchHistory');
+                    await SearchHistory.create({
+                        user: req.user._id,
+                        query: q.trim(),
+                        searchType: 'semantic',
+                        resultsCount: result.pagination.total,
+                    });
+                } catch (historyErr) {
+                    console.error('[SearchHistory] Lỗi lưu lịch sử ngữ nghĩa:', historyErr.message);
+                }
+            }
+
+            res.status(200).json({
+                success: true,
+                ...result,
+                quota: req.guestQuota || null,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @route   GET /api/literature/:idOrSlug/related
+     * @desc    Gợi ý nội dung văn hóa liên quan (UC11)
+     * @access  Public
+     */
+    async getRelated(req, res, next) {
+        try {
+            const { idOrSlug } = req.params;
+            const limit = req.query.limit || 4;
+            const related = await literatureService.getRelatedWorks(idOrSlug, limit);
+            res.status(200).json({
+                success: true,
+                data: related,
             });
         } catch (error) {
             next(error);

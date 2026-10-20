@@ -1,11 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/ai.controller');
+const { optionalAuth } = require('../middlewares/auth.middlewares');
+const { checkGuestQuota, getGuestQuotaStatus } = require('../middlewares/guestQuota.middleware');
 
-// Trả lời câu hỏi thông minh kèm trích dẫn nguồn học thuật (UC09)
-router.post('/ask', aiController.ask);
+// Lấy thông tin số lượt AI còn lại trong ngày (cho Guest hoặc Registered User)
+router.get('/quota', optionalAuth, getGuestQuotaStatus);
+
+// Trả lời câu hỏi thông minh kèm trích dẫn nguồn học thuật (UC10)
+router.post('/ask', optionalAuth, checkGuestQuota, aiController.ask);
+
+// Yêu cầu AI giải thích chi tiết câu ca dao, tục ngữ (UC10)
+router.post('/explain', optionalAuth, checkGuestQuota, aiController.explain);
 
 // Lấy danh sách câu hỏi gợi ý khám phá nhanh
 router.get('/suggestions', aiController.getSuggestions);
 
 module.exports = router;
+

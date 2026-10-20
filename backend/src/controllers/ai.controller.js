@@ -23,6 +23,7 @@ const ask = async (req, res) => {
         res.status(200).json({
             success: true,
             data: result,
+            quota: req.guestQuota || null,
         });
     } catch (error) {
         console.error('[AI Controller] Lỗi xử lý câu hỏi:', error.message);
@@ -51,7 +52,36 @@ const getSuggestions = async (req, res) => {
     }
 };
 
+/**
+ * Yêu cầu AI giải thích chi tiết câu ca dao, tục ngữ (UC10 Request AI Explanation)
+ */
+const explain = async (req, res) => {
+    try {
+        const { workId, slug } = req.body;
+        if (!workId && !slug) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp workId hoặc slug của tác phẩm cần giải thích',
+            });
+        }
+
+        const result = await aiService.explainWork({ workId, slug });
+        res.status(200).json({
+            success: true,
+            data: result,
+            quota: req.guestQuota || null,
+        });
+    } catch (error) {
+        console.error('[AI Controller] Lỗi giải thích tác phẩm:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi yêu cầu AI giải thích nội dung',
+        });
+    }
+};
+
 module.exports = {
     ask,
+    explain,
     getSuggestions,
 };

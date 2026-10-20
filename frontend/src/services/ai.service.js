@@ -10,7 +10,10 @@ export const aiService = {
             contextSlug,
             history,
         });
-        return response.data;
+        return {
+            ...(response.data || {}),
+            quota: response.quota || null,
+        };
     },
 
     /**
@@ -19,6 +22,14 @@ export const aiService = {
     async getSuggestions() {
         const response = await api.get('/ai/suggestions');
         return response.data || [];
+    },
+
+    /**
+     * Lấy thông tin số lượt AI còn lại trong ngày của Guest
+     */
+    async getQuota() {
+        const response = await api.get('/ai/quota');
+        return response;
     },
 };
 
