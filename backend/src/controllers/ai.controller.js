@@ -111,9 +111,46 @@ const draftSubmission = async (req, res) => {
     }
 };
 
+/**
+ * Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ cho đoạn trích bôi đen
+ */
+const analyzeSnippet = async (req, res) => {
+    try {
+        const { snippet, workSlug, workTitle, analysisType } = req.body;
+
+        if (!snippet || typeof snippet !== 'string' || snippet.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp đoạn trích hoặc từ ngữ cần phân tích',
+            });
+        }
+
+        const result = await aiService.analyzeSnippet({
+            snippet,
+            workSlug,
+            workTitle,
+            analysisType: analysisType || 'general',
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            quota: req.guestQuota || null,
+        });
+    } catch (error) {
+        console.error('[AI Controller] Lỗi phân tích đoạn trích:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi phân tích đoạn trích với AI',
+        });
+    }
+};
+
 module.exports = {
     draftSubmission,
     ask,
     explain,
     getSuggestions,
+    analyzeSnippet,
 };
+

@@ -17,7 +17,9 @@ import {
     Send,
     Bot,
     Compass,
-    Trophy
+    Trophy,
+    GraduationCap,
+    Share2
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -42,10 +44,9 @@ const Navbar = () => {
     const navItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
-        { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Compass },
+        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2 },
         { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy },
         { name: 'Đóng góp', path: '/dong-gop', isRoute: true },
-        { name: 'Trợ lý AI', isAction: true, icon: Sparkles },
     ];
 
     // Đóng dropdown khi click ra ngoài
@@ -221,6 +222,15 @@ const Navbar = () => {
 
                                         <div className="py-1">
                                             <Link
+                                                to="/lo-trinh-hoc"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center px-4 py-2.5 text-xs font-semibold text-stone-700 hover:text-red-950 hover:bg-amber-50/80 transition-colors"
+                                            >
+                                                <GraduationCap className="w-4 h-4 mr-3 text-amber-700" />
+                                                Lộ trình học cá nhân
+                                            </Link>
+
+                                            <Link
                                                 to="/profile"
                                                 onClick={() => setDropdownOpen(false)}
                                                 className="flex items-center px-4 py-2.5 text-xs font-semibold text-stone-700 hover:text-red-950 hover:bg-amber-50/80 transition-colors"
@@ -369,6 +379,15 @@ const Navbar = () => {
                                         <p className="text-[10px] text-amber-800 font-medium truncate">{user?.email}</p>
                                     </div>
                                 </div>
+
+                                <Link
+                                    to="/lo-trinh-hoc"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center min-h-[40px] px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-amber-50 rounded-xl"
+                                >
+                                    <GraduationCap className="w-4 h-4 mr-2.5 text-amber-700" />
+                                    Lộ trình học cá nhân
+                                </Link>
 
                                 <Link
                                     to="/profile"

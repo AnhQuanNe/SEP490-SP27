@@ -59,7 +59,7 @@ const Explore = () => {
 
     // Search Mode: 'keyword' (UC07) | 'semantic' (UC09)
     const initialMode = searchParams.get('mode') === 'semantic' ? 'semantic' : 'keyword';
-    const initialQuery = searchParams.get('q') || '';
+    const initialQuery = searchParams.get('q') || searchParams.get('query') || '';
 
     const [searchMode, setSearchMode] = useState(initialMode);
     const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -88,17 +88,24 @@ const Explore = () => {
     // Đồng bộ searchParams từ URL khi người dùng bấm menu Navbar hoặc Back/Forward
     useEffect(() => {
         const urlMode = searchParams.get('mode') === 'semantic' ? 'semantic' : 'keyword';
-        const urlQuery = searchParams.get('q') || '';
+        const urlQuery = searchParams.get('q') || searchParams.get('query') || '';
+        const urlSlug = searchParams.get('slug');
 
         setSearchMode(urlMode);
         if (urlQuery !== searchQuery) {
             setSearchQuery(urlQuery);
             setActiveSearchQuery(urlQuery);
+            fetchWorks(urlQuery, urlMode);
         }
         if (urlMode === 'keyword') {
             setAiInsight(null);
             setSemanticConcept(null);
             setConceptDescription(null);
+        }
+        if (urlSlug) {
+            literatureService.getWorkBySlug(urlSlug).then((w) => {
+                if (w) setActiveModalWork(w);
+            }).catch(() => {});
         }
     }, [searchParams]);
 

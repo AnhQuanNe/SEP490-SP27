@@ -22,6 +22,11 @@ router.get('/semantic-search', optionalAuth, checkGuestQuota, literatureControll
 // Gợi ý nội dung văn hóa liên quan (UC11 Explore Related Content)
 router.get('/:idOrSlug/related', literatureController.getRelated);
 
+// Đồ thị tri thức văn hóa tương tác (Interactive Cultural Knowledge Graph)
+const knowledgeGraphController = require('../controllers/knowledgeGraph.controller');
+router.get('/knowledge-graph/shortest-path', knowledgeGraphController.getShortestPath);
+router.get('/knowledge-graph', knowledgeGraphController.getGraph);
+
 // Xem chi tiết tác phẩm theo slug (UC08 View Details)
 router.get('/:slug', literatureController.getDetail);
 

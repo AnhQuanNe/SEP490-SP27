@@ -42,6 +42,23 @@ export const aiService = {
         });
         return response.data;
     },
+
+    /**
+     * Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ cho đoạn trích bôi đen
+     */
+    async analyzeSnippet({ snippet, workSlug = null, workTitle = null, analysisType = 'general' }) {
+        const response = await api.post('/ai/analyze-snippet', {
+            snippet,
+            workSlug,
+            workTitle,
+            analysisType,
+        });
+        return {
+            ...(response.data || {}),
+            quota: response.quota || null,
+        };
+    },
 };
+
 
 export default aiService;

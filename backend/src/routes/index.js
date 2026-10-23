@@ -10,6 +10,7 @@ const favoriteRoutes = require('./favorite.routes');
 const searchHistoryRoutes = require('./searchHistory.routes');
 const submissionRoutes = require('./submission.routes');
 const adminRoutes = require('./admin.routes');
+const learningPathRoutes = require('./learningPath.routes');
 const SystemSetting = require('../models/SystemSetting');
 
 router.use('/auth', authRoutes);
@@ -21,6 +22,7 @@ router.use('/favorites', favoriteRoutes);
 router.use('/search-history', searchHistoryRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/admin', adminRoutes);
+router.use('/learning-paths', learningPathRoutes);
 
 // Public settings endpoint (để frontend hiển thị banner thông báo hoặc bật/tắt đóng góp)
 router.get('/settings/public', async (req, res) => {
