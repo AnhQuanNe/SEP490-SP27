@@ -22,7 +22,8 @@ import {
     Eye,
     ThumbsUp,
     RefreshCw,
-    Trophy
+    Trophy,
+    GraduationCap
 } from 'lucide-react';
 import { useAiChat } from '../context/AiChatContext';
 import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
@@ -368,21 +369,24 @@ const Home = () => {
                     </Link>
 
                     {/* Pillar 2 */}
-                    <div className="card-heritage p-7 rounded-2xl group relative overflow-hidden">
+                    <Link
+                        to="/gia-su-ai"
+                        className="card-heritage p-7 rounded-2xl group block text-left relative overflow-hidden"
+                    >
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
                         <div className="w-12 h-12 rounded-xl bg-red-100/70 text-red-900 border border-red-300/50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
-                            <Bot className="w-6 h-6 text-red-800" />
+                            <GraduationCap className="w-6 h-6 text-red-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
-                            Trợ Lý AI Văn Học
+                            Gia Sư Văn Hóa AI
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                            Giải nghĩa từ cổ, điển tích điển cố, tóm tắt tác phẩm và hỗ trợ người học cảm thụ các tầng nghĩa biểu tượng một cách khoa học.
+                            Đồng hành học tập ca dao, tục ngữ theo chủ đề; giải thích nghĩa đen, nghĩa bóng, bài học đạo lý và vận dụng thực tiễn chuẩn xác.
                         </p>
-                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1">
-                            Thử nghiệm AI <ArrowRight className="w-3 h-3" />
+                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1 group-hover:text-amber-800 transition-colors">
+                            Học cùng Gia sư <ArrowRight className="w-3 h-3" />
                         </span>
-                    </div>
+                    </Link>
 
                     {/* Pillar 3 */}
                     <Link
@@ -405,21 +409,24 @@ const Home = () => {
                     </Link>
 
                     {/* Pillar 4 */}
-                    <div className="card-heritage p-7 rounded-2xl group relative overflow-hidden">
+                    <Link
+                        to="/studio-tho"
+                        className="card-heritage p-7 rounded-2xl group block text-left relative overflow-hidden"
+                    >
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
                         <div className="w-12 h-12 rounded-xl bg-amber-100/70 text-amber-900 border border-amber-300/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xs">
                             <Feather className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
-                            Cộng Đồng & Đánh Giá Thơ
+                            Studio Sáng Tác & Thơ Lục Bát
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                            Diễn đàn học thuật dành cho người yêu văn học trao đổi góc nhìn; tính năng AI Poetry Review giúp người sáng tác trau dồi thi luật.
+                            Soát niêm luật Bằng – Trắc chuẩn mực, hiệp vần tự động và nhận đánh giá từ AI Critic; đối câu Bát cùng thi sĩ AI thông minh.
                         </p>
-                        <span className="text-xs font-semibold text-amber-800 inline-flex items-center gap-1">
-                            Gia nhập nhóm <ArrowRight className="w-3 h-3" />
+                        <span className="text-xs font-semibold text-amber-800 inline-flex items-center gap-1 group-hover:text-red-800 transition-colors">
+                            Vào Studio Thơ <ArrowRight className="w-3 h-3" />
                         </span>
-                    </div>
+                    </Link>
                 </div>
             </section>
 

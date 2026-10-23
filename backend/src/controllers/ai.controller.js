@@ -78,8 +78,63 @@ const explain = async (req, res) => {
     }
 };
 
+/**
+ * Lấy danh sách các chủ đề học tập cho Gia sư AI
+ */
+const getTutorTopics = async (req, res) => {
+    try {
+        const topics = await aiService.getTutorTopics();
+        res.status(200).json({
+            success: true,
+            data: topics,
+        });
+    } catch (error) {
+        console.error('[AI Controller] Lỗi lấy chủ đề Gia sư AI:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Không thể tải danh sách chủ đề học tập',
+        });
+    }
+};
+
+/**
+ * Xử lý phiên hỏi đáp & học tập cùng Gia sư văn hóa AI
+ */
+const tutorChat = async (req, res) => {
+    try {
+        const { message, topic, history, selectedWorkSlug } = req.body;
+
+        if (!message || typeof message !== 'string' || message.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp nội dung câu hỏi cho Gia sư văn hóa AI',
+            });
+        }
+
+        const result = await aiService.tutorChat({
+            message,
+            topic,
+            history,
+            selectedWorkSlug,
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        console.error('[AI Controller] Lỗi phiên học tập Gia sư AI:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi kết nối với Gia sư văn hóa AI',
+        });
+    }
+};
+
 module.exports = {
     ask,
     explain,
     getSuggestions,
+    getTutorTopics,
+    tutorChat,
 };

@@ -363,7 +363,9 @@ class LiteratureService {
     async getWorkBySlug(slug) {
         const isObjectId = mongoose.isValidObjectId(slug);
         const query = isObjectId ? { $or: [{ slug }, { _id: slug }] } : { slug };
-        const work = await Work.findOne({ ...query, status: 'published' });
+        const work = await Work.findOne({ ...query, status: 'published' })
+            .populate('locationIds', 'name slug region coordinates')
+            .populate('locationRelations.locationId', 'name slug region coordinates');
         if (work) {
             work.viewsCount += 1;
             await work.save();

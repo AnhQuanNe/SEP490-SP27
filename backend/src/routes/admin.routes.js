@@ -26,4 +26,10 @@ router.delete('/works/:id', adminController.deleteWork);
 router.get('/settings', adminController.getSettings);
 router.put('/settings', adminController.updateSetting);
 
+// Location Management for Cultural Map
+const locationController = require('../controllers/location.controller');
+router.post('/locations', locationController.adminCreate);
+router.put('/locations/:id', locationController.adminUpdate);
+router.delete('/locations/:id', locationController.adminDelete);
+
 module.exports = router;

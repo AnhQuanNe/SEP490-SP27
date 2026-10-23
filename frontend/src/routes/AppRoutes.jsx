@@ -4,6 +4,10 @@ import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
 import LiteratureMap from '../pages/LiteratureMap';
 import HeritageQuiz from '../pages/HeritageQuiz';
+import AiTutor from '../pages/AiTutor';
+import PoetryStudio from '../pages/PoetryStudio';
+import Leaderboard from '../pages/Leaderboard';
+import HeritageArena from '../pages/HeritageArena';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -24,6 +28,11 @@ const AppRoutes = () => {
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
+            <Route path="/gia-su-ai" element={<AiTutor />} />
+            <Route path="/ai-tutor" element={<AiTutor />} />
+            <Route path="/studio-tho" element={<PoetryStudio />} />
+            <Route path="/bang-vang" element={<Leaderboard />} />
+            <Route path="/dau-truong" element={<HeritageArena />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />

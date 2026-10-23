@@ -122,6 +122,31 @@ const workSchema = new mongoose.Schema(
             default: 'published',
             index: true,
         },
+        locationIds: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Location',
+                index: true,
+            },
+        ],
+        locationRelations: [
+            {
+                locationId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Location',
+                },
+                relationType: {
+                    type: String,
+                    enum: ['origin', 'associated', 'circulation', 'unknown'],
+                    default: 'unknown',
+                },
+                notes: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+            },
+        ],
     },
     {
         timestamps: true,

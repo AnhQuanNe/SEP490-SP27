@@ -11,4 +11,8 @@ router.post('/explain', aiController.explain);
 // Lấy danh sách câu hỏi gợi ý khám phá nhanh
 router.get('/suggestions', aiController.getSuggestions);
 
+// Tính năng mới: Gia sư văn hóa AI (AI Cultural Tutor)
+router.get('/tutor/topics', aiController.getTutorTopics);
+router.post('/tutor', aiController.tutorChat);
+
 module.exports = router;

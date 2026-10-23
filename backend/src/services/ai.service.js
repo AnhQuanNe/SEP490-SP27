@@ -49,11 +49,11 @@ const GEMINI_MODELS = [
 /**
  * Gọi Google Gemini API với danh sách model hoạt động thực tế
  */
-async function callGeminiApi({ question, contextText, history = [] }) {
+async function callGeminiApi({ question, contextText, history = [], customInstruction = null }) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
-    const systemInstruction = `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
+    const systemInstruction = customInstruction || `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
 Nhiệm vụ của bạn:
 1. Trả lời câu hỏi một cách thông minh, chuẩn xác, tự nhiên, gần gũi, giàu chất nhân văn và truyền cảm. Luôn trả lời đầy đủ, trọn vẹn, không bao giờ ngắt quãng hay bỏ dở câu giữa chừng.
 2. Hiểu và giải thích cặn kẽ mọi câu hỏi về:
@@ -536,9 +536,349 @@ const getSuggestions = async () => {
     return DEFAULT_SUGGESTIONS;
 };
 
+// =========================================================================
+// FEATURE: AI CULTURAL TUTOR — GIA SƯ VĂN HÓA AI (CA DAO & TỤC NGỮ)
+// =========================================================================
+
+const TUTOR_TOPICS = [
+    {
+        id: 'long-biet-on',
+        name: 'Lòng biết ơn & Cội nguồn',
+        topicKey: 'Lòng biết ơn',
+        icon: 'Heart',
+        description: 'Khám phá truyền thống "Uống nước nhớ nguồn", tri ân công đức tổ tiên, ông bà, cha mẹ và những người giúp đỡ.',
+        sampleQuestions: [
+            'Ý nghĩa câu "Ăn quả nhớ kẻ trồng cây" là gì?',
+            'Tại sao người Việt luôn đặt chữ "Nhớ nguồn" lên hàng đầu?',
+            'Làm thế nào để vận dụng bài học biết ơn trong thời đại ngày nay?'
+        ],
+        keywords: ['biết ơn', 'uống nước nhớ nguồn', 'ăn quả nhớ kẻ trồng cây', 'cội nguồn', 'tổ tiên', 'tri ân']
+    },
+    {
+        id: 'tinh-cam-gia-dinh',
+        name: 'Tình cảm gia đình & Hiếu nghĩa',
+        topicKey: 'Tình cảm gia đình',
+        icon: 'Home',
+        description: 'Học tập đạo làm con, sự hy sinh của cha mẹ, nghĩa vụ anh em ruột thịt và chữ Hiếu thiêng liêng.',
+        sampleQuestions: [
+            'Hình tượng "núi Thái Sơn" và "nước trong nguồn" có ý nghĩa gì?',
+            'Câu ca dao "Anh em như thể tay chân" nhắn nhủ điều gì?',
+            'Đạo hiếu của người Việt xưa và nay có điểm gì tương đồng?'
+        ],
+        keywords: ['gia đình', 'công cha', 'nghĩa mẹ', 'chữ hiếu', 'thái sơn', 'anh em', 'cha mẹ', 'con cái']
+    },
+    {
+        id: 'dao-duc-loi-song',
+        name: 'Đạo đức & Nhân cách sống',
+        topicKey: 'Đạo đức - Lối sống',
+        icon: 'ShieldCheck',
+        description: 'Tìm hiểu chuẩn mực nhân cách, sự trung thực, khiêm tốn, phẩm giá "Đói cho sạch, rách cho thơm".',
+        sampleQuestions: [
+            'Ý nghĩa câu tục ngữ "Đói cho sạch, rách cho thơm"?',
+            'Câu "Gần mực thì đen, gần đèn thì rạng" khuyên ta điều gì?',
+            'Lối sống trọng nghĩa tình thể hiện thế nào trong ứng xử hàng ngày?'
+        ],
+        keywords: ['đạo đức', 'lối sống', 'nhân cách', 'đói cho sạch', 'gần mực thì đen', 'trung thực', 'khiêm tốn']
+    },
+    {
+        id: 'y-chi-hoc-tap',
+        name: 'Ý chí & Tinh thần học tập',
+        topicKey: 'Ý chí - Nghị lực',
+        icon: 'GraduationCap',
+        description: 'Rèn luyện nghị lực kiên trì, tinh thần hiếu học, tôn sư trọng đạo và học tập suốt đời.',
+        sampleQuestions: [
+            'Bài học ý chí từ câu "Có công mài sắt, có ngày nên kim"?',
+            'Ý nghĩa so sánh giữa "học thầy" và "học bạn" trong tục ngữ?',
+            'Làm sao rèn luyện tính kiên nhẫn khi gặp thử thách trong cuộc sống?'
+        ],
+        keywords: ['ý chí', 'học tập', 'nghị lực', 'có công mài sắt', 'học thầy', 'học bạn', 'kiên trì', 'hiếu học']
+    },
+    {
+        id: 'que-huong-doan-ket',
+        name: 'Tình yêu quê hương & Tương thân tương ái',
+        topicKey: 'Đoàn kết - Nhân ái',
+        icon: 'Users',
+        description: 'Khơi dậy tinh thần đại đoàn kết, đồng bào "lá lành đùm lá rách", yêu thương nòi giống Việt.',
+        sampleQuestions: [
+            'Hình tượng "Bầu ơi thương lấy bí cùng" mang thông điệp gì?',
+            'Ý nghĩa của câu "Nhiễu điều phủ lấy giá gương"?',
+            'Tinh thần đoàn kết dân tộc giúp đất nước vượt qua thử thách ra sao?'
+        ],
+        keywords: ['đoàn kết', 'tương thân tương ái', 'bầu ơi thương lấy bí cùng', 'nhiễu điều', 'lá lành đùm lá rách', 'quê hương', 'đồng bào']
+    }
+];
+
+const UNRELATED_PATTERNS = [
+    /\b(bitcoin|crypto|chung\s+khoan|co\s+phieu|tien\s+ao|forex)\b/i,
+    /\b(viet\s+code|lap\s+trinh|javascript|python|java|html|css|react|nodejs|c\+\+|sql)\b/i,
+    /\b(giai\s+toan|phuong\s+trinh|dao\s+ham|tich\s+phan|hinh\s+hoc|tam\s+giac)\b/i,
+    /\b(choi\s+game|lien\s+quan|lien\s+minh|pubg|fifa|game\s+thu)\b/i,
+    /\b(thoi\s+tiet\s+ngay\s+mai|du\s+bao\s+thoi\s+tiet|gia\s+vang|ti\s+so\s+bong\s+da)\b/i,
+];
+
+function isUnrelatedQuery(text) {
+    const clean = removeVietnameseTones(text).trim().toLowerCase();
+    // Ngoại lệ nếu có nhắc đến văn hóa, ca dao, tục ngữ
+    if (clean.includes('ca dao') || clean.includes('tuc ngu') || clean.includes('van hoa') || clean.includes('van hoc') || clean.includes('y nghia')) {
+        return false;
+    }
+    return UNRELATED_PATTERNS.some((p) => p.test(clean));
+}
+
+/**
+ * Lấy danh sách các chủ đề học tập cho Gia sư AI
+ */
+const getTutorTopics = async () => {
+    return TUTOR_TOPICS;
+};
+
+/**
+ * Động cơ tổng hợp bài giảng sư phạm nội bộ khi không có Gemini API
+ */
+function synthesizeTutorAnswer({ question, primaryWork, candidateWorks, topicInfo }) {
+    if (!primaryWork && (!candidateWorks || candidateWorks.length === 0)) {
+        return {
+            reply: `Chào bạn! Tôi là **Gia sư văn hóa AI** của VietHeritage. 
+
+Về câu hỏi: *"${question}"*, hiện tại tôi chưa tìm thấy tài liệu văn bản ca dao hoặc tục ngữ cụ thể trực tiếp trong kho tàng dữ liệu số. 
+
+💡 **Gợi ý học tập cho bạn:**
+- Bạn có thể chọn một trong 5 chủ đề tiêu biểu ở thanh điều hướng: **Lòng biết ơn, Tình cảm gia đình, Đạo đức & Lối sống, Ý chí học tập, Đoàn kết quê hương**.
+- Hoặc bạn có thể bấm vào một trong các câu hỏi gợi ý bên dưới để cùng tôi khám phá nhé!`,
+            citations: [],
+            suggestedQuestions: topicInfo?.sampleQuestions || [
+                'Ý nghĩa câu "Ăn quả nhớ kẻ trồng cây" là gì?',
+                'Hình tượng "núi Thái Sơn" và "nước trong nguồn" có ý nghĩa gì?',
+                'Bài học ý chí từ câu "Có công mài sắt, có ngày nên kim"?'
+            ],
+            isCultural: true,
+            sourceType: 'tutor_local_engine',
+        };
+    }
+
+    const work = primaryWork || candidateWorks[0];
+    const categoryLabel = work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ Việt Nam' : 'Ca dao Việt Nam');
+
+    const reply = `Xin chào bạn! Với vai trò là **Gia sư văn hóa AI**, tôi rất vui được cùng bạn phân tích và tìm hiểu sâu sắc về: **"${work.title}"** (${categoryLabel}).
+
+${work.quote ? `> *"${work.quote}"*\n` : ''}
+### 1. Ý nghĩa cốt lõi:
+- **Nghĩa đen (Nghĩa hiển ngôn):** ${work.literalMeaning || work.summary || 'Hình ảnh mộc mạc, gần gũi xuất phát từ đời sống lao động và sinh hoạt hằng ngày của người Việt.'}
+- **Nghĩa bóng (Nghĩa hàm ẩn):** ${work.figurativeMeaning || work.thematicMeaning || 'Gửi gắm triết lý nhân sinh sâu sắc, khẳng định các giá trị chân - thiện - mỹ trong văn hóa dân tộc.'}
+
+### 2. Bài học đạo lý & Giáo dục nhân cách:
+${work.lesson || 'Nhắc nhở mỗi cá nhân giữ gìn đạo lý sống có trước có sau, trân trọng cội nguồn và rèn luyện đạo đức.'}
+
+### 3. Vận dụng thực tiễn trong đời sống hiện đại:
+- **Trong giao tiếp & ứng xử:** Biết nói lời cảm ơn chân thành, đối xử khiêm nhường, luôn trân quý công sức của những người đã nâng đỡ mình.
+- **Trong học tập & công việc:** Giữ vững tinh thần trách nhiệm, gắn kết đồng đội, kiên trì theo đuổi mục tiêu và không ngại gian khổ.
+- **Trong gia đình & cộng đồng:** Thực hành chữ Hiếu với cha mẹ, chia sẻ với những hoàn cảnh khó khăn và gìn giữ nếp nhà hòa thuận.
+
+### 4. Nguồn gốc & Tư liệu kiểm chứng:
+- **Tác phẩm lưu trữ:** ${work.title}
+- **Chủ đề văn hóa:** ${work.topic || 'Văn học Dân gian'}
+- **Nguồn học thuật kiểm chứng:** ${work.source || 'Kho tàng Văn học Dân gian Việt Nam — NXB Giáo dục.'}
+
+*(Lưu ý: Nội dung trích dẫn nguồn trên được đối chiếu trực tiếp từ cơ sở dữ liệu học thuật VietHeritage AI; phần phân tích mở rộng được thực hiện bởi Gia sư văn hóa AI).*`;
+
+    const suggestedQuestions = [
+        `Làm sao để vận dụng bài học của "${work.title}" vào môi trường làm việc hiện nay?`,
+        `Còn câu ca dao hay tục ngữ nào cùng chủ đề "${work.topic || 'này'}" không?`,
+        `Bối cảnh lịch sử ra đời của câu "${work.title}" có gì đặc biệt?`
+    ];
+
+    return {
+        reply,
+        suggestedQuestions,
+        isCultural: true,
+        sourceType: 'tutor_local_engine',
+    };
+}
+
+/**
+ * Xử lý phiên học tập và hội thoại cùng Gia sư văn hóa AI
+ */
+const tutorChat = async ({ message, topic = null, history = [], selectedWorkSlug = null }) => {
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+        throw new Error('Vui lòng nhập nội dung câu hỏi cho Gia sư văn hóa AI');
+    }
+
+    const cleanMsg = message.trim();
+
+    // 1. Kiểm tra nếu câu hỏi hoàn toàn không liên quan đến văn hóa/văn học
+    if (isUnrelatedQuery(cleanMsg)) {
+        return {
+            reply: `Chào bạn! Tôi là **Gia sư văn hóa AI** của nền tảng VietHeritage AI, chuyên đồng hành cùng bạn học tập, tìm hiểu về **Ca dao, Tục ngữ và Di sản Văn hóa Việt Nam**.
+
+Câu hỏi của bạn dường như chưa thuộc phạm vi văn hóa, văn học hoặc đạo lý truyền thống dân tộc. 
+
+🌿 **Bạn có thể khám phá cùng tôi:**
+1. **Giải nghĩa ca dao, tục ngữ:** Nghĩa đen, nghĩa bóng, bài học đạo đức và cách ứng dụng vào đời sống hiện đại.
+2. **Khám phá theo 5 chủ đề trọng tâm:** Lòng biết ơn, Tình cảm gia đình, Đạo đức & Lối sống, Ý chí học tập, Đoàn kết quê hương.
+3. **Tra cứu nguồn gốc:** Các tài liệu học thuật kiểm chứng được lưu trữ trong hệ thống.
+
+Bạn hãy chọn một trong các câu hỏi gợi ý bên dưới hoặc hỏi tôi về một câu ca dao cụ thể nhé!`,
+            relatedWorks: [],
+            citations: [],
+            suggestedQuestions: [
+                'Ý nghĩa câu "Uống nước nhớ nguồn" là gì?',
+                'Tại sao tục ngữ nói "Có công mài sắt, có ngày nên kim"?',
+                'Câu ca dao nào răn dạy sâu sắc nhất về ơn nghĩa cha mẹ?'
+            ],
+            activeTopic: null,
+            isCultural: false,
+            sourceType: 'unrelated_topic_guard',
+        };
+    }
+
+    // 2. Xác định chủ đề tương ứng (nếu có)
+    let topicInfo = null;
+    if (topic) {
+        topicInfo = TUTOR_TOPICS.find((t) => t.id === topic || t.name === topic || t.topicKey === topic);
+    }
+
+    // 3. Truy vấn kho dữ liệu Work (MongoDB) để lấy các tư liệu học thuật kiểm chứng
+    let primaryWork = null;
+    let candidateWorks = [];
+
+    if (selectedWorkSlug) {
+        primaryWork = await Work.findOne({ slug: selectedWorkSlug, status: 'published' }).lean();
+    }
+
+    // Tìm kiếm tác phẩm liên quan dựa trên tên hoặc từ khóa câu hỏi
+    const regex = buildVietnameseRegex(cleanMsg);
+    if (regex) {
+        candidateWorks = await Work.find({
+            $or: [
+                { title: regex },
+                { quote: regex },
+                { tags: regex },
+                { topic: regex },
+                { summary: regex },
+            ],
+            status: 'published',
+        })
+            .limit(4)
+            .lean();
+    }
+
+    // Nếu chưa có tác phẩm và có topicInfo, lấy các tác phẩm thuộc topic đó từ DB
+    if ((!candidateWorks || candidateWorks.length === 0) && topicInfo) {
+        const topicRegex = buildVietnameseRegex(topicInfo.topicKey);
+        candidateWorks = await Work.find({
+            $or: [
+                { topic: topicRegex },
+                { tags: topicRegex },
+            ],
+            status: 'published',
+        })
+            .limit(4)
+            .lean();
+    }
+
+    if (!primaryWork && candidateWorks.length > 0) {
+        primaryWork = candidateWorks[0];
+    }
+
+    // Lập danh sách tác phẩm liên quan duy nhất
+    const allRelevantWorks = primaryWork
+        ? [primaryWork, ...candidateWorks.filter((w) => w._id.toString() !== primaryWork._id.toString())].slice(0, 4)
+        : candidateWorks.slice(0, 4);
+
+    // Chuẩn bị danh sách trích dẫn nguồn học thuật kiểm chứng
+    const citations = allRelevantWorks.map((w) => ({
+        title: w.title,
+        slug: w.slug,
+        category: w.category,
+        categoryName: w.categoryName,
+        source: w.source,
+        author: w.author,
+        topic: w.topic,
+    }));
+
+    // 4. Nếu có Gemini API Key, gọi LLM với chỉ dẫn sư phạm chuyên sâu của Gia sư văn hóa
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+        const contextText = allRelevantWorks
+            .map(
+                (w, i) => `[Tư liệu kiểm chứng ${i + 1} từ Database]:
+- Tên tác phẩm / Câu: ${w.title} (${w.categoryName || w.category})
+- Trích dẫn câu đầy đủ: ${w.quote || w.title}
+- Chủ đề: ${w.topic || 'Văn hóa Dân gian'}
+- Nghĩa đen đã ghi nhận: ${w.literalMeaning || w.summary}
+- Nghĩa bóng đã ghi nhận: ${w.figurativeMeaning || w.thematicMeaning}
+- Bài học đã ghi nhận: ${w.lesson || 'N/A'}
+- Nguồn học thuật kiểm chứng: ${w.source}`
+            )
+            .join('\n\n');
+
+        const tutorInstruction = `Bạn là "Gia sư văn hóa AI" (AI Cultural Tutor) của nền tảng VietHeritage AI, đồng hành và truyền cảm hứng về Ca dao, Tục ngữ và Di sản Văn hóa Việt Nam.
+
+MỤC TIÊU SƯ PHẠM:
+1. Giải thích cho người học một cách ân cần, mạch lạc, hấp dẫn và uyên bác.
+2. Luôn cấu trúc câu trả lời theo 4 phần rõ ràng:
+   - **1. Ý nghĩa cốt lõi (Nghĩa đen & Nghĩa bóng)**: Làm sáng tỏ hình ảnh thực tế và ẩn dụ triết lý.
+   - **2. Bài học đạo lý & Giáo dục nhân cách**: Nêu bật giá trị sống và đạo đức làm người.
+   - **3. Vận dụng thực tiễn trong đời sống hiện đại**: Hướng dẫn cách áp dụng vào giao tiếp gia đình, học tập, công việc và đối nhân xử thế.
+   - **4. Nguồn gốc & Tư liệu kiểm chứng**: Trích dẫn chính xác nguồn sách/học giả được cung cấp trong [Tư liệu kiểm chứng từ Database].
+3. NGUYÊN TẮC BẢO TOÀN TƯ LIỆU:
+   - Phân biệt rõ tư liệu đã có trong cơ sở dữ liệu và diễn giải mở rộng của bạn.
+   - TUYỆT ĐỐI KHÔNG tự tạo tên sách, tác giả hoặc URL kiểm chứng giả mạo.
+   - Nếu câu hỏi vượt ngoài dữ liệu có sẵn, hãy khiêm tốn nêu rõ giới hạn tư liệu và phân tích dựa trên tri thức dân gian học phổ quát.`;
+
+        const geminiAnswer = await callGeminiApi({
+            question: cleanMsg,
+            contextText,
+            history,
+            customInstruction: tutorInstruction,
+        });
+
+        if (geminiAnswer) {
+            const followUps = primaryWork
+                ? [
+                      `Làm thế nào để vận dụng bài học của "${primaryWork.title}" vào đời sống hằng ngày?`,
+                      `Có câu ca dao, tục ngữ nào cùng chủ đề "${primaryWork.topic || 'này'}" không?`,
+                      `Ý nghĩa của câu này trong bối cảnh xã hội xưa và nay khác nhau ra sao?`
+                  ]
+                : topicInfo?.sampleQuestions || [
+                      'Ý nghĩa câu "Ăn quả nhớ kẻ trồng cây" là gì?',
+                      'Hình tượng "núi Thái Sơn" và "nước trong nguồn" có ý nghĩa gì?',
+                      'Bài học ý chí từ câu "Có công mài sắt, có ngày nên kim"?'
+                  ];
+
+            return {
+                reply: geminiAnswer,
+                relatedWorks: allRelevantWorks,
+                citations,
+                suggestedQuestions: followUps,
+                activeTopic: topicInfo,
+                isCultural: true,
+                sourceType: 'gemini_tutor',
+            };
+        }
+    }
+
+    // 5. Fallback về động cơ sư phạm nội bộ (chạy mượt mà 100% không lo lỗi mạng hay quota)
+    const localResult = synthesizeTutorAnswer({
+        question: cleanMsg,
+        primaryWork,
+        candidateWorks: allRelevantWorks,
+        topicInfo,
+    });
+
+    return {
+        ...localResult,
+        relatedWorks: allRelevantWorks,
+        citations,
+        activeTopic: topicInfo,
+    };
+};
+
 module.exports = {
     askAssistant,
     explainWork,
     getSuggestions,
+    getTutorTopics,
+    tutorChat,
 };
 

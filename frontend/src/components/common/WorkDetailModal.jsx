@@ -245,6 +245,47 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                 </div>
                             )}
 
+                            {/* Địa phương liên quan và loại quan hệ địa lý (MAP05) */}
+                            {((current.locationRelations && current.locationRelations.length > 0) || (current.locationIds && current.locationIds.length > 0)) && (
+                                <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-2.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">
+                                        <MapPin className="w-4 h-4 text-amber-600" />
+                                        Địa phương liên quan & Không gian văn hóa
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {(current.locationRelations && current.locationRelations.length > 0
+                                            ? current.locationRelations
+                                            : (current.locationIds || []).map((loc) => ({ locationId: loc, relationType: 'unknown', notes: '' }))
+                                        ).map((rel, idx) => {
+                                            const locName = rel.locationId?.name || rel.name || (typeof rel.locationId === 'string' ? rel.locationId : 'Địa phương');
+                                            const relType = rel.relationType || 'unknown';
+                                            const badgeConfig = {
+                                                origin: { label: 'Nơi khởi nguồn', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+                                                associated: { label: 'Gắn liền địa danh', color: 'bg-amber-100 text-amber-900 border-amber-300' },
+                                                circulation: { label: 'Vùng lưu truyền', color: 'bg-blue-100 text-blue-900 border-blue-300' },
+                                                unknown: { label: 'Chưa rõ', color: 'bg-slate-100 text-slate-800 border-slate-300' },
+                                            }[relType] || { label: 'Liên quan', color: 'bg-slate-100 text-slate-800 border-slate-300' };
+
+                                            return (
+                                                <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 p-2.5 rounded-xl bg-white border border-amber-200/50 text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-slate-900">{locName}</span>
+                                                        <span className={`px-2 py-0.5 rounded-md font-semibold text-[11px] border ${badgeConfig.color}`}>
+                                                            {badgeConfig.label}
+                                                        </span>
+                                                    </div>
+                                                    {rel.notes && (
+                                                        <span className="text-slate-500 text-[11px] italic">
+                                                            {rel.notes}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Nguồn tham khảo kiểm chứng học thuật (Bắt buộc) */}
                             <div className="p-4 rounded-2xl bg-slate-100/80 border border-slate-200/80 flex items-start gap-3">
                                 <ShieldCheck className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
