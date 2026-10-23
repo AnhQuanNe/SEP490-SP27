@@ -7,9 +7,12 @@ const AiChatContext = createContext(null);
 export const AiChatProvider = ({ children }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [contextWork, setContextWork] = useState(null);
+    const [initialQuestion, setInitialQuestion] = useState(null);
 
-    const openAiChat = (work = null) => {
+    const openAiChat = (work = null, question = null) => {
         if (work) setContextWork(work);
+        if (question) setInitialQuestion(question);
+        else setInitialQuestion(null);
         setIsOpen(true);
     };
 
@@ -19,6 +22,7 @@ export const AiChatProvider = ({ children }) => {
 
     const closeAiChat = () => {
         setIsOpen(false);
+        setInitialQuestion(null);
     };
 
     return (
@@ -26,6 +30,7 @@ export const AiChatProvider = ({ children }) => {
             value={{
                 isOpen,
                 contextWork,
+                initialQuestion,
                 openAiChat,
                 toggleAiChat,
                 closeAiChat,
@@ -38,7 +43,9 @@ export const AiChatProvider = ({ children }) => {
                 isOpen={isOpen}
                 onClose={closeAiChat}
                 initialWork={contextWork}
+                initialQuestion={initialQuestion}
             />
+
 
             {/* Modern Floating Chat Bubble Button */}
             <button

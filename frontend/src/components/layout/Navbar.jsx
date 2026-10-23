@@ -22,7 +22,9 @@ import {
     Swords,
     ChevronRight,
     Layers,
-    Map
+    Map,
+    Bot,
+    Share2
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -49,6 +51,8 @@ const Navbar = () => {
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map },
+        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2 },
+        { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy },
         { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap },
         { name: 'Trợ lý AI', isAction: true, icon: Sparkles },
     ];
@@ -62,6 +66,7 @@ const Navbar = () => {
                 { name: 'Trang chủ', path: '/', icon: BookOpen, desc: 'Tổng quan di sản & nổi bật' },
                 { name: 'Kho tàng Di sản', path: '/kham-pha', icon: Compass, desc: 'Ca dao, tục ngữ & văn học dân gian' },
                 { name: 'Bản đồ Văn hóa', path: '/ban-do', icon: Map, desc: 'Không gian văn hóa & địa danh 3 miền', badge: 'Mới', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
+                { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', icon: Share2, desc: 'Mạng lưới liên kết tác phẩm & nhân vật', badge: 'Graph', badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
                 { name: 'Gia sư AI Di sản', path: '/gia-su-ai', icon: GraduationCap, desc: 'Hỏi đáp văn hóa & điển tích xưa', badge: 'AI' },
             ]
         },
@@ -88,7 +93,10 @@ const Navbar = () => {
             items: [
                 { name: 'Mục yêu thích', path: '/yeu-thich', icon: Heart, desc: 'Tác phẩm ca dao đã lưu trữ' },
                 { name: 'Lịch sử tra cứu', path: '/lich-su', icon: History, desc: 'Hồ sơ tìm kiếm gần đây' },
-                ...(isAuthenticated ? [{ name: 'Hồ sơ cá nhân', path: '/profile', icon: User, desc: 'Thông tin tài khoản & danh hiệu' }] : []),
+                ...(isAuthenticated ? [
+                    { name: 'Lộ trình học cá nhân', path: '/lo-trinh-hoc', icon: GraduationCap, desc: 'Kế hoạch học tập & tiến độ' },
+                    { name: 'Hồ sơ cá nhân', path: '/profile', icon: User, desc: 'Thông tin tài khoản & danh hiệu' }
+                ] : []),
                 ...(user?.role === 'admin' ? [{ name: 'Cổng Quản trị (Admin)', path: '/admin', icon: ShieldCheck, desc: 'Quản lý kho tư liệu & người dùng', badge: 'Admin', badgeColor: 'bg-purple-100 text-purple-900 border-purple-300' }] : []),
             ]
         }
@@ -212,8 +220,8 @@ const Navbar = () => {
                         </div>
 
                         {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (CHỈ GIỮ LẠI CÁC MỤC CỐT LÕI) */}
-                        <nav 
-                            aria-label="Menu điều hướng chính" 
+                        <nav
+                            aria-label="Menu điều hướng chính"
                             className="hidden md:flex items-center space-x-1.5 lg:space-x-2"
                         >
                             {primaryHeaderItems.map((item) => {
@@ -294,6 +302,15 @@ const Navbar = () => {
                                             </div>
 
                                             <div className="py-1">
+                                                <Link
+                                                    to="/lo-trinh-hoc"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="flex items-center px-4 py-2.5 text-xs font-semibold text-stone-700 hover:text-red-950 hover:bg-amber-50/80 transition-colors"
+                                                >
+                                                    <GraduationCap className="w-4 h-4 mr-3 text-amber-700" />
+                                                    Lộ trình học cá nhân
+                                                </Link>
+
                                                 <Link
                                                     to="/profile"
                                                     onClick={() => setDropdownOpen(false)}

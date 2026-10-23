@@ -10,7 +10,10 @@ export const aiService = {
             contextSlug,
             history,
         });
-        return response.data;
+        return {
+            ...(response.data || {}),
+            quota: response.quota || null,
+        };
     },
 
     /**
@@ -41,6 +44,42 @@ export const aiService = {
         });
         return response.data;
     },
+
+    /**
+     * Lấy thông tin số lượt AI còn lại trong ngày của Guest
+     */
+    async getQuota() {
+        const response = await api.get('/ai/quota');
+        return response;
+    },
+
+    /**
+     * Trợ lý AI hỗ trợ người dùng phân tích 4 tầng nghĩa khi đóng góp câu ca dao, tục ngữ
+     */
+    async draftSubmission({ title, category = 'ca-dao' }) {
+        const response = await api.post('/ai/draft-submission', {
+            title,
+            category,
+        });
+        return response.data;
+    },
+
+    /**
+     * Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ cho đoạn trích bôi đen
+     */
+    async analyzeSnippet({ snippet, workSlug = null, workTitle = null, analysisType = 'general' }) {
+        const response = await api.post('/ai/analyze-snippet', {
+            snippet,
+            workSlug,
+            workTitle,
+            analysisType,
+        });
+        return {
+            ...(response.data || {}),
+            quota: response.quota || null,
+        };
+    },
 };
+
 
 export default aiService;

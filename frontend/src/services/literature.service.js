@@ -66,6 +66,7 @@ export const literatureService = {
             semanticConcept: response.semanticConcept,
             conceptDescription: response.conceptDescription,
             pagination: response.pagination || { total: 0, page: 1, limit, totalPages: 1 },
+            quota: response.quota || null,
         };
     },
 
@@ -82,6 +83,22 @@ export const literatureService = {
      */
     async explainWork({ workId, slug }) {
         const response = await api.post('/ai/explain', { workId, slug });
+        return response.data;
+    },
+
+    /**
+     * Lấy toàn bộ dữ liệu Đồ thị Tri thức Dân gian (Nodes, Links, Summary, Categories)
+     */
+    async getKnowledgeGraph() {
+        const response = await api.get('/literature/knowledge-graph');
+        return response.data;
+    },
+
+    /**
+     * Tìm đường đi văn hóa ngắn nhất giữa 2 thực thể tri thức (BFS Shortest Path)
+     */
+    async getKnowledgeGraphShortestPath(source, target) {
+        const response = await api.get(`/literature/knowledge-graph/shortest-path?source=${encodeURIComponent(source)}&target=${encodeURIComponent(target)}`);
         return response.data;
     },
 };

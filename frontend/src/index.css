@@ -64,6 +64,15 @@
   background: #8b1818;
 }
 
+/* Hide scrollbar for clean UI while keeping scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ========================================================
    VIETNAMESE TRADITIONAL DESIGN ELEMENTS & PATTERNS
    ======================================================== */

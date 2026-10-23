@@ -1,0 +1,100 @@
+/* Styling cho Lộ trình học văn hóa cá nhân hóa VietHeritage AI */
+
+.heritage-gradient-bg {
+    background: radial-gradient(circle at 10% 20%, rgba(139, 24, 24, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(217, 119, 6, 0.06) 0%, transparent 40%),
+                #fffdf9;
+}
+
+.heritage-card {
+    background: #ffffff;
+    border: 1px solid rgba(180, 83, 9, 0.2);
+    box-shadow: 0 4px 20px -2px rgba(139, 24, 24, 0.04);
+    transition: all 0.2s ease-in-out;
+}
+
+.heritage-card:hover {
+    border-color: rgba(180, 83, 9, 0.4);
+    box-shadow: 0 8px 25px -4px rgba(139, 24, 24, 0.08);
+}
+
+.heritage-quote-box {
+    position: relative;
+    background: linear-gradient(135deg, #fefbf6 0%, #fff7ed 100%);
+    border-left: 4px solid #b45309;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.heritage-quote-box::before {
+    content: "“";
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    font-size: 3rem;
+    color: rgba(180, 83, 9, 0.15);
+    font-family: serif;
+    line-height: 1;
+}
+
+.quiz-option-btn {
+    transition: all 0.15s ease-in-out;
+    border: 1.5px solid #e5e7eb;
+}
+
+.quiz-option-btn:hover:not(:disabled) {
+    border-color: #d97706;
+    background-color: #fffbeb;
+}
+
+.quiz-option-btn.selected {
+    border-color: #b45309;
+    background-color: #fef3c7;
+    font-weight: 600;
+}
+
+.quiz-option-btn.correct {
+    border-color: #16a34a;
+    background-color: #f0fdf4;
+    color: #15803d;
+}
+
+.quiz-option-btn.wrong {
+    border-color: #dc2626;
+    background-color: #fef2f2;
+    color: #b91c1c;
+}
+
+.timeline-step-active {
+    border-color: #b45309;
+    background: #fef3c7;
+    color: #92400e;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.timeline-step-completed {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.timeline-step-locked {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+    color: #9ca3af;
+}
+
+.pulse-subtle {
+    animation: pulseSubtle 2.5s infinite;
+}
+
+@keyframes pulseSubtle {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.85;
+        transform: scale(1.02);
+    }
+}

@@ -35,7 +35,6 @@ const GoogleLoginButton = ({ onSuccess, onError, text = 'signin_with' }) => {
                 window.google.accounts.id.renderButton(buttonRef.current, {
                     theme: 'outline',
                     size: 'large',
-                    width: '100%',
                     text: text, // 'signin_with' | 'signup_with' | 'continue_with'
                     shape: 'rectangular',
                     logo_alignment: 'left',

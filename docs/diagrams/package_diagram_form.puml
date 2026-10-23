@@ -1,0 +1,110 @@
+@startuml VietHeritage_AI_Package_Diagram
+skinparam packageStyle folder
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 11
+skinparam roundcorner 5
+
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+    FontColor #000000
+    FontStyle bold
+}
+
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+}
+
+skinparam arrow {
+    Color #555555
+    FontColor #333333
+    FontSize 10
+}
+
+package "Frontend" {
+    package "pages" as pages {
+        package "AdminPages" as AdminPages {
+        }
+        package "CustomerPages" as CustomerPages {
+        }
+        package "StaffPages" as StaffPages {
+        }
+        package "LoginPage" as LoginPage {
+        }
+        package "RegisterPage" as RegisterPage {
+        }
+        package "VerifyEmailPage" as VerifyEmailPage {
+        }
+    }
+
+    package "components" as components {
+        package "comp_admin\nadmin" as comp_admin {
+        }
+        package "comp_auth\nauth" as comp_auth {
+        }
+        package "comp_common\ncommon" as comp_common {
+        }
+        package "comp_customer\ncustomer" as comp_customer {
+        }
+        package "comp_literature\nliterature" as comp_literature {
+        }
+        package "comp_staff\nstaff" as comp_staff {
+        }
+    }
+
+    package "fe_hooks\nhooks" as fe_hooks {
+    }
+    package "fe_utils\nutils" as fe_utils {
+    }
+    package "fe_styles\nstyles" as fe_styles {
+    }
+    package "fe_context\ncontext" as fe_context {
+    }
+    package "fe_services\nservices" as fe_services {
+    }
+}
+
+package "Backend" as Backend {
+    package "be_config\nconfig" as be_config {
+    }
+    package "be_routes\nroutes" as be_routes {
+    }
+    package "be_api\napi" as be_api {
+    }
+
+    package "be_controllers\ncontrollers" as be_controllers {
+    }
+
+    package "be_models\nmodels" as be_models {
+    }
+    package "be_middleware\nmiddleware" as be_middleware {
+    }
+    package "be_sockets\nsockets" as be_sockets {
+    }
+}
+
+database "MongoDB" as MongoDB
+
+' ==========================================
+' Mối quan hệ và luồng phụ thuộc (Dependencies)
+' ==========================================
+pages ..> components : use
+components ..> fe_context : use
+components ..> fe_services : use
+
+pages ..> Backend : REST API
+
+fe_services ..> be_config : configuration
+fe_services ..> be_controllers : business logic
+
+be_routes ..> be_controllers : route requests
+be_controllers ..> be_models : CRUD
+be_controllers ..> be_middleware : authorize
+be_controllers ..> be_sockets : realtime updates
+
+be_models ..> MongoDB : store data
+
+@enduml

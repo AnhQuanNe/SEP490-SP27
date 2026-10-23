@@ -1,0 +1,168 @@
+@startuml VietHeritage_Database_Design
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 11
+skinparam roundcorner 8
+skinparam linetype ortho
+
+' Styling cho Package các phân hệ
+skinparam package {
+    BorderThickness 1.5
+    FontColor #0F172A
+    FontStyle bold
+    FontSize 12
+}
+
+' Styling cho Entity / Table
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #334155
+    BorderThickness 1.2
+    FontColor #0F172A
+    HeaderBackgroundColor #F1F5F9
+}
+
+title **THIẾT KẾ CƠ SỞ DỮ LIỆU HỆ THỐNG VIETHERITAGE AI (DATABASE ERD DESIGN)**\nCơ sở dữ liệu NoSQL: MongoDB (Mongoose ODM) — Phân tách theo miền nghiệp vụ
+
+' ====================================================================
+' PHÂN HỆ 1: TÀI KHOẢN & XÁC THỰC
+' ====================================================================
+package "1. Quản lý Tài khoản & Phân quyền (User & Auth)" as ModuleUser #F0FDF4 {
+    entity "users" as users {
+        * **_id** : ObjectId <<PK>>
+        --
+        * name : String
+        * email : String <<Unique>>
+        password : String (Bcrypt hash)
+        avatar : String
+        phone : String
+        address : String
+        role : Enum('customer', 'staff', 'admin')
+        isVerified : Boolean
+        googleId : String
+        verificationCode : String
+        verificationExpires : Date
+        resetPasswordToken : String
+        resetPasswordExpires : Date
+        createdAt : Date
+        updatedAt : Date
+    }
+}
+
+' ====================================================================
+' PHÂN HỆ 2: KHO TÀNG DI SẢN VĂN HỌC & DÂN GIAN
+' ====================================================================
+package "2. Kho tàng Di sản Văn học (Literature Archive)" as ModuleLiterature #EFF6FF {
+    entity "works" as works {
+        * **_id** : ObjectId <<PK>>
+        --
+        * title : String <<Text Index>>
+        * slug : String <<Unique, Index>>
+        * category : Enum('than-thoai', 'truyen-thuyet', 'co-tich', 'ca-dao', 'tuc-ngu', 'trung-dai', 'hien-dai', 'khac')
+        * categoryName : String
+        * period : String
+        region : String
+        author : String
+        * summary : String
+        quote : String
+        content : String
+        historicalContext : String
+        thematicMeaning : String
+        * source : String (Học thuật kiểm chứng)
+        tags : Array<String>
+        readTime : String
+        viewsCount : Number
+        likesCount : Number
+        isFeatured : Boolean
+        status : Enum('published', 'draft', 'archived')
+        createdAt : Date
+        updatedAt : Date
+    }
+}
+
+' ====================================================================
+' PHÂN HỆ 3: TƯƠNG TÁC ĐỘC GIẢ & ĐÓNG GÓP NGỮ LIỆU
+' ====================================================================
+package "3. Tương tác & Đóng góp Cộng đồng (Community & Contributions)" as ModuleCommunity #FEFCE8 {
+    entity "favorites" as favorites {
+        * **_id** : ObjectId <<PK>>
+        --
+        * **user** : ObjectId <<FK -> users._id, Index>>
+        * **work** : ObjectId <<FK -> works._id, Index>>
+        createdAt : Date
+        updatedAt : Date
+    }
+
+    entity "contentsubmissions" as submissions {
+        * **_id** : ObjectId <<PK>>
+        --
+        * **user** : ObjectId <<FK -> users._id, Index>>
+        * title : String (Câu ca dao / Tục ngữ)
+        * category : Enum('ca-dao', 'tuc-ngu', 'than-thoai', 'truyen-thuyet', 'co-tich', 'khac')
+        topic : String
+        summary : String
+        * meaning : String
+        literalMeaning : String
+        figurativeMeaning : String
+        lesson : String
+        historicalContext : String
+        region : String
+        * source : String
+        status : Enum('pending', 'approved', 'rejected')
+        adminNote : String
+        reviewedBy : ObjectId <<FK -> users._id>>
+        reviewedAt : Date
+        publishedWorkId : ObjectId <<FK -> works._id>>
+        createdAt : Date
+        updatedAt : Date
+    }
+}
+
+' ====================================================================
+' PHÂN HỆ 4: NHẬT KÝ TRA CỨU & CẤU HÌNH HỆ THỐNG
+' ====================================================================
+package "4. Nhật ký Tra cứu & Quản trị Hệ thống (Search & Governance)" as ModuleSystem #FAF5FF {
+    entity "searchhistories" as history {
+        * **_id** : ObjectId <<PK>>
+        --
+        * **user** : ObjectId <<FK -> users._id, Index>>
+        * query : String (Từ khóa / Ngữ nghĩa)
+        searchType : Enum('keyword', 'semantic')
+        resultsCount : Number
+        createdAt : Date
+        updatedAt : Date
+    }
+
+    entity "systemsettings" as settings {
+        * **_id** : ObjectId <<PK>>
+        --
+        * key : String <<Unique>>
+        * value : Mixed (JSON/Boolean/String)
+        description : String
+        category : String ('general', 'ai', 'security')
+        updatedBy : ObjectId <<FK -> users._id>>
+        createdAt : Date
+        updatedAt : Date
+    }
+}
+
+' ====================================================================
+' QUAN HỆ GIỮA CÁC COLLECTION (ENTITY RELATIONSHIPS)
+' ====================================================================
+' 1. User lưu tác phẩm yêu thích
+users ||--o{ favorites : "1..* (lưu yêu thích)"
+works ||--o{ favorites : "1..* (được yêu thích)"
+
+' 2. User gửi bài đóng góp ngữ liệu
+users ||--o{ submissions : "1..* (tác giả đóng góp)"
+users |o--o{ submissions : "0..* (admin duyệt [reviewedBy])"
+works |o..o| submissions : "0..1 (liên kết xuất bản [publishedWorkId])"
+
+' 3. User thực hiện tìm kiếm
+users ||--o{ history : "1..* (lưu lịch sử tra cứu)"
+
+' 4. Admin quản lý cấu hình hệ thống
+users |o--o{ settings : "0..* (cập nhật cài đặt [updatedBy])"
+
+@enduml

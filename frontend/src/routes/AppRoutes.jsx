@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
 import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
-import LiteratureMap from '../pages/LiteratureMap';
+import KnowledgeGraph from '../pages/KnowledgeGraph';
 import HeritageQuiz from '../pages/HeritageQuiz';
 import AiTutor from '../pages/AiTutor';
 import PoetryStudio from '../pages/PoetryStudio';
@@ -18,6 +18,8 @@ import Favorites from '../pages/Favorites';
 import SearchHistory from '../pages/SearchHistory';
 import SubmitContent from '../pages/SubmitContent';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import LearningPathHub from '../pages/learning/LearningPathHub';
+import LearningPathDetail from '../pages/learning/LearningPathDetail';
 import ProtectedRoute from './ProtectedRoute';
 
 const AppRoutes = () => {
@@ -26,7 +28,8 @@ const AppRoutes = () => {
             <Route path="/" element={<Home />} />
             <Route path="/kham-pha" element={<Explore />} />
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
-            <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
+            <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
             <Route path="/gia-su-ai" element={<AiTutor />} />
             <Route path="/ai-tutor" element={<AiTutor />} />
@@ -40,6 +43,22 @@ const AppRoutes = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Các route yêu cầu người dùng đăng nhập */}
+            <Route
+                path="/lo-trinh-hoc"
+                element={
+                    <ProtectedRoute>
+                        <LearningPathHub />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/lo-trinh-hoc/:id"
+                element={
+                    <ProtectedRoute>
+                        <LearningPathDetail />
+                    </ProtectedRoute>
+                }
+            />
             <Route
                 path="/profile"
                 element={
