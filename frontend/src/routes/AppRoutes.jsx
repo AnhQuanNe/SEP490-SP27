@@ -4,6 +4,7 @@ import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
 import KnowledgeGraph from '../pages/KnowledgeGraph';
 import HeritageQuiz from '../pages/HeritageQuiz';
+import LiteratureMap from '../pages/LiteratureMap';
 import AiTutor from '../pages/AiTutor';
 import PoetryStudio from '../pages/PoetryStudio';
 import Leaderboard from '../pages/Leaderboard';
@@ -30,6 +31,7 @@ const AppRoutes = () => {
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
             <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
             <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+            <Route path="/ban-do" element={<LiteratureMap />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
             <Route path="/gia-su-ai" element={<AiTutor />} />
             <Route path="/ai-tutor" element={<AiTutor />} />
