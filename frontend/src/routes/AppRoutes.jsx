@@ -4,6 +4,7 @@ import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
 import LiteratureMap from '../pages/LiteratureMap';
 import HeritageQuiz from '../pages/HeritageQuiz';
+import InteractiveStory from '../pages/InteractiveStory';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -21,6 +22,7 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/kham-pha" element={<Explore />} />
+            <Route path="/di-ban-co-tich" element={<InteractiveStory />} />
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />

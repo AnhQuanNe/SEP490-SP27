@@ -10,6 +10,7 @@ const favoriteRoutes = require('./favorite.routes');
 const searchHistoryRoutes = require('./searchHistory.routes');
 const submissionRoutes = require('./submission.routes');
 const adminRoutes = require('./admin.routes');
+const storyBranchRoutes = require('./storyBranch.routes');
 const SystemSetting = require('../models/SystemSetting');
 
 router.use('/auth', authRoutes);
@@ -21,6 +22,7 @@ router.use('/favorites', favoriteRoutes);
 router.use('/search-history', searchHistoryRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/admin', adminRoutes);
+router.use('/story-branch', storyBranchRoutes);
 
 // Public settings endpoint (để frontend hiển thị banner thông báo hoặc bật/tắt đóng góp)
 router.get('/settings/public', async (req, res) => {
@@ -44,4 +46,3 @@ router.get('/settings/public', async (req, res) => {
 });
 
 module.exports = router;
-

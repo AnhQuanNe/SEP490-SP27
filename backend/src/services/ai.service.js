@@ -39,11 +39,10 @@ const DEFAULT_SUGGESTIONS = [
 ];
 
 const GEMINI_MODELS = [
-    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
     'gemini-3.5-flash-lite',
+    'gemini-3.5-flash',
     'gemini-flash-latest',
-    'gemini-3.7-flash',
-    'gemini-3.8-flash',
 ];
 
 /**
@@ -53,42 +52,57 @@ async function callGeminiApi({ question, contextText, history = [] }) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
-    const systemInstruction = `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
-Nhiệm vụ của bạn:
-1. Trả lời câu hỏi một cách thông minh, chuẩn xác, tự nhiên, gần gũi, giàu chất nhân văn và truyền cảm. Luôn trả lời đầy đủ, trọn vẹn, không bao giờ ngắt quãng hay bỏ dở câu giữa chừng.
-2. Hiểu và giải thích cặn kẽ mọi câu hỏi về:
-   - Các tác giả, danh nhân văn hóa Việt Nam (như Đại thi hào Nguyễn Du, Nguyễn Trãi, Hồ Xuân Hương, Chu Văn An, v.v.).
-   - Các tác phẩm văn học dân gian, truyện cổ tích, truyền thuyết, thần thoại, ca dao tục ngữ.
-   - Các tác phẩm văn học kinh điển (như Truyện Kiều, Nam quốc sơn hà, Hịch tướng sĩ, Bình Ngô đại cáo, v.v.).
-   - Ý nghĩa biểu tượng nghệ thuật, phong tục tập quán và bài học đạo lý truyền thống.
-3. Nếu người dùng hỏi các câu hỏi cơ bản như "Nguyễn Du là ai?" hoặc mục tiêu của bạn là gì, hãy giải thích một cách cô đọng, dễ hiểu, có bố cục rõ ràng, nêu bật các đóng góp lớn nhất.
-4. Nếu có kho tư liệu tham khảo từ hệ thống bên dưới khớp với câu hỏi, hãy ưu tiên kết hợp tư liệu và dẫn nguồn học thuật.
-5. Luôn giữ phong thái uyên bác, trang nhã, chuẩn mực tiếng Việt.`;
+    const systemInstruction = `Bạn là VietHeritage AI — Chuyên gia cố vấn, nhà nghiên cứu uyên bác và người bạn đồng hành đàm đạo về Văn học, Lịch sử, Ca dao - Tục ngữ, Truyện cổ tích, Thần thoại, Văn học Kinh điển và Văn hóa Dân gian Việt Nam.
+
+NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
+1. TRẢ LỜI ĐÚNG TRỌNG TÂM, ĐÚNG Ý CÂU HỎI (QUAN TRỌNG NHẤT):
+   - Người dùng hỏi gì, hãy trả lời trực tiếp, chính xác, sâu sắc vào câu hỏi đó. Tuyệt đối KHÔNG trả lời vòng vo, KHÔNG gượng ép câu hỏi vào một chủ đề hay tác phẩm khác.
+   - TUYỆT ĐỐI KHÔNG dùng một khuôn mẫu cố định hay một công thức chung (như luôn luôn tự ý chia thành 3 phần "Bối cảnh - Ý nghĩa - Bài học"). Hãy thay đổi linh hoạt bố cục và văn phong tùy thuộc vào từng dạng câu hỏi:
+     * Câu hỏi về nhân vật / tác giả / danh nhân (vd: "Nguyễn Du là ai?", "Lý Thông là người thế nào?"): Giới thiệu xuất thân, cuộc đời, sự nghiệp, vai trò, tính cách, cống hiến lớn nhất và phong cách tiêu biểu.
+     * Câu hỏi về ý nghĩa câu ca dao / tục ngữ / thành ngữ: Trình bày rõ ràng 3 tầng: Nghĩa đen (hình ảnh thực tế đời thường), Nghĩa bóng (triết lý sâu xa) và Bài học nhân sinh ứng dụng vào đời sống.
+     * Câu hỏi về biểu tượng / chi tiết nghệ thuật (vd: "Ý nghĩa tiếng đàn thần?", "Niêu cơm thần?", "Ngựa sắt Thánh Gióng?"): Phân tích nguồn gốc biểu tượng, khát vọng dân gian gửi gắm và giá trị nhân văn.
+     * Câu hỏi so sánh / đối chiếu (vd: "So sánh Sơn Tinh và Thủy Tinh", "Thạch Sanh khác Lý Thông ở điểm nào?"): So sánh đối chiếu sắc nét theo từng tiêu chí, lập luận mạch lạc.
+     * Câu hỏi yêu cầu làm thơ / viết văn / tóm tắt: Sáng tác hoặc tóm tắt trực tiếp, giàu cảm xúc, đúng thể thơ (lục bát, song thất lục bát...), không giải thích rườm rà trừ khi được yêu cầu.
+     * Câu hỏi đố, hỏi mẹo, chào hỏi, tâm sự, hỏi ý kiến: Đối đáp tự nhiên, hóm hỉnh, ấm áp, đậm tình người và chất văn hóa Việt.
+     * Câu hỏi về các chủ đề khác (đời sống, khoa học, hiện đại): Vẫn giải đáp lịch thiệp, thông minh, chính xác, có thể khéo léo liên hệ nét đẹp văn hóa truyền thống khi phù hợp.
+
+2. CÁCH XỬ LÝ TƯ LIỆU THAM KHẢO TỪ HỆ THỐNG:
+   - Nếu hệ thống cung cấp [TƯ LIỆU THAM KHẢO]: Bạn CHỈ sử dụng tư liệu khi và chỉ khi nó THỰC SỰ TRÙNG KHỚP hoặc LIÊN QUAN TRỰC TIẾP đến câu hỏi của người dùng.
+   - Nếu câu hỏi của người dùng KHÔNG liên quan đến tư liệu được cung cấp (ví dụ người dùng hỏi về chủ đề khác, làm thơ, hỏi danh nhân khác...), HÃY BỎ QUA TƯ LIỆU ĐÓ và trả lời hoàn toàn bằng kiến thức sâu rộng của chính bạn. Tuyệt đối KHÔNG gượng ép nhắc đến tên tác phẩm hay nội dung trong tư liệu nếu người dùng không hỏi.
+
+3. VĂN PHONG VÀ TRÌNH BÀY:
+   - Chuẩn mực tiếng Việt, trong sáng, trang nhã, giàu cảm xúc, đậm đà bản sắc dân tộc.
+   - Trình bày mạch lạc, dễ đọc bằng Markdown (in đậm từ khóa quan trọng, gạch đầu dòng các ý chính, trích thơ/ca dao trong ngoặc kép hoặc blockquote).
+   - Luôn trả lời trọn vẹn, không ngắt câu lửng lơ.`;
 
     const contents = [];
 
     // Thêm lịch sử hội thoại gần nhất (nếu có)
     if (Array.isArray(history) && history.length > 0) {
         for (const msg of history.slice(-4)) {
-            contents.push({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }],
-            });
+            if (msg && msg.content && typeof msg.content === 'string') {
+                contents.push({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.content }],
+                });
+            }
         }
     }
 
     const userPrompt = contextText && contextText.trim() !== ''
-        ? `[KHO TƯ LIỆU THAM KHẢO TỪ HỆ THỐNG]:
+        ? `[TƯ LIỆU THAM KHẢO TỪ CƠ SỞ DỮ LIỆU]:
 ${contextText}
+
+(Lưu ý: Chỉ tham khảo tư liệu trên nếu nó thực sự phù hợp với câu hỏi của người dùng. Nếu câu hỏi về chủ đề khác, hãy bỏ qua và trả lời trực tiếp câu hỏi).
 
 [CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy phân tích và trả lời câu hỏi trên dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng (nếu có). Trình bày mạch lạc, đầy đủ, không cắt ngắn.`
+Hãy trả lời trực tiếp, chính xác, linh hoạt theo đúng trọng tâm câu hỏi trên.`
         : `[CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn xác, làm nổi bật giá trị văn hóa và văn học Việt Nam. Trình bày trọn vẹn, sinh động.`;
+Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên theo đúng ý câu hỏi của người dùng.`;
 
     contents.push({
         role: 'user',
@@ -106,13 +120,11 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
                     system_instruction: { parts: [{ text: systemInstruction }] },
                     contents,
                     generationConfig: {
-                        temperature: 0.6,
-                        maxOutputTokens: 4096,
-                        thinkingConfig: {
-                            thinkingBudget: 0,
-                        },
+                        temperature: 0.7,
+                        maxOutputTokens: 3000,
                     },
                 }),
+                signal: AbortSignal.timeout(10000),
             });
 
             if (response.ok) {
@@ -133,111 +145,118 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
 
 /**
  * Động cơ phân tích & tổng hợp tri thức Di sản nội bộ (Heritage Knowledge Synthesis Engine)
- * Đảm bảo 100% phản hồi chính xác, có dẫn chứng học thuật ngay cả khi chưa có API Key
+ * Phản hồi linh hoạt theo từng dạng câu hỏi, không gò ép một khuôn mẫu cứng nhắc
  */
 function synthesizeHeritageAnswer({ question, primaryWork, candidateWorks }) {
-    const works = primaryWork ? [primaryWork] : candidateWorks;
-    if (!works || works.length === 0) {
+    const qClean = removeVietnameseTones(question || '').toLowerCase();
+
+    // 1. Khi câu hỏi không chỉ đích danh tác phẩm cụ thể trong cơ sở dữ liệu
+    if (!primaryWork) {
+        if (qClean.includes('tho') || qClean.includes('luc bat')) {
+            return {
+                answer: `Dưới đây là một bài thơ lục bát truyền thống giàu cảm xúc về cội nguồn và tình nghĩa gia đình:
+
+> *"Công cha như núi Thái Sơn,*
+> *Nghĩa mẹ như nước trong nguồn chảy ra.*
+> *Một lòng thờ mẹ kính cha,*
+> *Cho tròn chữ hiếu mới là đạo con."*
+
+Thể thơ lục bát là một di sản nghệ thuật độc đáo của dân tộc ta, vừa mộc mạc vừa giàu nhạc tính, thường được ông cha gửi gắm những đạo lý đối nhân xử thế sâu sắc. Bạn có muốn đàm đạo hoặc phân tích tác phẩm văn học nào không?`,
+                citations: [],
+                suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
+            };
+        }
+
+        if (qClean.includes('ca dao') || qClean.includes('tuc ngu')) {
+            return {
+                answer: `Ca dao và tục ngữ là kho tàng bách khoa thư về đời sống tâm hồn, đạo đức và triết lý sống của người Việt Nam qua hàng nghìn năm lịch sử.
+
+Mỗi câu nói dân gian đều ẩn chứa:
+- **Nghĩa đen:** Bắt nguồn từ các hình ảnh lao động sản xuất, sinh hoạt mộc mạc nơi thôn dã.
+- **Nghĩa bóng:** Gửi gắm đạo lý làm người — chữ Hiếu, lòng Nhân ái, sự Thủy chung và Tinh thần đoàn kết cộng đồng.
+
+Bạn có thể hỏi trực tiếp bất kỳ câu ca dao, tục ngữ nào (ví dụ: *"Bầu ơi thương lấy bí cùng"*, *"Uống nước nhớ nguồn"*, *"Lá lành đùm lá rách"*) để tôi giải nghĩa chi tiết nhé!`,
+                citations: [],
+                suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
+            };
+        }
+
         return {
-            answer: `Xin chào bạn! Hiện tại trong kho tàng dữ liệu VietHeritage AI, câu hỏi của bạn có thể liên quan đến một chủ đề dân gian phong phú chưa được lập chỉ mục cụ thể. 
-Tuy nhiên, theo các nghiên cứu dân gian học, văn học dân gian Việt Nam luôn mang đậm tinh thần nhân đạo, lòng yêu chuộng hòa bình, và đạo lý "Uống nước nhớ nguồn".
-Bạn có thể thử tra cứu các tác phẩm kinh điển hiện có trong hệ thống như: **Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Truyện Kiều, Nam quốc sơn hà, Tấm Cám** để xem phân tích chi tiết nhé!`,
+            answer: `Chào bạn! Tôi đã ghi nhận câu hỏi của bạn: *"${question}"*.
+
+VietHeritage AI luôn sẵn sàng đồng hành cùng bạn khám phá mọi khía cạnh của di sản văn hóa và văn học Việt Nam. Để có câu trả lời sâu sắc nhất, bạn có thể thử:
+1. **Hỏi về truyện cổ tích / truyền thuyết:** Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Tấm Cám, Chử Đồng Tử...
+2. **Hỏi về danh nhân / tác phẩm kinh điển:** Nguyễn Du (Truyện Kiều), Nguyễn Trãi (Bình Ngô đại cáo), Lý Thường Kiệt (Nam quốc sơn hà)...
+3. **Phân tích ca dao, tục ngữ:** Giải nghĩa đen, nghĩa bóng và bài học làm người.`,
             citations: [],
             suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
         };
     }
 
-    const main = works[0];
-    const qClean = removeVietnameseTones(question);
+    // 2. Khi câu hỏi gắn với tác phẩm cụ thể (primaryWork)
+    const main = primaryWork;
+    let dynamicBody = '';
 
-    let specificAnalysis = '';
+    // Phân tích câu hỏi theo ý định (intent) để câu trả lời luôn đúng trọng tâm
+    if (main.slug === 'thach-sanh' && (qClean.includes('tieng dan') || qClean.includes('nieu com') || qClean.includes('dan than'))) {
+        dynamicBody = `Trong truyện cổ tích **Thạch Sanh**, hai biểu tượng thần kỳ mang ý nghĩa nhân văn sâu sắc:
 
-    // Phân tích theo câu hỏi về "tiếng đàn", "niêu cơm" (Thạch Sanh)
-    if (main.slug === 'thach-sanh' && (qClean.includes('tieng dan') || qClean.includes('nieu com') || qClean.includes('y nghia'))) {
-        specificAnalysis = `
-### 1. Ý nghĩa biểu tượng "Tiếng đàn thần":
-- **Tiếng nói của công lý:** Tiếng đàn gảy lên trong ngục tối đã vượt qua bức tường giam cầm để đến tai công chúa, giải tỏa nỗi oan khuất ngút trời của Thạch Sanh và vạch trần bộ mặt bội bạc, xảo quyệt của mẹ con Lý Thông.
-- **Vũ khí cảm hóa hòa bình:** Khi 18 nước chư hầu đem quân vây hãm, chàng không dùng gươm giáo mà mang đàn ra gảy. Tiếng đàn kỳ diệu làm mềm lòng binh sĩ, gợi nhớ nỗi niềm cha mẹ, quê hương khiến quân giặc "bủn rủn tay chân, không đánh mà tan". Đây là đỉnh cao của tư tưởng nhân văn và tinh thần yêu chuộng hòa bình của dân tộc Việt Nam.
+- **Tiếng đàn thần — Tiếng nói của Công lý và Hòa bình:** Tiếng đàn gảy lên trong ngục tối đã vạch trần tội ác của mẹ con Lý Thông, giải nỗi oan khuất ngút trời của Thạch Sanh. Đặc biệt, khi 18 nước chư hầu kéo quân sang vây hãm, tiếng đàn thần vang lên làm mềm lòng binh sĩ giặc, khiến quân thù "bủn rủn tay chân, không đánh mà tan". Đây là đỉnh cao của truyền thống yêu chuộng hòa bình và tư tưởng nhân đạo của dân tộc ta.
+- **Niêu cơm thần — Lòng nhân ái vô tận:** Niêu cơm nhỏ xíu nhưng quân sĩ 18 nước chư hầu ăn mãi không hết tượng trưng cho tiềm lực dồi dào, đức tính hiếu khách và tấm lòng vị tha cao cả đối với kẻ bại trận.`;
+    } else if (main.slug === 'thanh-giong' && (qClean.includes('bay ve troi') || qClean.includes('tai sao') || qClean.includes('coi giap'))) {
+        dynamicBody = `Hình tượng **Thánh Gióng đánh tan giặc Ân rồi cởi giáp bay thẳng về trời** gửi gắm hai tầng ý nghĩa lớn:
 
-### 2. Ý nghĩa biểu tượng "Niêu cơm thần":
-- **Lòng nhân ái vô tận:** Niêu cơm nhỏ xíu nhưng ăn mãi không bao giờ hết tượng trưng cho tiềm lực dồi dào, đức tính hiếu khách và lòng vị tha của nhân dân ta đối với kẻ bại trận.
-- **Sức mạnh tinh thần:** Thắng giặc không bằng sự hủy diệt mà bằng sự cảm hóa, ban phát sự sống và mở ra con đường giao hảo dài lâu giữa các láng giềng.`;
-    } 
-    // Phân tích câu hỏi Thánh Gióng bay về trời
-    else if (main.slug === 'thanh-giong' && (qClean.includes('bay ve troi') || qClean.includes('tai sao') || qClean.includes('y nghia'))) {
-        specificAnalysis = `
-### 1. Lý do Thánh Gióng cởi giáp bay về trời:
-- **Người anh hùng vô tư, xả thân vì nước:** Thánh Gióng sinh ra từ nhân dân, lớn lên bằng cơm áo của bà con làng xóm. Khi đất nước lâm nguy thì vươn vai đánh giặc; khi sạch bóng quân thù, người tráng sĩ cởi bỏ áo giáp bay thẳng về trời mà không màng danh lợi, bổng lộc hay chức tước của triều đình.
-- **Bất tử hóa hình tượng người anh hùng:** Hành động bay về trời nâng hình tượng Gióng từ một người anh hùng trần thế trở thành một vị thần bất tử trong tâm thức dân tộc Việt Nam (Phù Đổng Thiên Vương - một trong Tứ Bất Tử).
+- **Người anh hùng vô tư, xả thân vì nghĩa lớn:** Thánh Gióng lớn lên bằng cơm áo của bà con làng xóm. Khi Tổ quốc lâm nguy, người tráng sĩ vươn vai đánh giặc; khi sạch bóng thù, chàng thanh thản bay về trời, không màng tước lộc, quyền quý hay bổng lộc triều đình.
+- **Bất tử hóa trong tâm thức dân tộc:** Nhân dân đã biến người anh hùng trần thế thành một vị thần bất tử (Phù Đổng Thiên Vương - một trong Tứ Bất Tử), sống mãi trong non sông gấm vóc.`;
+    } else if (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('tieu su')) {
+        const authorName = main.author && main.author !== 'Dân gian' ? main.author : 'Tác giả Dân gian (Nhân dân lao động)';
+        dynamicBody = `Về tác giả và xuất xứ của tác phẩm **"${main.title}"**:
 
-### 2. Giá trị biểu tượng lịch sử:
-- Vết tích tre đằng ngà ngả màu vàng óng, những ao hồ liên tiếp nơi chân ngựa sắt giẫm qua... chính là cách nhân dân biến lịch sử thành huyền thoại để truyền đời đời lòng tự hào bảo vệ giang sơn.`;
-    }
-    // Phân tích Sơn Tinh - Thủy Tinh
-    else if (main.slug === 'son-tinh-thuy-tinh') {
-        specificAnalysis = `
-### 1. Bản chất cuộc xung đột Sơn Tinh - Thủy Tinh:
-- Phản ánh hiện tượng lũ lụt hàng năm ở lưu vực đồng bằng sông Hồng thời kỳ tiền sử dựng nước. Thủy Tinh tượng trưng cho sức tàn phá dữ dội của bão lũ thiên nhiên.
-- Sơn Tinh tượng trưng cho khối đại đoàn kết và ý chí đắp đê, ngăn lũ, trị thủy quật cường của tổ tiên người Việt cổ (*"Nước dâng lên bao nhiêu, núi cao lên bấy nhiêu"*).
+- **Tác giả:** **${authorName}**
+- **Thời kỳ & Vùng miền:** ${main.period} — Khu vực *${main.region}*.
+- **Thể loại:** ${main.categoryName}
+- **Đóng góp & Vị thế:** ${main.summary}
+${main.quote ? `\n> *"${main.quote}"*` : ''}`;
+    } else if (qClean.includes('y nghia') || qClean.includes('bai hoc') || qClean.includes('thong diep') || qClean.includes('triet ly')) {
+        dynamicBody = `Về ý nghĩa chủ đề và bài học nhân sinh của **"${main.title}"**:
 
-### 2. Ý nghĩa nhân văn:
-- Tôn vinh vị thần núi Tản Viên (Đệ nhất Tứ Bất Tử) như biểu tượng che chở, chở che cho cuộc sống ấm no, mùa màng bình yên của cư dân nông nghiệp lúa nước.`;
-    }
-    // Phân tích theo tác giả cụ thể (ví dụ: Nguyễn Du, Nguyễn Trãi) hoặc câu hỏi "là ai"
-    else if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
-        specificAnalysis = `
-### 1. Giới thiệu về ${main.author}:
-- **Vị thế văn học:** Là một trong những đại diện tiêu biểu nhất của nền văn học Việt Nam, gắn liền với kiệt tác bất hủ **"${main.title}"** (${main.categoryName}).
-- **Thời kỳ & Địa bàn:** ${main.period} — gắn liền với vùng đất *${main.region}*.
-- **Tầm vóc:** Đóng góp to lớn vào việc bảo tồn, phát triển tiếng Việt và khẳng định bản sắc văn hóa dân tộc.
+- **Ý nghĩa cốt lõi:** ${main.thematicMeaning || 'Tác phẩm khẳng định niềm tin mãnh liệt vào chân lý cái thiện luôn chiến thắng cái ác, đạo lý ở hiền gặp lành.'}
+- **Bài học cho hôm nay:** Nhắc nhở thế hệ hôm nay giữ gìn lòng tự tôn dân tộc, lối sống ân nghĩa, dũng cảm và nhân ái.
+${main.quote ? `\n> *"${main.quote}"*` : ''}`;
+    } else if (qClean.includes('boi canh') || qClean.includes('lich su') || qClean.includes('hoan canh')) {
+        dynamicBody = `Về bối cảnh lịch sử và hoàn cảnh ra đời của **"${main.title}"**:
 
-### 2. Kiệt tác gắn liền tên tuổi:
-- ${main.summary}
-${main.quote ? `\n> *"${main.quote}"*` : ''}
+- **Hoàn cảnh ra đời:** ${main.historicalContext || 'Tác phẩm ra đời trong giai đoạn ' + main.period + ', phản ánh tâm tư tình cảm và đời sống xã hội của nhân dân vùng ' + main.region + '.'}
+- **Tóm tắt nội dung:** ${main.summary}`;
+    } else {
+        dynamicBody = `Về tác phẩm **"${main.title}"** (${main.categoryName}, khu vực *${main.region}*):
 
-### 3. Ý nghĩa chủ đề & Bài học nhân đạo:
-- ${main.thematicMeaning || 'Đề cao giá trị nhân bản, tiếng nói công lý và lòng trắc ẩn sâu sắc trước số phận con người.'}`;
-    }
-    // Mặc định: Phân tích tổng quan dựa trên bối cảnh lịch sử và ý nghĩa chủ đề của tác phẩm
-    else {
-        specificAnalysis = `
-### 1. Bối cảnh lịch sử & Hoàn cảnh ra đời:
-${main.historicalContext || main.summary}
+${main.summary}
 
-### 2. Ý nghĩa chủ đề & Biểu tượng nghệ thuật:
-${main.thematicMeaning || 'Tác phẩm kết tinh trí tuệ dân gian, đạo lý sống ân nghĩa thủy chung và khát vọng về công bằng xã hội của dân tộc ta.'}
-${main.quote ? `\n> *"${main.quote}"*` : ''}
-
-### 3. Bài học nhân sinh sâu sắc:
-Tác phẩm là lời nhắc nhở thế hệ hôm nay về cội nguồn văn hóa, bài học ứng xử trọng nghĩa khinh tài và lòng tự tôn đối với di sản văn học nghìn năm.`;
+- **Ý nghĩa chủ đề:** ${main.thematicMeaning || 'Gửi gắm ước mơ của nhân dân về công lý, hòa bình và đạo nghĩa làm người.'}
+${main.quote ? `\n> *"${main.quote}"*` : ''}`;
     }
 
-    const authorHeader = main.author && main.author !== 'Dân gian' ? ` — Tác giả: **${main.author}**` : '';
-    const answer = `Dựa trên nguồn tư liệu học thuật về tác phẩm **"${main.title}"** (${main.categoryName}${authorHeader}, khu vực *${main.region}*), VietHeritage AI xin giải đáp như sau:
-
-${specificAnalysis}
-
----
-*Nguồn tham khảo học thuật kiểm chứng:* **${main.source}**`;
-
-    const citations = works.map((w) => ({
-        title: w.title,
-        slug: w.slug,
-        category: w.category,
-        categoryName: w.categoryName,
-        region: w.region,
-        author: w.author,
-        source: w.source,
-    }));
+    const citations = [
+        {
+            title: main.title,
+            slug: main.slug,
+            category: main.category,
+            categoryName: main.categoryName,
+            region: main.region,
+            author: main.author,
+            source: main.source,
+        },
+    ];
 
     const suggestedQuestions = [
-        `Bối cảnh lịch sử của tác phẩm ${main.title} là gì?`,
-        `Những chi tiết hoang đường kỳ ảo trong ${main.title} có ý nghĩa gì?`,
-        `Tác phẩm ${main.title} gửi gắm thông điệp gì cho thế hệ trẻ ngày nay?`,
+        `Ý nghĩa biểu tượng nổi bật nhất trong "${main.title}"?`,
+        `Bối cảnh lịch sử và hoàn cảnh ra đời của "${main.title}"?`,
+        `Những bài học nhân sinh sâu sắc từ "${main.title}"?`,
     ];
 
     return {
-        answer,
+        answer: dynamicBody,
         citations,
         suggestedQuestions,
     };
@@ -257,7 +276,7 @@ function isConversationalGreeting(text) {
 }
 
 /**
- * Service chính: Trả lời câu hỏi thông minh có RAG & Dẫn nguồn kiểm chứng (UC09)
+ * Service chính: Trả lời câu hỏi thông minh linh hoạt, đúng trọng tâm
  */
 const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
     if (!question || typeof question !== 'string' || question.trim() === '') {
@@ -266,24 +285,25 @@ const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
 
     const cleanQuery = question.trim();
 
-    // 0. Nhận diện các câu chào hỏi / giới thiệu xã giao thông thường (tránh bị spam văn học)
+    // 0. Nhận diện các câu chào hỏi / cảm ơn / xã giao thuần túy
     if (!contextSlug && isConversationalGreeting(cleanQuery)) {
         const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
         let greetingText = '';
 
         if (qClean.includes('cam on') || qClean.includes('thank')) {
-            greetingText = `Không có chi! Rất vui được đồng hành cùng bạn khám phá di sản văn hóa và văn học dân gian Việt Nam. Nếu bạn có bất kỳ câu hỏi nào về các tích truyện, nhân vật hay câu ca dao, đừng ngần ngại hỏi tôi nhé! 😊`;
+            greetingText = `Không có chi! Rất vui được đồng hành cùng bạn khám phá di sản văn hóa và văn học Việt Nam. Nếu bạn có bất kỳ câu hỏi nào về các tích truyện, nhân vật hay câu ca dao, đừng ngần ngại hỏi tôi nhé! 😊`;
         } else if (qClean.includes('tam biet') || qClean.includes('bye')) {
             greetingText = `Tạm biệt bạn! Chúc bạn có những phút giây học tập và trải nghiệm văn hóa thật nhiều niềm vui. Hẹn gặp lại bạn lần sau! 👋`;
         } else {
-            greetingText = `Chào bạn! Tôi là **VietHeritage AI** — Trợ lý nghiên cứu Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸
+            greetingText = `Chào bạn! Tôi là **VietHeritage AI** — Trợ lý nghiên cứu và đàm đạo Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸
 
 Tôi có thể hỗ trợ bạn:
-- **Giải nghĩa ca dao, tục ngữ**: Phân tích nghĩa đen, nghĩa bóng và đạo lý nhân sinh răn dạy đời sau.
+- **Giải nghĩa ca dao, tục ngữ**: Phân tích nghĩa đen, nghĩa bóng và bài học đạo lý nhân sinh.
 - **Phân tích biểu tượng văn học**: Khám phá ý nghĩa tiếng đàn thần Thạch Sanh, ngựa sắt Thánh Gióng, cuộc chiến Sơn Tinh - Thủy Tinh...
-- **Tra cứu bối cảnh lịch sử**: Cung cấp nguồn tư liệu học thuật kiểm chứng đáng tin cậy.
+- **Tra cứu bối cảnh lịch sử & danh nhân**: Cuộc đời, sự nghiệp Nguyễn Du, Nguyễn Trãi, Hồ Xuân Hương...
+- **Sáng tác & đàm đạo thơ ca**: Đối thơ, đố vui văn học và trao đổi văn hóa truyền thống.
 
-Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
+Hôm nay bạn muốn cùng tôi tìm hiểu chủ đề nào?`;
         }
 
         return {
@@ -295,146 +315,112 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào?`;
     }
 
     let primaryWork = null;
-    let candidateWorks = [];
 
     // 1. Nếu có contextSlug cụ thể (ví dụ người dùng bấm từ trang chi tiết tác phẩm)
     if (contextSlug) {
-        primaryWork = await Work.findOne({ slug: contextSlug });
+        primaryWork = await Work.findOne({ slug: contextSlug, status: 'published' }).lean();
     }
 
-    // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database
+    // 2. Nếu không có contextSlug, tìm kiếm chính xác theo Tiêu đề hoặc Tác giả xuất hiện trong câu hỏi
     if (!primaryWork) {
-        const fullRegex = buildVietnameseRegex(cleanQuery);
-
-        if (fullRegex) {
-            candidateWorks = await Work.find({
-                $or: [
-                    { title: fullRegex },
-                    { author: fullRegex },
-                    { tags: fullRegex },
-                    { summary: fullRegex },
-                    { thematicMeaning: fullRegex },
-                    { historicalContext: fullRegex },
-                ],
-                status: 'published',
-            })
-                .limit(3)
+        try {
+            const allPublishedWorks = await Work.find({ status: 'published' })
+                .select('title slug author category categoryName region period summary quote historicalContext thematicMeaning source tags')
                 .lean();
-        }
 
-        // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa (loại bỏ từ dừng)
-        if (candidateWorks.length === 0) {
-            const STOP_WORDS = new Set([
-                'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
-                'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
-                'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
-                'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
-                'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin'
-            ]);
+            const qNorm = removeVietnameseTones(cleanQuery).toLowerCase();
 
-            const rawTokens = cleanQuery.split(/[\s,?.!;:—–"']+/).filter(Boolean);
-            const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
+            // A. So khớp theo Tiêu đề tác phẩm
+            const matchedByTitle = allPublishedWorks
+                .filter((w) => {
+                    const titleNorm = removeVietnameseTones(w.title).toLowerCase();
+                    const slugNorm = (w.slug || '').replace(/-/g, ' ').toLowerCase();
+                    return qNorm.includes(titleNorm) || (slugNorm.length >= 4 && qNorm.includes(slugNorm));
+                })
+                .sort((a, b) => b.title.length - a.title.length);
 
-            // Tạo các cụm 2 từ (bigram) hoặc từ đơn có nghĩa
-            const searchTerms = [];
-            for (let i = 0; i < filteredWords.length - 1; i++) {
-                searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
-            }
-            filteredWords.forEach((w) => {
-                if (w.length >= 2) searchTerms.push(w);
-            });
+            if (matchedByTitle.length > 0) {
+                primaryWork = matchedByTitle[0];
+            } else {
+                // B. So khớp theo Tên tác giả nổi tiếng
+                const matchedByAuthor = allPublishedWorks.filter((w) => {
+                    if (!w.author || w.author === 'Dân gian') return false;
+                    const authorNorm = removeVietnameseTones(w.author).toLowerCase();
+                    return authorNorm.length >= 4 && qNorm.includes(authorNorm);
+                });
 
-            if (searchTerms.length > 0) {
-                const orConditions = [];
-                for (const term of searchTerms.slice(0, 5)) {
-                    const r = buildVietnameseRegex(term);
-                    if (r) {
-                        orConditions.push({ title: r }, { author: r }, { tags: r });
-                    }
-                }
-
-                if (orConditions.length > 0) {
-                    candidateWorks = await Work.find({
-                        $or: orConditions,
-                        status: 'published',
-                    })
-                        .limit(3)
-                        .lean();
+                if (matchedByAuthor.length > 0) {
+                    primaryWork = matchedByAuthor[0];
                 }
             }
-        }
-
-        if (candidateWorks.length > 0) {
-            primaryWork = candidateWorks[0];
-        } else if (!process.env.GEMINI_API_KEY) {
-            // Khi không dùng Gemini và cũng không tìm thấy tác phẩm phù hợp trong DB
-            return {
-                answer: `Tôi đã tra cứu trong kho tư liệu của VietHeritage AI nhưng chưa thấy tài liệu khớp trực tiếp với câu hỏi: *"${cleanQuery}"*.
-
-💡 **Gợi ý cho bạn:**
-1. Thử hỏi về các tác phẩm nổi bật: **Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Truyện Kiều, Nam quốc sơn hà, Tấm Cám**.
-2. Tìm theo chủ đề: *đạo lý chữ Hiếu, lòng yêu nước, tinh thần tương thân tương ái, ước mơ công lý*.
-3. Bấm vào một trong các câu hỏi gợi ý bên dưới để bắt đầu!`,
-                citations: [],
-                suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
-                sourceType: 'no_match_guidance',
-            };
+        } catch (dbErr) {
+            console.warn('[AI Service] Lỗi tra cứu DB:', dbErr.message);
         }
     }
 
-    // 3. Chuẩn bị context để đưa vào RAG Prompt
-    const allRelevantWorks = primaryWork
-        ? [primaryWork, ...candidateWorks.filter((w) => w.slug !== primaryWork.slug)].slice(0, 3)
-        : candidateWorks;
+    // 3. Chuẩn bị context nếu có tác phẩm trùng khớp
+    let contextText = null;
+    if (primaryWork) {
+        contextText = `[Tác phẩm đối chiếu]:
+- Tên tác phẩm: ${primaryWork.title} (${primaryWork.categoryName})
+${primaryWork.author ? `- Tác giả: ${primaryWork.author}\n` : ''}- Khu vực / Thời kỳ: ${primaryWork.region} — ${primaryWork.period}
+- Tóm tắt: ${primaryWork.summary}
+- Trích đoạn / Câu tiêu biểu: ${primaryWork.quote || 'N/A'}
+- Bối cảnh lịch sử: ${primaryWork.historicalContext || 'N/A'}
+- Ý nghĩa chủ đề & Biểu tượng: ${primaryWork.thematicMeaning || 'N/A'}
+- Nguồn học thuật kiểm chứng: ${primaryWork.source}`;
+    }
 
-    const contextText = allRelevantWorks
-        .map(
-            (w, i) => `[Tư liệu ${i + 1}]:
-- Tên tác phẩm: ${w.title} (${w.categoryName})
-${w.author ? `- Tác giả: ${w.author}\n` : ''}- Khu vực / Thời kỳ: ${w.region} — ${w.period}
-- Tóm tắt: ${w.summary}
-- Trích đoạn / Câu tiêu biểu: ${w.quote || 'N/A'}
-- Bối cảnh lịch sử: ${w.historicalContext || 'N/A'}
-- Ý nghĩa chủ đề & Biểu tượng: ${w.thematicMeaning || 'N/A'}
-- Nguồn học thuật kiểm chứng: ${w.source}`
-        )
-        .join('\n\n');
-
-    // 4. Ưu tiên gọi Gemini AI nếu có key
+    // 4. Ưu tiên gọi Gemini AI
     const geminiAnswer = await callGeminiApi({
         question: cleanQuery,
         contextText,
         history,
     });
 
-    const citations = allRelevantWorks.map((w) => ({
-        title: w.title,
-        slug: w.slug,
-        category: w.category,
-        categoryName: w.categoryName,
-        region: w.region,
-        author: w.author,
-        source: w.source,
-    }));
+    const citations = primaryWork
+        ? [
+              {
+                  title: primaryWork.title,
+                  slug: primaryWork.slug,
+                  category: primaryWork.category,
+                  categoryName: primaryWork.categoryName,
+                  region: primaryWork.region,
+                  author: primaryWork.author,
+                  source: primaryWork.source,
+              },
+          ]
+        : [];
+
+    let suggestedQuestions = [];
+    if (primaryWork) {
+        suggestedQuestions = [
+            `Ý nghĩa biểu tượng nổi bật nhất trong "${primaryWork.title}"?`,
+            `Bối cảnh lịch sử và hoàn cảnh ra đời của "${primaryWork.title}"?`,
+            `Những bài học nhân sinh giá trị từ "${primaryWork.title}" cho hôm nay?`,
+        ];
+    } else {
+        suggestedQuestions = [
+            'Ý nghĩa tiếng đàn thần Thạch Sanh là gì?',
+            'Tại sao Thánh Gióng bay về trời sau khi đánh tan giặc?',
+            'Những câu ca dao sâu sắc nhất về tình cảm gia đình?',
+        ];
+    }
 
     if (geminiAnswer) {
         return {
             answer: geminiAnswer,
             citations,
-            suggestedQuestions: [
-                `Ý nghĩa nhân văn của tác phẩm ${primaryWork ? primaryWork.title : 'này'} là gì?`,
-                `Bối cảnh lịch sử ra đời của ${primaryWork ? primaryWork.title : 'tác phẩm'}?`,
-                `Còn câu ca dao / tích truyện nào liên quan đến chủ đề này không?`,
-            ],
-            sourceType: 'gemini_rag',
+            suggestedQuestions,
+            sourceType: 'gemini_smart_dialogue',
         };
     }
 
-    // 5. Fallback về động cơ nội bộ (chắc chắn luôn chạy 100% không sợ lỗi mạng hay hết quota)
+    // 5. Fallback thông minh nội bộ
     const localResult = synthesizeHeritageAnswer({
         question: cleanQuery,
         primaryWork,
-        candidateWorks: allRelevantWorks,
+        candidateWorks: primaryWork ? [primaryWork] : [],
     });
 
     return {
@@ -562,9 +548,10 @@ Nhiệm vụ của bạn: Hãy viết một đoạn phân tích và lời khuyê
                                 maxOutputTokens: 250,
                             },
                         }),
+                        signal: AbortSignal.timeout(8000),
                     });
                     if (res.ok) {
-                        const data = await res.json();
+                        const data = await response.json();
                         const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
                         if (text) {
                             return {
@@ -616,17 +603,17 @@ const draftSubmissionAssist = async ({ title, category = "ca-dao" }) => {
     }
 
     const cleanTitle = title.trim();
-    const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\module.exports = {");
+    const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     // 1. Kiểm tra đối chiếu xem trong DB đã có tác phẩm nào tương tự chưa
     let existingWork = null;
     try {
         existingWork = await Work.findOne({
-        $or: [
-            { title: new RegExp(escapedTitle, "i") },
-            { quote: new RegExp(escapedTitle, "i") },
-        ],
-    }).maxTimeMS(2000).lean();
+            $or: [
+                { title: new RegExp(escapedTitle, "i") },
+                { quote: new RegExp(escapedTitle, "i") },
+            ],
+        }).maxTimeMS(2000).lean();
     } catch (e) {
         // Bỏ qua lỗi DB nếu chưa kết nối, tiếp tục luồng AI
     }
@@ -678,9 +665,9 @@ const draftSubmissionAssist = async ({ title, category = "ca-dao" }) => {
                         generationConfig: {
                             temperature: 0.3,
                             maxOutputTokens: 2048,
-                            thinkingConfig: { thinkingBudget: 0 },
                         },
                     }),
+                    signal: AbortSignal.timeout(8000),
                 });
 
                 if (response.ok) {
@@ -747,4 +734,3 @@ module.exports = {
     getSuggestions,
     generateSemanticInsight,
 };
-

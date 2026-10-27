@@ -17,7 +17,8 @@ import {
     Send,
     Bot,
     Compass,
-    Trophy
+    Trophy,
+    GitBranch
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -42,6 +43,7 @@ const Navbar = () => {
     const navItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
+        { name: 'Dị bản', path: '/di-ban-co-tich', isRoute: true, icon: GitBranch },
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Compass },
         { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy },
         { name: 'Đóng góp', path: '/dong-gop', isRoute: true },
