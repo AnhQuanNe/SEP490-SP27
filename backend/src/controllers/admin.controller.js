@@ -496,7 +496,18 @@ const deleteWork = async (req, res) => {
 
 const getSettings = async (req, res) => {
     try {
-        const settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        let settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        if (settings.length === 0) {
+            const defaultSettings = [
+                { key: 'allowUserSubmissions', value: true, description: 'Cho phép người dùng đóng góp ca dao, tục ngữ mới', category: 'content' },
+                { key: 'aiExplanationEnabled', value: true, description: 'Kích hoạt tính năng giải nghĩa đa tầng bằng AI', category: 'ai' },
+                { key: 'semanticSearchEnabled', value: true, description: 'Bật tìm kiếm ngữ nghĩa thông minh', category: 'search' },
+                { key: 'systemNotice', value: 'Chào mừng bạn đến với VietHeritage AI - Kho tàng văn hóa dân gian Việt Nam!', description: 'Thông báo trên banner toàn trang', category: 'general' },
+                { key: 'maintenanceMode', value: false, description: 'Chế độ bảo trì hệ thống', category: 'system' },
+            ];
+            await SystemSetting.insertMany(defaultSettings);
+            settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        }
         res.status(200).json({
             success: true,
             data: settings,

@@ -18,7 +18,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const from = location.state?.from?.pathname || '/';
+    const from = location.state?.from?.pathname || (typeof location.state?.from === 'string' ? location.state.from : '/');
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

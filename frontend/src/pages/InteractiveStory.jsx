@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
     Sparkles,
     GitBranch,
@@ -17,7 +19,11 @@ import {
     Scroll,
     Share2,
     History,
-    Compass
+    Compass,
+    Lock,
+    X,
+    LogIn,
+    UserPlus
 } from 'lucide-react';
 import storyBranchService from '../services/storyBranch.service';
 
@@ -53,6 +59,10 @@ const MOOD_STYLES = {
 };
 
 const InteractiveStory = () => {
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const [stories, setStories] = useState([]);
     const [loadingStories, setLoadingStories] = useState(true);
     const [selectedStory, setSelectedStory] = useState(null);
@@ -64,6 +74,10 @@ const InteractiveStory = () => {
     const [loadingNext, setLoadingNext] = useState(false);
     const [customActionText, setCustomActionText] = useState('');
     const [copied, setCopied] = useState(false);
+
+    // Trạng thái modal yêu cầu đăng nhập khi khách tương tác
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [pendingStory, setPendingStory] = useState(null);
 
     const storyContainerRef = useRef(null);
 
@@ -86,6 +100,13 @@ const InteractiveStory = () => {
 
     // Bắt đầu một câu chuyện
     const handleStartStory = (story) => {
+        // Kiểm tra quyền: Nếu chưa đăng nhập thì hiện modal nhắc nhở
+        if (!isAuthenticated) {
+            setPendingStory(story);
+            setShowAuthModal(true);
+            return;
+        }
+
         setSelectedStory(story);
         setStats(story.initialStats || { tam: 50, tri: 50, dung: 50, longDan: 50 });
         setCurrentChapter(story.starterChapter);
@@ -111,6 +132,11 @@ const InteractiveStory = () => {
 
     // Người chơi chọn một lựa chọn
     const handleChooseOption = async (optionText, statChanges = null) => {
+        if (!isAuthenticated) {
+            setShowAuthModal(true);
+            return;
+        }
+
         if (loadingNext || !selectedStory) return;
 
         setLoadingNext(true);
@@ -244,7 +270,7 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                                 <p className="text-amber-200/80 font-medium text-sm">Đang thỉnh kho tàng tích truyện...</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                                 {stories.map((story) => (
                                     <div
                                         key={story.slug}
@@ -304,10 +330,20 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                                         {/* Nút bấm bắt đầu */}
                                         <button
                                             onClick={() => handleStartStory(story)}
-                                            className="mt-6 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/30 transition-all duration-200 active:scale-95"
+                                            className="mt-6 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/30 transition-all duration-200 active:scale-95 group/btn"
                                         >
-                                            <span>Bắt đầu định đoạt</span>
-                                            <ArrowRight className="w-4 h-4" />
+                                            {!isAuthenticated ? (
+                                                <>
+                                                    <Lock className="w-4 h-4 text-stone-900/80" />
+                                                    <span>Bắt đầu định đoạt</span>
+                                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>Bắt đầu định đoạt</span>
+                                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 ))}
@@ -631,6 +667,78 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                     </div>
                 )}
             </div>
+
+            {/* ============================================================ */}
+            {/* MODAL YÊU CẦU ĐĂNG NHẬP (DÀNH CHO KHÁCH / GUEST) */}
+            {/* ============================================================ */}
+            {showAuthModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-stone-900 via-[#181412] to-stone-950 border-2 border-amber-500/50 p-6 sm:p-8 shadow-2xl shadow-black/80 overflow-hidden text-center">
+                        {/* 4 hoa văn cung đình truyền thống ở góc */}
+                        <span className="absolute top-2.5 left-2.5 text-amber-500/50 text-xs select-none">❖</span>
+                        <span className="absolute top-2.5 right-2.5 text-amber-500/50 text-xs select-none">❖</span>
+                        <span className="absolute bottom-2.5 left-2.5 text-amber-500/50 text-xs select-none">❖</span>
+                        <span className="absolute bottom-2.5 right-2.5 text-amber-500/50 text-xs select-none">❖</span>
+
+                        {/* Dải vân hoàng kim trên đầu modal */}
+                        <div className="h-1 w-full bg-gradient-to-r from-transparent via-amber-500 to-transparent absolute top-0 left-0" />
+
+                        {/* Nút đóng X */}
+                        <button
+                            onClick={() => setShowAuthModal(false)}
+                            className="absolute top-4 right-4 text-stone-400 hover:text-stone-200 p-1.5 rounded-full hover:bg-stone-800/80 transition-colors"
+                            aria-label="Đóng"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        {/* Icon huy hiệu có hào quang */}
+                        <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-amber-500/40 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
+                            <Lock className="w-7 h-7 text-amber-400" />
+                        </div>
+
+                        <h3 className="text-xl sm:text-2xl font-bold text-amber-200 font-heritage mb-2">
+                            Mở Khóa Vận Mệnh Dị Bản
+                        </h3>
+
+                        {pendingStory && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 font-medium mb-3">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                <span>{pendingStory.title}</span>
+                            </div>
+                        )}
+
+                        <p className="text-stone-300 text-xs sm:text-sm leading-relaxed mb-6">
+                            Để bảo lưu nhánh rẽ câu chuyện, tích lũy điểm danh vọng và khắc danh hiệu cá nhân lên Bảng Vàng di sản, bạn vui lòng đăng nhập tài khoản.
+                        </p>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => navigate('/login', { state: { from: location } })}
+                                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/40 transition-all duration-200 active:scale-95"
+                            >
+                                <LogIn className="w-4 h-4" />
+                                <span>Đăng nhập để chơi ngay</span>
+                            </button>
+
+                            <button
+                                onClick={() => navigate('/register', { state: { from: location } })}
+                                className="w-full py-2.5 px-4 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 border border-amber-500/40 hover:border-amber-400 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200"
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                <span>Tạo tài khoản miễn phí</span>
+                            </button>
+
+                            <button
+                                onClick={() => setShowAuthModal(false)}
+                                className="text-stone-400 hover:text-stone-200 text-xs transition-colors pt-2 block mx-auto"
+                            >
+                                Để sau, tôi muốn xem tiếp danh mục truyện
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -131,6 +131,84 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
             ],
         },
     },
+    {
+        slug: 'son-tinh-thuy-tinh',
+        title: 'Sơn Tinh - Thủy Tinh: Đại Chiến Sơn Hà',
+        subtitle: 'Chế ngự thiên tai bằng vũ lực hay hóa giải oán thù hòa hợp thủy thổ?',
+        category: 'Truyền thuyết thần thoại',
+        coverColor: 'from-blue-700 via-cyan-800 to-stone-950',
+        badgeTheme: 'Sơn Hà Xã Tắc',
+        summary: 'Thủy Tinh dâng nước biển Đông ngập lụt đồng bằng, sườn núi Tản Viên chao đảo trong bão lũ. Đứng trước nỗi thống khổ của trăm họ, Sơn Tinh sẽ chọn đối sách nào?',
+        initialStats: { tam: 50, tri: 50, dung: 50, longDan: 50 },
+        starterChapter: {
+            step: 1,
+            chapterTitle: 'Hồi 1: Nước Dâng Ngút Trời Núi Tản',
+            sceneMood: 'dark',
+            storyText: `Gió thét mây giông, sấm sét xé toạc bầu trời Phong Châu. Thủy Tinh vì uất hận chậm chân đến sau đã hô phong hoán vũ, kéo theo thủy quái, ba ba, thuồng luồng dâng nước biển Đông cuồn cuộn ngập lụt khắp đồng bằng châu thổ sông Hồng. Nước dâng cao bao nhiêu, chân núi Tản Viên lại theo đó mà rung chuyển dữ dội.
+
+Đứng trên đỉnh Tản Viên nhìn xuống xóm làng chìm trong biển nước, muôn dân trăm họ gào khóc cầu cứu, Mỵ Nương run rẩy nép bên Sơn Tinh. Chúa non cao nắm chặt cây gậy thần trong tay, trước mắt là vận mệnh sinh tử của cả giang sơn. Sơn Tinh sẽ quyết định hành động ra sao?`,
+            choices: [
+                {
+                    id: 'st_c1',
+                    text: 'Vung gậy thần bốc từng quả đồi, dựng lũy đá ngăn nước, đồng thời mở kho lương và điều thuyền bè cứu vớt bá tánh',
+                    hint: '+Dũng (Khí phách kiên cường), +Lòng Dân',
+                    statChanges: { tam: 10, tri: 5, dung: 20, longDan: 20 },
+                },
+                {
+                    id: 'st_c2',
+                    text: 'Cưỡi mây xuống giữa tâm bão lũ gặp Thủy Tinh, đề nghị đàm phán phân chia lưu vực sông và nguồn nước tưới tiêu cho dân',
+                    hint: '+Trí (Mưu lược hòa hiếu), +Tâm',
+                    statChanges: { tam: 20, tri: 15, dung: 5, longDan: 10 },
+                },
+                {
+                    id: 'st_c3',
+                    text: 'Lập trận đồ Bát Quái dẫn nước lũ ra biển Đông, đào kênh khơi thông dòng chảy biến hiểm họa thành hệ thống thủy lợi ngàn năm',
+                    hint: '+Trí (Đại trí tuệ thủy lợi), +Quốc gia trường tồn',
+                    statChanges: { tam: 5, tri: 25, dung: 10, longDan: 15 },
+                },
+            ],
+        },
+    },
+    {
+        slug: 'cay-khe',
+        title: 'Cây Khế: Lời Hứa Chim Phượng Hoàng',
+        subtitle: 'Vàng bạc vô tận nơi đảo xa hay tấm lòng thảo thơm cứu đời?',
+        category: 'Truyện cổ tích thần kỳ',
+        coverColor: 'from-amber-600 via-emerald-800 to-stone-950',
+        badgeTheme: 'Minh Bạch & Phúc Đức',
+        summary: 'Chim thần đưa người em nghèo ra đảo hoang nhặt vàng trả ơn quả khế. Trước kho báu vô tận giữa đại dương, người em sẽ lựa chọn cách thức dùng của cải ra sao?',
+        initialStats: { tam: 50, tri: 50, dung: 50, longDan: 50 },
+        starterChapter: {
+            step: 1,
+            chapterTitle: 'Hồi 1: Đôi Cánh Chim Thần Nơi Đảo Vàng',
+            sceneMood: 'mystic',
+            storyText: `Gió biển lồng lộng thổi qua đôi cánh phượng hoàng khổng lồ. Vượt qua muôn trùng sóng dữ, chim thần đáp xuống hòn đảo kỳ bí giữa đại dương — nơi vách đá hang sâu lấp lánh muôn ngàn thỏi vàng ròng, ngọc bích và kim cương lóa mắt.
+
+Người em cầm trên tay chiếc túi ba gang may đúng lời dặn. Chim thần cất tiếng sang sảng: "Ngươi hãy lấy vàng theo đúng túi ba gang như đã ước hẹn." Nhưng nhìn thấy kho báu chất cao như núi, người em chợt nhớ tới quê nhà đang mùa hạn hán, dân làng đói khổ rách rưới, và cả người anh trai tham lam đang hắt hủi mình nơi xóm nghèo.
+
+Trước kho vàng vô tận giữa biển khơi, người em sẽ đưa ra quyết định gì?`,
+            choices: [
+                {
+                    id: 'ck_c1',
+                    text: 'Chỉ nhặt nửa túi ba gang vừa đủ sống, khẩn khoản xin chim thần chở thêm các giống cây ăn quả và lúa nước quý về giúp dân làng thoát nghèo',
+                    hint: '+Tâm (Nhân ái tột bậc), +Lòng Dân',
+                    statChanges: { tam: 25, tri: 10, dung: 5, longDan: 25 },
+                },
+                {
+                    id: 'ck_c2',
+                    text: 'Lấy đúng một túi ba gang vàng ròng, đem về chia đều cho người anh một nửa và thành lập xưởng thủ công tạo kế sinh nhai cho bá tánh',
+                    hint: '+Trí (Kiến thiết kinh tế), +Lấy đức báo oán',
+                    statChanges: { tam: 15, tri: 20, dung: 10, longDan: 15 },
+                },
+                {
+                    id: 'ck_c3',
+                    text: 'Khuyên chim thần đưa người anh cùng ra đảo một lần để tự mắt thấy sự linh diệu của trời đất, từ đó cảm hóa lòng tham của anh',
+                    hint: '+Tâm (Tình ruột thịt), +Thử thách',
+                    statChanges: { tam: 20, tri: 5, dung: 15, longDan: 5 },
+                },
+            ],
+        },
+    },
 ];
 
 /**
@@ -340,6 +418,230 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
                     id: 'fallback_c2',
                     text: 'Giữ nghề dệt làm sản nghiệp chung cho dân nghèo trong làng, sống đời thanh bần giản dị',
                     hint: '+Lòng Dân, +Thanh thản',
+                },
+            ],
+            endingData: null,
+            sourceType: 'local_narrative_engine',
+        };
+    }
+
+    if (story.slug === 'thach-sanh') {
+        if (isEnding) {
+            return {
+                step: nextStep,
+                chapterTitle: 'Hồi Kết: Khúc Ca Khải Hoàn Hòa Hiếu Bất Diệt',
+                sceneMood: 'triumphant',
+                storyText: `Khói lửa can qua hoàn toàn lùi xa. Mười tám nước chư hầu đời đời tôn kính Đại Việt, dân chúng hai bên biên giới qua lại buôn bán thái bình, tiếng cười rộn rã khắp thôn trang. Thạch Sanh không chỉ là vị dũng sĩ diệt chằn tinh, bắn đại bàng năm nào, mà nay được muôn đời tôn xưng là biểu tượng của tinh thần hòa hiếu dân tộc — lấy nhân nghĩa thắng hung tàn, lấy trí dũng giữ trọn non sông.`,
+                statChanges: { tam: 25, tri: 20, dung: 15, longDan: 30 },
+                newStats: {
+                    tam: Math.min(100, currentStats.tam + 25),
+                    tri: Math.min(100, currentStats.tri + 20),
+                    dung: Math.min(100, currentStats.dung + 15),
+                    longDan: Math.min(100, currentStats.longDan + 30),
+                },
+                isEnding: true,
+                choices: [],
+                endingData: {
+                    endingType: 'Thiên Hạ Đại Thái Bình',
+                    badgeTitle: 'Đại Trí Dũng Hiệp Vương',
+                    moralComparison:
+                        'Bản gốc ca ngợi chiến thắng thần kỳ và công lý trừng trị kẻ gian ác. Dị bản của bạn nâng tầm triết lý: Người anh hùng vĩ đại nhất không phải là kẻ vung gươm chém nhiều quân thù nhất, mà là người biết dùng nhân nghĩa cảm hóa lòng người, biến kẻ thù thành tri âm bằng tiếng đàn hòa hiếu.',
+                },
+                sourceType: 'local_narrative_engine',
+            };
+        }
+
+        return {
+            step: nextStep,
+            chapterTitle: `Hồi ${nextStep}: Tiếng Đàn Tri Âm & Niêu Cơm Thần Tích`,
+            sceneMood: 'mystic',
+            storyText: `Trước vạn cỗ chiến xa của 18 nước chư hầu, Thạch Sanh bước ra trận tiền. Chàng không vung búa sắt mà khoan thai gảy đàn thần. Tiếng đàn lúc dập dìu như ngọn gió đầu xuân, lúc da diết nỗi nhớ quê hương, khiến mười vạn quân sĩ phương xa bùi ngùi rơi giáp, ôm mặt khóc thương mẹ già con dại. Niêu cơm thần bé nhỏ được bày ra, tướng sĩ mười tám nước ăn mãi không vơi, thảy đều cúi đầu bái phục dũng khí và lòng nhân của chàng.`,
+            statChanges: { tam: 20, tri: 15, dung: 10, longDan: 25 },
+            newStats: {
+                tam: Math.min(100, currentStats.tam + 20),
+                tri: Math.min(100, currentStats.tri + 15),
+                dung: Math.min(100, currentStats.dung + 10),
+                longDan: Math.min(100, currentStats.longDan + 25),
+            },
+            isEnding: false,
+            choices: [
+                {
+                    id: 'ts_next_1',
+                    text: 'Ký kết Minh Ước Hòa Bình, thiết lập bang giao hòa hiếu lâu dài giữa các nước',
+                    hint: '+Trí tuệ, +Thái bình thịnh trị',
+                },
+                {
+                    id: 'ts_next_2',
+                    text: 'Từ tạ ấn kiếm Nguyên soái, cùng công chúa trở về dưới gốc đa xưa dạy dân làm nương rẫy',
+                    hint: '+Tâm đức, +Khí phách thanh cao',
+                },
+            ],
+            endingData: null,
+            sourceType: 'local_narrative_engine',
+        };
+    }
+
+    if (story.slug === 'an-duong-vuong') {
+        if (isEnding) {
+            return {
+                step: nextStep,
+                chapterTitle: 'Hồi Kết: Trường Thành Cổ Loa Vạn Niên Bất Tử',
+                sceneMood: 'triumphant',
+                storyText: `Trước thế trận phòng thủ kiên cố và nỏ thần Kim Quy uy lực sấm sét, quân Triệu Đà thảm bại tan tác, phải vội vã dâng biểu xin hòa và lui binh về phương Bắc. Thành Cổ Loa chín vòng xoáy ốc sừng sững không một vết rạn nứt. Mỵ Châu không còn phải gánh chịu số phận bi kịch nơi bờ biển Dạ Hải, mà được muôn dân ngợi ca là bậc nữ kiệt trí dũng song toàn, người đã đặt giang sơn xã tắc lên trên tư tình mà vẫn giữ vẹn tấm lòng bao dung.`,
+                statChanges: { tam: 20, tri: 25, dung: 25, longDan: 30 },
+                newStats: {
+                    tam: Math.min(100, currentStats.tam + 20),
+                    tri: Math.min(100, currentStats.tri + 25),
+                    dung: Math.min(100, currentStats.dung + 25),
+                    longDan: Math.min(100, currentStats.longDan + 30),
+                },
+                isEnding: true,
+                choices: [],
+                endingData: {
+                    endingType: 'Đại Thắng Non Sông Âu Lạc',
+                    badgeTitle: 'Quốc Mẫu Trí Dũng Song Toàn',
+                    moralComparison:
+                        'Bản gốc là tấn bi kịch cảnh tỉnh muôn đời về việc "Trái tim lầm chỗ để trên đầu". Dị bản của bạn đã tái sinh hình tượng Mỵ Châu thành người phụ nữ tỉnh táo, mưu lược, biết đặt tình yêu đất nước làm gốc rễ mà vẫn bảo toàn phẩm giá và đạo lý làm người.',
+                },
+                sourceType: 'local_narrative_engine',
+            };
+        }
+
+        return {
+            step: nextStep,
+            chapterTitle: `Hồi ${nextStep}: Chiếc Lẫy Thần & Cơn Sóng Ngầm Cổ Loa`,
+            sceneMood: 'dramatic',
+            storyText: `Trước hành động sáng suốt của Mỵ Châu: "${chosenText}", thế cờ Cổ Loa lập tức xoay chuyển ngoạn mục. Lẫy nỏ thần Kim Quy thật được bí mật canh phòng cẩn mật nơi tôn miếu, quân tuần thành lập tức tăng cường phòng vệ ở các vòng thành ốc. Trọng Thủy mang lẫy giả về phương Bắc ngỡ đại kế đã thành. Không lâu sau, Triệu Đà xua đại quân ồ ạt tấn công hòng đánh úp kinh đô...`,
+            statChanges: { tam: 10, tri: 20, dung: 15, longDan: 25 },
+            newStats: {
+                tam: Math.min(100, currentStats.tam + 10),
+                tri: Math.min(100, currentStats.tri + 20),
+                dung: Math.min(100, currentStats.dung + 15),
+                longDan: Math.min(100, currentStats.longDan + 25),
+            },
+            isEnding: false,
+            choices: [
+                {
+                    id: 'adv_next_1',
+                    text: 'Cùng vua cha giương nỏ thần thật phát huy sấm sét bắn tan hạm đội giặc tại sông Cầu',
+                    hint: '+Dũng khí, +Bảo quốc an dân',
+                },
+                {
+                    id: 'adv_next_2',
+                    text: 'Đích thân ra trước quan ải đối chất cùng Trọng Thủy, khuyên chàng hồi tâm chuyển ý quy thuận Âu Lạc',
+                    hint: '+Tâm tình, +Thử thách lòng người',
+                },
+            ],
+            endingData: null,
+            sourceType: 'local_narrative_engine',
+        };
+    }
+
+    if (story.slug === 'son-tinh-thuy-tinh') {
+        if (isEnding) {
+            return {
+                step: nextStep,
+                chapterTitle: 'Hồi Kết: Bản Hùng Ca Sơn Hà Xã Tắc',
+                sceneMood: 'triumphant',
+                storyText: `Trời quang mây tạnh, đồng lúa chín vàng trải dài tít tắp đến tận chân trời châu thổ sông Hồng. Sơn Tinh và Thủy Tinh từ đây không còn là kẻ thù sinh tử, mà trở thành biểu tượng của sự hòa hợp âm dương giữa Đất và Nước. Người dân Đại Việt đời đời ghi nhớ công ơn vị Thánh vương Tản Viên đã dạy dân đắp đê ngăn lũ, biến hiểm họa thiên tai thành sức mạnh đoàn kết ngàn năm dựng nước.`,
+                statChanges: { tam: 20, tri: 25, dung: 25, longDan: 30 },
+                newStats: {
+                    tam: Math.min(100, currentStats.tam + 20),
+                    tri: Math.min(100, currentStats.tri + 25),
+                    dung: Math.min(100, currentStats.dung + 25),
+                    longDan: Math.min(100, currentStats.longDan + 30),
+                },
+                isEnding: true,
+                choices: [],
+                endingData: {
+                    endingType: 'Đại Hòa Hợp Thủy Thổ',
+                    badgeTitle: 'Tản Viên Minh Vương Đại Thánh',
+                    moralComparison:
+                        'Bản gốc là cuộc chiến đụng độ hàng năm phản ánh nỗi vất vả trước thiên tai bão lũ. Dị bản của bạn đã mở ra tư tưởng tiến bộ: Con người không chỉ chế ngự thiên tai mà còn biết thuận theo tự nhiên, chuyển hóa giông bão thành dòng phù sa trù phú.',
+                },
+                sourceType: 'local_narrative_engine',
+            };
+        }
+
+        return {
+            step: nextStep,
+            chapterTitle: `Hồi ${nextStep}: Khơi Thông Dòng Lũ & Cánh Đồng Châu Thổ`,
+            sceneMood: 'dramatic',
+            storyText: `Hưởng ứng quyết định của Sơn Tinh: "${chosenText}", vạn dân vùng sông Hồng cùng hợp sức xẻ núi ngăn dòng, đắp nên những con đê vững chãi đầu tiên trong lịch sử dân tộc. Thủy Tinh nhìn thấy ý chí quật cường và lòng bao dung của Chúa non cao, cơn thịnh nộ dần nguôi ngoai, bèn thu bớt phong ba, biến dòng lũ hung dữ thành phù sa bồi đắp màu mỡ cho châu thổ.`,
+            statChanges: { tam: 15, tri: 20, dung: 20, longDan: 25 },
+            newStats: {
+                tam: Math.min(100, currentStats.tam + 15),
+                tri: Math.min(100, currentStats.tri + 20),
+                dung: Math.min(100, currentStats.dung + 20),
+                longDan: Math.min(100, currentStats.longDan + 25),
+            },
+            isEnding: false,
+            choices: [
+                {
+                    id: 'st_next_1',
+                    text: 'Lập đàn tế Trời Đất, ký Minh ước Sơn Hà đời đời hòa hợp với loài thủy tộc phương Nam',
+                    hint: '+Trí tuệ, +Thái bình thịnh trị',
+                },
+                {
+                    id: 'st_next_2',
+                    text: 'Truyền dạy cho muôn dân phương pháp canh tác lúa nước theo mùa lũ, biến hiểm họa thành mùa vàng',
+                    hint: '+Lòng Dân, +Bách nghệ phồn vinh',
+                },
+            ],
+            endingData: null,
+            sourceType: 'local_narrative_engine',
+        };
+    }
+
+    if (story.slug === 'cay-khe') {
+        if (isEnding) {
+            return {
+                step: nextStep,
+                chapterTitle: 'Hồi Kết: Cội Rễ Phúc Đức Trường Tồn',
+                sceneMood: 'triumphant',
+                storyText: `Mái nhà tranh năm xưa nay đã trở thành nơi đong đầy tiếng cười hạnh phúc của cả thôn làng. Hai anh em hòa thuận sẻ chia như thuở ấu thơ, cây khế thần vẫn đơm hoa kết trái bốn mùa tỏa bóng mát chở che. Bài học về lòng thảo thơm và sự thức tỉnh lương tri của người anh đã được muôn đời truyền tụng, trở thành câu chuyện đạo lý đẹp nhất của xứ sở.`,
+                statChanges: { tam: 30, tri: 20, dung: 15, longDan: 30 },
+                newStats: {
+                    tam: Math.min(100, currentStats.tam + 30),
+                    tri: Math.min(100, currentStats.tri + 20),
+                    dung: Math.min(100, currentStats.dung + 15),
+                    longDan: Math.min(100, currentStats.longDan + 30),
+                },
+                isEnding: true,
+                choices: [],
+                endingData: {
+                    endingType: 'Đại Phúc Vô Lượng',
+                    badgeTitle: 'Bậc Thiện Nhân Phúc Trạch',
+                    moralComparison:
+                        'Bản gốc kết thúc với bi kịch người anh tham lam rơi xuống biển sâu răn dạy "Tham thì thâm". Dị bản của bạn nâng tầm triết lý: Của cải chân chính không phải là vàng bạc nhặt được, mà là sự thức tỉnh lương tri của con người và tấm lòng sẵn sàng chia sẻ vì hạnh phúc chung.',
+                },
+                sourceType: 'local_narrative_engine',
+            };
+        }
+
+        return {
+            step: nextStep,
+            chapterTitle: `Hồi ${nextStep}: Mầm Xanh Nở Hoa Nơi Xóm Nghèo`,
+            sceneMood: 'serene',
+            storyText: `Trước nghĩa cử thơm thảo của người em: "${chosenText}", chim thần cảm kích vỗ cánh bay quanh cây khế ba vòng chúc phúc. Vàng bạc được dùng để đào giếng nước ngọt, mở trường dạy chữ cho trẻ thơ và dựng nhà cho người neo đơn. Người anh trai chứng kiến tấm lòng của em mình, hổ thẹn rơi nước mắt, quỳ xuống xin tha thứ và cùng em chăm sóc vườn cây.`,
+            statChanges: { tam: 25, tri: 15, dung: 10, longDan: 25 },
+            newStats: {
+                tam: Math.min(100, currentStats.tam + 25),
+                tri: Math.min(100, currentStats.tri + 15),
+                dung: Math.min(100, currentStats.dung + 10),
+                longDan: Math.min(100, currentStats.longDan + 25),
+            },
+            isEnding: false,
+            choices: [
+                {
+                    id: 'ck_next_1',
+                    text: 'Cùng người anh lập Quỹ Tương Tế Làng Xã, trích một phần hoa lợi hàng năm để cứu tế dân nghèo',
+                    hint: '+Đại Phúc Đức, +Lòng Dân',
+                },
+                {
+                    id: 'ck_next_2',
+                    text: 'Trồng thêm một vạn cây ăn quả quanh bờ đê để chim muông muôn phương tìm về làm tổ, tạo cảnh thái bình',
+                    hint: '+Tâm đức, +Thuận hòa tự nhiên',
                 },
             ],
             endingData: null,
