@@ -1,4 +1,4 @@
-# VietHeritage AI — Nền Tảng Khám Phá & Nghiên Cứu Ca Dao, Tục Ngữ Dân Gian Việt Nam
+# VietHeritage AI — Nền tảng số hóa, giải nghĩa đa tầng và tương tác văn học dân gian Việt Nam ứng dụng Trí tuệ Nhân tạo
 
 > **Dự án tốt nghiệp / Đồ án chuyên ngành SEP490**  
 > Ứng dụng Trí tuệ Nhân tạo và Hệ thống RAG trong bảo tồn, giải thích và truyền bá Văn hóa Dân gian Việt Nam.

@@ -84,7 +84,7 @@ function renderInlineFormatting(str) {
     });
 }
 
-const HeritageChatModal = ({ isOpen, onClose, initialWork = null, onSelectWork = null }) => {
+const HeritageChatModal = ({ isOpen, onClose, initialWork = null, initialQuestion = null, onSelectWork = null }) => {
     const { isAuthenticated } = useAuth();
     const [messages, setMessages] = useState([
         {
@@ -161,6 +161,16 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
         }
     }, [initialWork]);
 
+    // Tự động gửi câu hỏi nếu có initialQuestion truyền từ Smart Text Selection
+    useEffect(() => {
+        if (isOpen && initialQuestion && typeof initialQuestion === 'string') {
+            const timer = setTimeout(() => {
+                handleSend(initialQuestion, initialWork);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, initialQuestion, initialWork]);
+
     // Cuộn xuống tin nhắn mới nhất
     useEffect(() => {
         if (isOpen) {
@@ -170,7 +180,7 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
 
     if (!isOpen) return null;
 
-    const handleSend = async (questionToSend) => {
+    const handleSend = async (questionToSend, workOverride = null) => {
         const q = questionToSend || input;
         if (!q.trim() || loading) return;
 
@@ -192,9 +202,10 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
                 content: m.content,
             }));
 
+            const targetWork = workOverride || contextWork || initialWork;
             const res = await aiService.ask({
                 question: q.trim(),
-                contextSlug: contextWork?.slug || null,
+                contextSlug: targetWork?.slug || null,
                 history,
             });
 

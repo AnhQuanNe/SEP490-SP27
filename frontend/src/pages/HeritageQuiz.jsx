@@ -14,8 +14,9 @@ import {
     Trophy,
     ChevronRight,
     Compass,
-    Calendar,
+    SlidersHorizontal,
     Target,
+    Calendar,
     BarChart3,
     Medal,
     Flame,
@@ -25,21 +26,31 @@ import {
     History,
     Check,
     X,
-    ExternalLink
+    ExternalLink,
+    Layers,
+    ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import quizService from '../services/quiz.service';
 import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
+import WorkDetailModal from '../components/common/WorkDetailModal';
 import './HeritageQuiz.css';
 
 const CATEGORIES = [
-    { id: 'all', name: 'Toàn bộ Thể loại' },
+    { id: 'all', name: 'Tất cả Thể loại' },
     { id: 'co-tich', name: 'Truyện cổ tích' },
     { id: 'truyen-thuyet', name: 'Truyền thuyết' },
     { id: 'than-thoai', name: 'Thần thoại' },
     { id: 'ca-dao', name: 'Ca dao - Tục ngữ' },
     { id: 'trung-dai', name: 'Văn học Trung đại' },
+];
+
+const DIFFICULTIES = [
+    { id: 'all', name: 'Mọi độ khó' },
+    { id: 'de', name: 'Cơ bản (Dễ)' },
+    { id: 'trung-binh', name: 'Thông hiểu (Vừa)' },
+    { id: 'kho', name: 'Uyên bác (Khó)' },
 ];
 
 const HeritageQuiz = () => {
@@ -48,6 +59,7 @@ const HeritageQuiz = () => {
     // Mode: 'standard' | 'daily' | 'personalized' | 'progress'
     const [activeTab, setActiveTab] = useState('standard');
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [questionCount, setQuestionCount] = useState(5);
 
     // Quiz game states
@@ -74,6 +86,7 @@ const HeritageQuiz = () => {
 
     // Related work detail modal
     const [selectedWorkModal, setSelectedWorkModal] = useState(null);
+    const [reviewFilter, setReviewFilter] = useState('all'); // 'all' | 'wrong' | 'correct'
 
     // Tải thông tin tiến độ học tập nếu là Registered User
     const loadProgress = async () => {
@@ -96,13 +109,19 @@ const HeritageQuiz = () => {
     }, [isAuthenticated]);
 
     // Bắt đầu một lượt thi mới theo chế độ
-    const startQuiz = async (mode = activeTab, cat = selectedCategory, count = questionCount) => {
+    const startQuiz = async (
+        mode = activeTab,
+        cat = selectedCategory,
+        count = questionCount,
+        difficulty = selectedDifficulty
+    ) => {
         setLoading(true);
         setQuizResult(null);
         setCurrentIndex(0);
         setUserAnswers([]);
         setCurrentSelection(null);
         setHasAnsweredCurrent(false);
+        setReviewFilter('all');
 
         try {
             let targetCategory = cat;
@@ -115,8 +134,9 @@ const HeritageQuiz = () => {
             const data = await quizService.getQuestions({
                 category: targetCategory,
                 count: mode === 'daily' ? 5 : count,
+                difficulty,
             });
-            setQuestions(data);
+            setQuestions(data || []);
         } catch (err) {
             console.error('Lỗi khi tải câu hỏi quiz:', err);
         } finally {
@@ -126,7 +146,7 @@ const HeritageQuiz = () => {
 
     useEffect(() => {
         if (activeTab !== 'progress') {
-            startQuiz(activeTab, selectedCategory, questionCount);
+            startQuiz(activeTab, selectedCategory, questionCount, selectedDifficulty);
         } else if (isAuthenticated) {
             loadProgress();
         }
@@ -229,6 +249,12 @@ const HeritageQuiz = () => {
         }
     };
 
+    const filteredReviewDetails = quizResult?.details?.filter((item) => {
+        if (reviewFilter === 'wrong') return !item.isCorrect;
+        if (reviewFilter === 'correct') return item.isCorrect;
+        return true;
+    }) || [];
+
     return (
         <div className="quiz-page">
             <div className="quiz-container">
@@ -296,51 +322,90 @@ const HeritageQuiz = () => {
 
                 {/* 3. Filter controls (Chỉ hiện ở tab standard khi chưa nộp bài) */}
                 {activeTab === 'standard' && !quizResult && !loading && (
-                    <div className="quiz-filter-bar">
-                        <div className="quiz-cat-tabs no-scrollbar">
-                            {CATEGORIES.map((cat) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => {
-                                        setSelectedCategory(cat.id);
-                                        startQuiz('standard', cat.id, questionCount);
-                                    }}
-                                    className={`quiz-cat-btn ${
-                                        selectedCategory === cat.id ? 'active' : 'inactive'
-                                    }`}
-                                >
-                                    {cat.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                            <span className="text-xs text-slate-500 font-medium">Số câu:</span>
-                            <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                                {[5, 10].map((num) => (
+                    <div className="bg-[#fffdf9]/95 rounded-2xl p-4 sm:p-5 border border-amber-900/15 shadow-sm space-y-4 relative">
+                        {/* Thể loại */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                                    <BookOpen className="w-3.5 h-3.5 text-amber-800" />
+                                    Chủ đề / Thể loại:
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                                {CATEGORIES.map((cat) => (
                                     <button
-                                        key={num}
+                                        key={cat.id}
                                         onClick={() => {
-                                            setQuestionCount(num);
-                                            startQuiz('standard', selectedCategory, num);
+                                            setSelectedCategory(cat.id);
+                                            startQuiz('standard', cat.id, questionCount, selectedDifficulty);
                                         }}
-                                        className={`px-3 py-1 rounded-md text-xs font-bold transition ${
-                                            questionCount === num
-                                                ? 'bg-white text-slate-900 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-900'
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                                            selectedCategory === cat.id
+                                                ? 'bg-amber-900 text-amber-50 border-amber-800 shadow-sm'
+                                                : 'bg-white text-stone-700 border-stone-200/80 hover:bg-amber-50 hover:border-amber-300'
                                         }`}
                                     >
-                                        {num} câu
+                                        {cat.name}
                                     </button>
                                 ))}
                             </div>
-                            <button
-                                onClick={() => startQuiz('standard', selectedCategory, questionCount)}
-                                title="Đổi đề bài khác"
-                                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                            >
-                                <RotateCcw className="w-4 h-4" />
-                            </button>
+                        </div>
+
+                        {/* Độ khó & Số câu */}
+                        <div className="pt-2 border-t border-amber-200/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            {/* Độ khó */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs text-stone-500 font-medium flex items-center gap-1">
+                                    <SlidersHorizontal className="w-3 h-3 text-amber-700" />
+                                    Độ khó:
+                                </span>
+                                {DIFFICULTIES.map((diff) => (
+                                    <button
+                                        key={diff.id}
+                                        onClick={() => {
+                                            setSelectedDifficulty(diff.id);
+                                            startQuiz('standard', selectedCategory, questionCount, diff.id);
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                                            selectedDifficulty === diff.id
+                                                ? 'bg-red-900 text-amber-100 shadow-xs'
+                                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                        }`}
+                                    >
+                                        {diff.name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Số câu & Đổi đề */}
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <span className="text-xs text-stone-500 font-medium">Số câu:</span>
+                                <div className="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+                                    {[5, 10, 15].map((num) => (
+                                        <button
+                                            key={num}
+                                            onClick={() => {
+                                                setQuestionCount(num);
+                                                startQuiz('standard', selectedCategory, num, selectedDifficulty);
+                                            }}
+                                            className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition ${
+                                                questionCount === num
+                                                    ? 'bg-white text-stone-900 shadow-xs'
+                                                    : 'text-stone-500 hover:text-stone-900'
+                                            }`}
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => startQuiz('standard', selectedCategory, questionCount, selectedDifficulty)}
+                                    title="Xáo trộn đề bài mới"
+                                    className="p-1.5 text-stone-600 hover:text-amber-900 hover:bg-amber-100/70 rounded-lg transition"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -664,6 +729,11 @@ const HeritageQuiz = () => {
                                     <span className="text-xs text-slate-500 font-medium hidden sm:inline">
                                         • {currentQuestion.categoryName}
                                     </span>
+                                    {currentQuestion.difficulty && (
+                                        <span className="text-[10px] uppercase font-bold text-stone-500 px-2 py-0.5 rounded bg-stone-100">
+                                            {currentQuestion.difficulty === 'de' ? 'Dễ' : currentQuestion.difficulty === 'kho' ? 'Khó' : 'Vừa'}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs font-bold text-amber-800">
@@ -705,7 +775,7 @@ const HeritageQuiz = () => {
 
                         {/* Question Text */}
                         <div className="space-y-2">
-                            <h2 className="quiz-question-title font-heritage">
+                            <h2 className="quiz-question-title font-heritage text-lg sm:text-2xl font-bold leading-relaxed">
                                 {currentQuestion.question}
                             </h2>
                         </div>
@@ -719,22 +789,22 @@ const HeritageQuiz = () => {
                                         key={optIdx}
                                         onClick={() => handleSelectOption(optIdx)}
                                         disabled={hasAnsweredCurrent}
-                                        className={`w-full p-4 rounded-2xl border text-left text-sm font-medium transition-all flex items-start gap-3 ${
+                                        className={`w-full p-4 rounded-2xl border text-left text-xs sm:text-sm font-medium transition-all flex items-start gap-3.5 ${
                                             isSelected
-                                                ? 'border-amber-600 bg-amber-50/70 text-amber-950 ring-2 ring-amber-500/20 shadow-sm'
-                                                : 'border-slate-200 bg-white hover:border-slate-300 text-slate-800 hover:bg-slate-50'
+                                                ? 'border-amber-700 bg-amber-50/90 text-amber-950 ring-2 ring-amber-600/30 shadow-sm'
+                                                : 'border-stone-200 bg-white hover:border-amber-300 text-stone-800 hover:bg-stone-50/70'
                                         }`}
                                     >
                                         <div
                                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 transition ${
                                                 isSelected
-                                                    ? 'bg-amber-600 text-white'
-                                                    : 'bg-slate-100 text-slate-600'
+                                                    ? 'bg-amber-900 text-amber-100'
+                                                    : 'bg-stone-100 text-stone-600'
                                             }`}
                                         >
                                             {String.fromCharCode(65 + optIdx)}
                                         </div>
-                                        <span className="leading-relaxed">{option}</span>
+                                        <span className="leading-relaxed pt-0.5">{option}</span>
                                     </button>
                                 );
                             })}
@@ -765,23 +835,23 @@ const HeritageQuiz = () => {
                         )}
 
                         {/* Action Bar */}
-                        <div className="pt-4 flex items-center justify-between">
-                            {currentQuestion.relatedWork && (
+                        <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-amber-200/50">
+                            {currentQuestion.relatedWork ? (
                                 <button
                                     onClick={() => handleOpenRelatedWork(currentQuestion.relatedWork.slug)}
-                                    className="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1.5 transition"
+                                    className="text-xs text-amber-900 hover:text-red-800 font-semibold flex items-center gap-1.5 transition"
                                 >
-                                    <BookOpen className="w-3.5 h-3.5" />
+                                    <BookOpen className="w-3.5 h-3.5 text-amber-700" />
                                     <span>Đọc tác phẩm: {currentQuestion.relatedWork.title}</span>
                                 </button>
-                            )}
+                            ) : <div />}
 
                             <div className="ml-auto flex items-center gap-3">
                                 {!hasAnsweredCurrent ? (
                                     <button
                                         onClick={handleConfirmAnswer}
                                         disabled={currentSelection === null}
-                                        className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-white rounded-xl text-xs font-bold transition shadow-sm"
+                                        className="px-6 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-40 disabled:pointer-events-none text-amber-50 rounded-xl text-xs font-bold transition shadow-sm"
                                     >
                                         Xác nhận câu trả lời
                                     </button>
@@ -789,22 +859,22 @@ const HeritageQuiz = () => {
                                     <button
                                         onClick={handleNextQuestion}
                                         disabled={submitting}
-                                        className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-amber-600/20 flex items-center gap-1.5"
+                                        className="px-6 py-2.5 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-xl text-xs font-bold transition shadow-md shadow-red-950/20 flex items-center gap-1.5"
                                     >
                                         {submitting ? (
                                             <>
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
                                                 <span>Đang chấm điểm...</span>
                                             </>
                                         ) : currentIndex === questions.length - 1 ? (
                                             <>
                                                 <span>Xem kết quả & Danh hiệu</span>
-                                                <Trophy className="w-4 h-4" />
+                                                <Trophy className="w-4 h-4 text-amber-300" />
                                             </>
                                         ) : (
                                             <>
                                                 <span>Câu tiếp theo</span>
-                                                <ArrowRight className="w-4 h-4" />
+                                                <ArrowRight className="w-4 h-4 text-amber-300" />
                                             </>
                                         )}
                                     </button>
@@ -816,37 +886,38 @@ const HeritageQuiz = () => {
 
                 {/* 7. RESULTS SCREEN */}
                 {quizResult && activeTab !== 'progress' && (
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8 animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8 animate-in zoom-in-95 duration-200 relative">
+                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
                         {/* Hero Score Badge */}
                         <div className="text-center space-y-4 max-w-md mx-auto">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-600 mx-auto flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/25 ring-8 ring-amber-50">
-                                <Crown className="w-12 h-12 text-slate-950" />
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-500 mx-auto flex items-center justify-center text-red-950 shadow-xl shadow-amber-600/25 ring-8 ring-amber-100">
+                                <Crown className="w-12 h-12 text-red-950" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
                                     Danh hiệu đạt được
                                 </span>
-                                <h2 className="text-3xl font-extrabold text-slate-900 font-heritage">
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-heritage">
                                     {quizResult.badge.title}
                                 </h2>
-                                <p className="text-xs sm:text-sm text-slate-600">
+                                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                                     {quizResult.badge.description}
                                 </p>
                             </div>
 
                             {/* Score Stats */}
                             <div className="grid grid-cols-2 gap-4 pt-3">
-                                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                                    <p className="text-2xl font-extrabold text-slate-900 font-heritage">
+                                <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80">
+                                    <p className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-heritage">
                                         {quizResult.score} / 100
                                     </p>
-                                    <p className="text-[11px] text-slate-500 font-medium">Điểm số tổng kết</p>
+                                    <p className="text-[11px] text-stone-500 font-medium">Điểm số tổng kết</p>
                                 </div>
-                                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                                    <p className="text-2xl font-extrabold text-emerald-600 font-heritage">
+                                <div className="bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-200/80">
+                                    <p className="text-2xl sm:text-3xl font-extrabold text-emerald-800 font-heritage">
                                         {quizResult.correctCount} / {quizResult.totalQuestions}
                                     </p>
-                                    <p className="text-[11px] text-slate-500 font-medium">Số câu trả lời đúng</p>
+                                    <p className="text-[11px] text-emerald-700 font-medium">Số câu trả lời đúng</p>
                                 </div>
                             </div>
 
@@ -877,78 +948,121 @@ const HeritageQuiz = () => {
                                 </div>
                             )}
 
-                            <div className="pt-2 flex items-center justify-center gap-3">
+                            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                                 <button
-                                    onClick={() => startQuiz(activeTab, selectedCategory, questionCount)}
+                                    onClick={() => startQuiz(activeTab, selectedCategory, questionCount, selectedDifficulty)}
                                     className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
                                 >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                    <span>Thử thách lượt mới</span>
+                                    <RotateCcw className="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Làm đề mới</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('progress')}
-                                    className="px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                                    className="px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-200"
                                 >
                                     <BarChart3 className="w-3.5 h-3.5" />
                                     <span>Xem tiến độ</span>
                                 </button>
+                                <Link
+                                    to="/kham-pha"
+                                    className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                                >
+                                    <Compass className="w-3.5 h-3.5 text-stone-600" />
+                                    <span>Khám phá thêm</span>
+                                </Link>
                             </div>
                         </div>
 
-                        {/* Detailed Question Review with AI Explanation Button */}
+                        {/* Detailed Question Review with Filters */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-slate-900 font-heritage flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-amber-600" />
-                                    <span>Phân tích & Giải nghĩa Chi tiết từng câu:</span>
-                                </h3>
-                                <span className="text-xs text-slate-500 font-medium">
-                                    Click "Hỏi AI" để xem bối cảnh và nguồn học thuật
-                                </span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heritage flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-amber-600" />
+                                        <span>Phân tích & Giải nghĩa Chi tiết từng câu:</span>
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                        Click "AI Giảng giải Đa tầng" để xem bối cảnh và nguồn học thuật
+                                    </p>
+                                </div>
+
+                                {/* Filter Buttons */}
+                                <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-xl text-xs font-semibold">
+                                    <button
+                                        onClick={() => setReviewFilter('all')}
+                                        className={`px-2.5 py-1 rounded-lg transition ${
+                                            reviewFilter === 'all'
+                                                ? 'bg-white text-stone-900 shadow-xs'
+                                                : 'text-stone-500 hover:text-stone-900'
+                                        }`}
+                                    >
+                                        Tất cả ({quizResult.details?.length || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setReviewFilter('wrong')}
+                                        className={`px-2.5 py-1 rounded-lg transition ${
+                                            reviewFilter === 'wrong'
+                                                ? 'bg-red-900 text-white shadow-xs'
+                                                : 'text-stone-500 hover:text-rose-800'
+                                        }`}
+                                    >
+                                        Câu sai ({quizResult.details?.filter((d) => !d.isCorrect).length || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setReviewFilter('correct')}
+                                        className={`px-2.5 py-1 rounded-lg transition ${
+                                            reviewFilter === 'correct'
+                                                ? 'bg-emerald-800 text-white shadow-xs'
+                                                : 'text-stone-500 hover:text-emerald-800'
+                                        }`}
+                                    >
+                                        Câu đúng ({quizResult.details?.filter((d) => d.isCorrect).length || 0})
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                {quizResult.details.map((item, idx) => (
+                                {filteredReviewDetails.map((item, idx) => (
                                     <div
                                         key={idx}
                                         className={`p-5 rounded-2xl border transition ${
                                             item.isCorrect
                                                 ? 'bg-emerald-50/50 border-emerald-200'
-                                                : 'bg-rose-50/40 border-rose-200'
+                                                : 'bg-rose-50/50 border-rose-200'
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-slate-700">
+                                                    <span className="text-xs font-bold text-stone-700">
                                                         Câu {idx + 1}:
                                                     </span>
-                                                    <span className="text-[11px] text-slate-500 font-medium">
+                                                    <span className="text-[11px] text-stone-500 font-medium">
                                                         ({item.categoryName})
                                                     </span>
                                                 </div>
-                                                <p className="text-sm font-bold text-slate-900 leading-snug">
+                                                <p className="text-sm font-bold text-stone-900 leading-snug">
                                                     {item.question}
                                                 </p>
                                             </div>
                                             {item.isCorrect ? (
-                                                <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs flex-shrink-0">
-                                                    <CheckCircle2 className="w-5 h-5" />
+                                                <div className="flex items-center gap-1 text-emerald-700 font-bold text-xs flex-shrink-0">
+                                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                                     <span>Chính xác</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-1 text-rose-600 font-bold text-xs flex-shrink-0">
-                                                    <XCircle className="w-5 h-5" />
+                                                <div className="flex items-center gap-1 text-rose-700 font-bold text-xs flex-shrink-0">
+                                                    <XCircle className="w-4 h-4 text-rose-600" />
                                                     <span>Chưa đúng</span>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="mt-3 pt-3 border-t border-slate-200/60 space-y-2 text-xs">
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+                                        <div className="mt-3 pt-3 border-t border-stone-200/60 space-y-2 text-xs">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-stone-700">
                                                 <span>Bạn đã chọn: <strong className={item.isCorrect ? 'text-emerald-700' : 'text-rose-700'}>{item.userAnswer}</strong></span>
                                                 {!item.isCorrect && (
-                                                    <span className="text-slate-400 hidden sm:inline">•</span>
+                                                    <span className="text-stone-400 hidden sm:inline">•</span>
                                                 )}
                                                 {!item.isCorrect && (
                                                     <span>Đáp án đúng: <strong className="text-emerald-700">{item.correctAnswer}</strong></span>
@@ -967,9 +1081,9 @@ const HeritageQuiz = () => {
                                                     {item.relatedWorkSlug ? (
                                                         <button
                                                             onClick={() => handleOpenRelatedWork(item.relatedWorkSlug)}
-                                                            className="text-indigo-600 hover:text-indigo-800 font-bold text-[11px] flex items-center gap-1"
+                                                            className="text-amber-900 hover:text-red-900 font-bold text-[11px] flex items-center gap-1"
                                                         >
-                                                            <BookOpen className="w-3 h-3" />
+                                                            <BookOpen className="w-3 h-3 text-amber-700" />
                                                             <span>Xem tác phẩm liên quan</span>
                                                         </button>
                                                     ) : <span />}
@@ -998,24 +1112,30 @@ const HeritageQuiz = () => {
             </div>
 
             {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích đa tầng & Dẫn nguồn học thuật) */}
+            {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích 4 Tầng & Dẫn nguồn học thuật) */}
             {activeAiModal && (
                 <div
-                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
                     role="dialog"
                 >
-                    <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-amber-500/40 relative max-h-[85vh] overflow-y-auto">
+                    <div className="bg-gradient-to-b from-slate-900 via-stone-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 space-y-4 shadow-2xl border border-amber-500/40 relative max-h-[88vh] overflow-y-auto custom-scrollbar">
                         {/* Header */}
-                        <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                        <div className="flex items-start justify-between border-b border-slate-800 pb-3.5">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
                                     <Sparkles className="w-5 h-5 text-slate-950" />
                                 </div>
                                 <div>
-                                    <h3 className="font-extrabold text-white text-base font-heritage">
-                                        VietHeritage AI — Phân Tích Đa Tầng
-                                    </h3>
-                                    <p className="text-[11px] text-amber-300">
-                                        Nguồn học thuật & Bối cảnh lịch sử dân gian
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-extrabold text-white text-base font-heritage">
+                                            VietHeritage AI — Giải Nghĩa 4 Tầng
+                                        </h3>
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                            4 Tầng
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-amber-300/90 font-medium">
+                                        Chuẩn hóa đa chiều: Ngôn từ • Biểu tượng • Đạo lý • Địa văn hóa
                                     </p>
                                 </div>
                             </div>
@@ -1028,24 +1148,35 @@ const HeritageQuiz = () => {
                         </div>
 
                         {/* Question Reference */}
-                        <div className="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60 text-xs space-y-1">
-                            <span className="font-bold text-amber-400 text-[11px]">Câu hỏi phân tích:</span>
-                            <p className="text-slate-200 font-medium">{activeAiModal.question}</p>
-                        </div>
-
-                        {/* Explanation Content */}
-                        <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam">
-                            {activeAiModal.data?.deepExplanation}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
-                            <span className="text-[11px] text-slate-400">
-                                Dữ liệu kiểm chứng bởi VietHeritage Knowledge Base
+                        <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/70 text-xs space-y-1 shadow-inner">
+                            <span className="font-bold text-amber-400 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                                <HelpCircle className="w-3.5 h-3.5" />
+                                Câu hỏi phân tích:
                             </span>
+                            <p className="text-slate-100 font-medium text-sm leading-snug">{activeAiModal.question}</p>
+                            {activeAiModal.data?.correctAnswer && (
+                                <p className="text-emerald-400 text-xs font-semibold pt-1">
+                                    ✓ Đáp án chuẩn xác: <strong>"{activeAiModal.data.correctAnswer}"</strong>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Explanation Content (4 Tiers) */}
+                        <div className="space-y-3 pt-1">
+                            <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam bg-slate-950/50 p-4 rounded-2xl border border-slate-800 shadow-inner">
+                                {activeAiModal.data?.deepExplanation}
+                            </div>
+                        </div>
+
+                        {/* Academic Citation Footer */}
+                        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2 text-slate-400 text-[11px]">
+                                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                <span>Nguồn kiểm chứng: <strong className="text-amber-300">{activeAiModal.data?.academicSource || 'Viện Văn học Việt Nam'}</strong></span>
+                            </div>
                             <button
                                 onClick={() => setActiveAiModal(null)}
-                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-sm"
                             >
                                 Đã hiểu
                             </button>
@@ -1103,60 +1234,12 @@ const HeritageQuiz = () => {
                 </div>
             )}
 
-            {/* Quick Work Detail Modal if user clicked read more */}
-            {selectedWorkModal && (
-                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
-                                    {selectedWorkModal.categoryName}
-                                </span>
-                                <h3 className="text-2xl font-bold font-heritage text-slate-900 mt-2">
-                                    {selectedWorkModal.title}
-                                </h3>
-                                <p className="text-xs text-slate-500">
-                                    {selectedWorkModal.region} • {selectedWorkModal.period}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setSelectedWorkModal(null)}
-                                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg"
-                            >
-                                <XCircle className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {selectedWorkModal.quote && (
-                            <div className="border-l-4 border-amber-600 bg-amber-50/70 p-3.5 rounded-r-xl">
-                                <PoemDisplay text={selectedWorkModal.quote} size="sm" showQuotes={true} />
-                            </div>
-                        )}
-
-                        <div className="space-y-2 text-xs leading-relaxed text-slate-700">
-                            <h4 className="font-bold text-slate-900">Tóm tắt tác phẩm:</h4>
-                            <p>{selectedWorkModal.summary}</p>
-                        </div>
-
-                        {selectedWorkModal.thematicMeaning && (
-                            <div className="space-y-2 text-xs leading-relaxed text-slate-700">
-                                <h4 className="font-bold text-slate-900">Ý nghĩa chủ đề & Biểu tượng:</h4>
-                                <p>{selectedWorkModal.thematicMeaning}</p>
-                            </div>
-                        )}
-
-                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                            <span>Nguồn kiểm chứng: <strong>{selectedWorkModal.source}</strong></span>
-                            <button
-                                onClick={() => setSelectedWorkModal(null)}
-                                className="px-4 py-2 bg-slate-900 text-white rounded-xl font-semibold"
-                            >
-                                Đóng
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* MODAL: CHI TIẾT TÁC PHẨM LIÊN QUAN CHUẨN HÓA 4 TẦNG NGHĨA */}
+            <WorkDetailModal
+                work={selectedWorkModal}
+                isOpen={!!selectedWorkModal}
+                onClose={() => setSelectedWorkModal(null)}
+            />
         </div>
     );
 };

@@ -25,6 +25,27 @@ export const aiService = {
     },
 
     /**
+     * Lấy danh sách các chủ đề học tập cho Gia sư văn hóa AI
+     */
+    async getTutorTopics() {
+        const response = await api.get('/ai/tutor/topics');
+        return response.data || [];
+    },
+
+    /**
+     * Tương tác hỏi đáp học tập với Gia sư văn hóa AI
+     */
+    async chatWithTutor({ message, topic = null, history = [], selectedWorkSlug = null }) {
+        const response = await api.post('/ai/tutor', {
+            message,
+            topic,
+            history,
+            selectedWorkSlug,
+        });
+        return response.data;
+    },
+
+    /**
      * Lấy thông tin số lượt AI còn lại trong ngày của Guest
      */
     async getQuota() {
@@ -42,6 +63,23 @@ export const aiService = {
         });
         return response.data;
     },
+
+    /**
+     * Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ cho đoạn trích bôi đen
+     */
+    async analyzeSnippet({ snippet, workSlug = null, workTitle = null, analysisType = 'general' }) {
+        const response = await api.post('/ai/analyze-snippet', {
+            snippet,
+            workSlug,
+            workTitle,
+            analysisType,
+        });
+        return {
+            ...(response.data || {}),
+            quota: response.quota || null,
+        };
+    },
 };
+
 
 export default aiService;

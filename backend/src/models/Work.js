@@ -122,6 +122,69 @@ const workSchema = new mongoose.Schema(
             default: 'published',
             index: true,
         },
+        locationIds: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Location',
+                index: true,
+            },
+        ],
+        locationRelations: [
+            {
+                locationId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Location',
+                },
+                relationType: {
+                    type: String,
+                    enum: ['origin', 'associated', 'circulation', 'unknown'],
+                    default: 'unknown',
+                },
+                notes: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+            },
+        ],
+        variants: [
+            {
+                name: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+                region: {
+                    type: String,
+                    default: 'Toàn quốc',
+                    trim: true,
+                },
+                quote: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                content: {
+                    type: String,
+                    default: '',
+                },
+                differenceNote: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                scholarlyAnalysis: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                source: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+            },
+        ],
     },
     {
         timestamps: true,

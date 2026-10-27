@@ -6,10 +6,11 @@ const quizService = require('../services/quiz.service');
  */
 const getQuestions = async (req, res) => {
     try {
-        const { category = 'all', count = 5 } = req.query;
+        const { category = 'all', count = 5, difficulty = 'all' } = req.query;
         const questions = await quizService.getQuestions({
             category,
             count: parseInt(count, 10) || 5,
+            difficulty,
             userId: req.user?._id || null,
         });
 

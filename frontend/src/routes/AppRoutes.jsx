@@ -2,9 +2,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
 import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
-import LiteratureMap from '../pages/LiteratureMap';
+import KnowledgeGraph from '../pages/KnowledgeGraph';
 import HeritageQuiz from '../pages/HeritageQuiz';
 import InteractiveStory from '../pages/InteractiveStory';
+import LiteratureMap from '../pages/LiteratureMap';
+import AiTutor from '../pages/AiTutor';
+import PoetryStudio from '../pages/PoetryStudio';
+import Leaderboard from '../pages/Leaderboard';
+import HeritageArena from '../pages/HeritageArena';
+import VirtualExhibition from '../pages/VirtualExhibition';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -15,6 +21,8 @@ import Favorites from '../pages/Favorites';
 import SearchHistory from '../pages/SearchHistory';
 import SubmitContent from '../pages/SubmitContent';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import LearningPathHub from '../pages/learning/LearningPathHub';
+import LearningPathDetail from '../pages/learning/LearningPathDetail';
 import ProtectedRoute from './ProtectedRoute';
 
 const AppRoutes = () => {
@@ -24,8 +32,17 @@ const AppRoutes = () => {
             <Route path="/kham-pha" element={<Explore />} />
             <Route path="/di-ban-co-tich" element={<InteractiveStory />} />
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
+            <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
+            <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/trien-lam-3d" element={<VirtualExhibition />} />
+            <Route path="/virtual-exhibition" element={<VirtualExhibition />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
+            <Route path="/gia-su-ai" element={<AiTutor />} />
+            <Route path="/ai-tutor" element={<AiTutor />} />
+            <Route path="/studio-tho" element={<PoetryStudio />} />
+            <Route path="/bang-vang" element={<Leaderboard />} />
+            <Route path="/dau-truong" element={<HeritageArena />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
@@ -33,6 +50,22 @@ const AppRoutes = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Các route yêu cầu người dùng đăng nhập */}
+            <Route
+                path="/lo-trinh-hoc"
+                element={
+                    <ProtectedRoute>
+                        <LearningPathHub />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/lo-trinh-hoc/:id"
+                element={
+                    <ProtectedRoute>
+                        <LearningPathDetail />
+                    </ProtectedRoute>
+                }
+            />
             <Route
                 path="/profile"
                 element={

@@ -5,10 +5,11 @@ export const quizService = {
      * Lấy danh sách câu hỏi đố vui trắc nghiệm
      * category có thể là: 'all', thể loại cụ thể, 'personalized', 'daily'
      */
-    async getQuestions({ category = 'all', count = 5 } = {}) {
+    async getQuestions({ category = 'all', count = 5, difficulty = 'all' } = {}) {
         const params = new URLSearchParams();
         if (category) params.append('category', category);
         if (count) params.append('count', count);
+        if (difficulty && difficulty !== 'all') params.append('difficulty', difficulty);
 
         const response = await api.get(`/quiz/questions?${params.toString()}`);
         return response.data || [];

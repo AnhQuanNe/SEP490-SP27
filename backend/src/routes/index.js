@@ -11,6 +11,12 @@ const searchHistoryRoutes = require('./searchHistory.routes');
 const submissionRoutes = require('./submission.routes');
 const adminRoutes = require('./admin.routes');
 const storyBranchRoutes = require('./storyBranch.routes');
+const poetryRoutes = require('./poetry.routes');
+const gamificationRoutes = require('./gamification.routes');
+const locationRoutes = require('./location.routes');
+const mapRoutes = require('./map.routes');
+const learningPathRoutes = require('./learningPath.routes');
+const artifactRoutes = require('./artifact.routes');
 const SystemSetting = require('../models/SystemSetting');
 
 router.use('/auth', authRoutes);
@@ -23,6 +29,12 @@ router.use('/search-history', searchHistoryRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/admin', adminRoutes);
 router.use('/story-branch', storyBranchRoutes);
+router.use('/poetry', poetryRoutes);
+router.use('/gamification', gamificationRoutes);
+router.use('/locations', locationRoutes);
+router.use('/map', mapRoutes);
+router.use('/learning-paths', learningPathRoutes);
+router.use('/artifacts', artifactRoutes);
 
 // Public settings endpoint (để frontend hiển thị banner thông báo hoặc bật/tắt đóng góp)
 router.get('/settings/public', async (req, res) => {

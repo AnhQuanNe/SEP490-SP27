@@ -49,7 +49,6 @@ const Footer = () => {
                             <li><Link to="/kham-pha" className="hover:text-amber-300 transition-colors">Ca dao & Tục ngữ</Link></li>
                             <li><Link to="/kham-pha?mode=semantic" className="hover:text-amber-300 transition-colors">Tìm kiếm ý nghĩa bằng AI</Link></li>
                             <li><Link to="/dong-gop" className="hover:text-amber-300 transition-colors">Đóng góp di sản văn hóa</Link></li>
-                            <li><Link to="/ban-do" className="hover:text-amber-300 transition-colors">Bản đồ Văn học 3 miền</Link></li>
                         </ul>
                     </div>
 

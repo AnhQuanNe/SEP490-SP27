@@ -1,448 +1,470 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import literatureService from '../services/literature.service';
-import PoemDisplay from '../components/common/PoemDisplay';
+import locationService from '../services/location.service';
+import CulturalMap from '../components/map/CulturalMap';
+import WorkDetailModal from '../components/common/WorkDetailModal';
 import {
     MapPin,
     Compass,
-    CheckCircle2,
-    Bookmark,
-    Eye,
-    ThumbsUp,
-    X,
-    Navigation,
-    Mountain,
-    Waves,
-    Sun,
+    BookOpen,
+    ArrowRight,
+    Filter,
+    ShieldCheck,
     ChevronRight,
-    ArrowRight
+    Map as MapIcon,
+    X,
+    Info,
+    FileText
 } from 'lucide-react';
-import './LiteratureMap.css';
+
+const CATEGORY_FILTERS = [
+    { id: 'all', label: 'Tất cả thể loại' },
+    { id: 'ca-dao', label: 'Ca dao Dân ca' },
+    { id: 'tuc-ngu', label: 'Tục ngữ Việt Nam' },
+    { id: 'truyen-thuyet', label: 'Truyền thuyết' },
+    { id: 'co-tich', label: 'Cổ tích' },
+    { id: 'trung-dai', label: 'Văn học Trung đại' },
+];
+
+const REGION_FILTERS = [
+    { id: 'all', label: 'Toàn quốc' },
+    { id: 'Bắc', label: 'Miền Bắc' },
+    { id: 'Trung', label: 'Miền Trung' },
+    { id: 'Nam', label: 'Miền Nam' },
+];
+
+const RELATION_BADGES = {
+    origin: {
+        label: 'Nơi khởi nguồn',
+        color: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        desc: 'Địa phương được ghi nhận là nơi phát tích / quê hương tác phẩm',
+    },
+    associated: {
+        label: 'Gắn liền địa danh',
+        color: 'bg-amber-100 text-amber-900 border-amber-300',
+        desc: 'Tác phẩm nhắc đến hoặc có mối liên hệ mật thiết với địa danh này',
+    },
+    circulation: {
+        label: 'Vùng lưu truyền',
+        color: 'bg-blue-100 text-blue-900 border-blue-300',
+        desc: 'Lưu truyền rộng khắp trong sinh hoạt văn hóa dân gian địa phương',
+    },
+    unknown: {
+        label: 'Chưa xác định',
+        color: 'bg-slate-100 text-slate-700 border-slate-300',
+        desc: 'Mối liên hệ địa lý đang được tiếp tục khảo cứu học thuật',
+    },
+};
 
 const LiteratureMap = () => {
-    const [selectedRegion, setSelectedRegion] = useState('Bắc');
-    const [works, setWorks] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // Trạng thái bộ lọc
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedRegion, setSelectedRegion] = useState('all');
+
+    // Dữ liệu bản đồ & địa phương
+    const [locations, setLocations] = useState([]);
+    const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+
+    // Dữ liệu tác phẩm của địa phương đang chọn
+    const [locationWorks, setLocationWorks] = useState([]);
+    const [isLoadingWorks, setIsLoadingWorks] = useState(false);
+    const [workTotal, setWorkTotal] = useState(0);
+
+    // Modal xem chi tiết tác phẩm (tái sử dụng WorkDetailModal hiện có)
     const [activeModalWork, setActiveModalWork] = useState(null);
-    const [savedWorkIds, setSavedWorkIds] = useState(new Set());
-    const [toastMessage, setToastMessage] = useState('');
 
-    const showToast = (msg) => {
-        setToastMessage(msg);
-        setTimeout(() => setToastMessage(''), 3000);
-    };
+    // Mobile drawer state
+    const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-    // Cultural & Geographic Data of 3 Regions
-    const regionInfo = {
-        'Bắc': {
-            name: 'Kinh Kỳ & Bắc Bộ',
-            subtitle: 'Cái nôi văn minh sông Hồng & Vùng đất ngàn năm văn hiến',
-            icon: Mountain,
-            accentColor: 'from-amber-600 to-amber-800',
-            borderColor: 'border-amber-400',
-            bgGlow: 'bg-amber-500/10',
-            landmarks: [
-                { name: 'Núi Tản Viên (Ba Vì)', desc: 'Gắn liền với Thần thoại Sơn Tinh - Thủy Tinh & Tứ Bất Tử' },
-                { name: 'Đền Hùng (Phú Thọ)', desc: 'Đất Tổ cội nguồn, khởi phát truyền thuyết Bánh chưng bánh giầy' },
-                { name: 'Sông Bạch Đằng', desc: 'Chiến địa lịch sử lẫy lừng, nguồn cảm hứng thiên cổ Bạch Đằng giang phú' },
-                { name: 'Hồ Hoàn Kiếm (Hà Nội)', desc: 'Địa linh Thăng Long, truyền thuyết rùa vàng trao gươm báu' },
-            ],
-            identity: 'Văn học Bắc Bộ đậm tính sử thi khởi nguồn, triết lý nhân sinh trầm mặc, giàu chất trữ tình qua ca dao quan họ và danh tác Nho học trung đại.',
-        },
-        'Trung': {
-            name: 'Miền Trung & Xứ Lam Hồng',
-            subtitle: 'Vùng đất địa linh nhân kiệt, sâu lắng trầm tích cung đình & thi ca',
-            icon: Waves,
-            accentColor: 'from-emerald-600 to-teal-800',
-            borderColor: 'border-emerald-400',
-            bgGlow: 'bg-emerald-500/10',
-            landmarks: [
-                { name: 'Sông Hương & Núi Ngự (Huế)', desc: 'Không gian nhã nhạc cung đình, ca dao hò mái nhì mái đẩy' },
-                { name: 'Núi Hồng - Sông Lam (Hà Tĩnh)', desc: 'Quê hương Đại thi hào Nguyễn Du, cái nôi kiệt tác Truyện Kiều' },
-                { name: 'Đèo Ngang (Quảng Bình)', desc: 'Cảm hứng bất hủ qua bài thơ Bà Huyện Thanh Quan' },
-                { name: 'Ngũ Hành Sơn (Đà Nẵng)', desc: 'Địa linh truyền tích non nước hữu tình xứ Quảng' },
-            ],
-            identity: 'Văn học Miền Trung giàu tính tự sự, đượm nét hoài cổ phong trần, gắn kết giữa văn hóa cung đình bác học và ca dao thổ nhưỡng kiên cường trước bão táp.',
-        },
-        'Nam': {
-            name: 'Nam Bộ & Miền Tây Đất Mới',
-            subtitle: 'Hào sảng đất phương Nam, phóng khoáng nghĩa tình sông nước Cửu Long',
-            icon: Sun,
-            accentColor: 'from-orange-500 to-amber-700',
-            borderColor: 'border-orange-400',
-            bgGlow: 'bg-orange-500/10',
-            landmarks: [
-                { name: 'Đồng Tháp Mười', desc: 'Không gian ca dao tráng lệ: Tháp Mười đẹp nhất bông sen' },
-                { name: 'Bến Nghé - Sài Gòn xưa', desc: 'Vùng đất khởi sắc của văn học tài tử và chí khí Lục Vân Tiên' },
-                { name: 'Rừng U Minh & Cà Mau', desc: 'Bối cảnh truyện cổ tích mở cõi và thần thoại Bác Ba Phi' },
-                { name: 'Sông Tiền & Sông Hậu', desc: 'Mạch nguồn của những câu hò sông nước mênh mang, trù phú' },
-            ],
-            identity: 'Văn học Nam Bộ mộc mạc, hào sảng, thẳng thắn, trọng nghĩa khinh tài với tinh thần cởi mở của những lưu dân khai hoang mở cõi kiên cường.',
-        },
-    };
-
+    // 1. Tải danh sách markers bản đồ theo bộ lọc thể loại & vùng miền (Chỉ chạy khi đổi bộ lọc)
     useEffect(() => {
-        const fetchRegionalWorks = async () => {
-            setIsLoading(true);
+        let isMounted = true;
+        const fetchMapData = async () => {
             try {
-                const res = await literatureService.searchWorks({
+                setIsLoadingLocations(true);
+                const data = await locationService.getMapWorks({
+                    category: selectedCategory,
                     region: selectedRegion,
-                    limit: 12,
                 });
-                setWorks(res.works || []);
+                if (!isMounted) return;
+                const markers = data?.markers || [];
+                setLocations(markers);
             } catch (err) {
-                console.error('Lỗi lấy tác phẩm theo vùng miền:', err);
+                console.error('Lỗi tải dữ liệu bản đồ văn hóa:', err);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoadingLocations(false);
             }
         };
 
-        fetchRegionalWorks();
-    }, [selectedRegion]);
+        fetchMapData();
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedCategory, selectedRegion]);
 
-    const toggleSave = (workId) => {
-        setSavedWorkIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(workId)) {
-                next.delete(workId);
-                showToast('Đã xóa khỏi sổ tay lưu trữ');
-            } else {
-                next.add(workId);
-                showToast('Đã lưu tác phẩm vào sổ tay');
+    // Lấy ID định danh ổn định của địa phương đang chọn
+    const selectedLocationId = selectedLocation?._id || selectedLocation?.slug || null;
+
+    // 2. Tải danh sách tác phẩm chi tiết khi chọn địa phương hoặc đổi thể loại
+    useEffect(() => {
+        if (!selectedLocationId) {
+            return;
+        }
+
+        let isMounted = true;
+        const fetchWorksForLocation = async () => {
+            try {
+                setIsLoadingWorks(true);
+                const res = await locationService.getLocationWorks(selectedLocationId, {
+                    category: selectedCategory,
+                    limit: 20,
+                });
+                if (!isMounted) return;
+                setLocationWorks(res?.works || []);
+                setWorkTotal(res?.pagination?.total || 0);
+            } catch (err) {
+                console.error('Lỗi tải tác phẩm của địa phương:', err);
+                if (isMounted) {
+                    setLocationWorks([]);
+                    setWorkTotal(0);
+                }
+            } finally {
+                if (isMounted) setIsLoadingWorks(false);
             }
-            return next;
+        };
+
+        fetchWorksForLocation();
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedLocationId, selectedCategory]);
+
+    // Khi người dùng click marker trên bản đồ
+    const handleSelectLocation = (loc) => {
+        if (!loc) return;
+        setSelectedLocation((prev) => {
+            if (prev && (prev._id === loc._id || prev.slug === loc.slug)) return prev;
+            return loc;
         });
+        setIsMobileDrawerOpen(true);
     };
 
-    const currentRegionData = regionInfo[selectedRegion];
-    const RegionIcon = currentRegionData.icon;
+    // Tổng số tác phẩm trên toàn bản đồ
+    const totalWorksCount = useMemo(() => {
+        return locations.reduce((acc, loc) => acc + (loc.totalWorks || loc.worksCount || 0), 0);
+    }, [locations]);
 
     return (
-        <div className="litmap-page">
-            {toastMessage && (
-                <div className="litmap-toast">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    <span className="text-xs font-semibold">{toastMessage}</span>
-                </div>
-            )}
-
+        <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* 1. HERO HEADER */}
-            <section className="litmap-hero">
-                <div className="litmap-hero-aura"></div>
-                <div className="litmap-hero-container">
-                    {/* Breadcrumb */}
-                    <div className="litmap-breadcrumb">
-                        <Link to="/" className="litmap-breadcrumb-link">Trang chủ</Link>
+            <header className="bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white pt-8 pb-10 relative overflow-hidden border-b border-indigo-950">
+                <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    {/* Breadcrumbs */}
+                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-4 font-medium">
+                        <Link to="/" className="hover:text-amber-400 transition">
+                            Trang chủ
+                        </Link>
                         <ChevronRight className="w-3.5 h-3.5" />
-                        <span className="text-amber-300 font-semibold">Bản đồ Văn học</span>
+                        <span className="text-amber-300 font-semibold">Bản đồ tác phẩm</span>
                     </div>
 
-                    <div className="litmap-hero-content">
-                        <div className="litmap-badge">
-                            <Compass className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Không Gian Văn Hóa & Địa Danh Văn Học 3 Miền</span>
+                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                        <div className="max-w-2xl space-y-3">
+                            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                                <Compass className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Địa lý Văn hóa & Không gian Di sản Việt Nam</span>
+                            </div>
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heritage tracking-tight leading-tight">
+                                Bản Đồ Tác Phẩm Văn Hóa Việt Nam
+                            </h1>
+                            <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                                Khám phá ca dao, tục ngữ và tác phẩm văn học dân gian gắn liền với các vùng đất trên dải đất hình chữ S. 
+                                Phân biệt rõ nơi khởi nguồn được ghi nhận, địa danh gắn liền và phạm vi lưu truyền.
+                            </p>
                         </div>
-                        <h1 className="litmap-hero-title font-heritage">
-                            Bản Đồ Văn Học Việt Nam
-                        </h1>
-                        <p className="litmap-hero-desc">
-                            Mỗi tấc đất, dòng sông, ngọn núi trên dải đất hình chữ S đều thấm đượm những áng thi ca, tích xưa và huyền thoại. Hãy chọn từng miền đất để khám phá di sản văn học gắn liền với địa danh văn hóa.
-                        </p>
-                    </div>
 
-                    {/* Region Switcher Tabs */}
-                    <div className="litmap-tabs-container">
-                        {[
-                            { id: 'Bắc', name: 'Miền Bắc', sub: 'Kinh Kỳ & Đất Tổ' },
-                            { id: 'Trung', name: 'Miền Trung', sub: 'Lam Hồng & Cố Đô' },
-                            { id: 'Nam', name: 'Miền Nam', sub: 'Hào sảng Đất Phương Nam' },
-                        ].map((reg) => {
-                            const isActive = selectedRegion === reg.id;
-                            return (
-                                <button
-                                    key={reg.id}
-                                    onClick={() => setSelectedRegion(reg.id)}
-                                    className={`litmap-tab-btn ${isActive ? 'litmap-tab-btn-active' : 'litmap-tab-btn-inactive'}`}
-                                >
-                                    <MapPin className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
-                                    <div>
-                                        <span className="litmap-tab-title">{reg.name}</span>
-                                        <span className={`litmap-tab-sub ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>
-                                            {reg.sub}
-                                        </span>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* 2. REGION SPOTLIGHT & LANDMARKS */}
-            <section className="litmap-spotlight-section">
-                <div className="litmap-spotlight-card">
-                    <div className="litmap-spotlight-grid">
-                        {/* Region Identity Card */}
-                        <div className="litmap-identity-col">
-                            <div className="litmap-region-header">
-                                <div className="litmap-region-icon-wrapper">
-                                    <RegionIcon className="w-6 h-6" />
-                                </div>
+                        {/* Thống kê nhanh */}
+                        <div className="flex items-center gap-3">
+                            <div className="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                                <MapPin className="w-5 h-5 text-amber-400" />
                                 <div>
-                                    <span className="litmap-region-tag">Khu vực văn hóa</span>
-                                    <h2 className="litmap-region-title font-heritage">
-                                        {currentRegionData.name}
-                                    </h2>
+                                    <span className="text-xs text-slate-400 block font-medium">Địa phương văn hóa</span>
+                                    <span className="text-lg font-bold text-white font-heritage">{locations.length}</span>
                                 </div>
                             </div>
-                            <p className="litmap-region-subtitle">
-                                {currentRegionData.subtitle}
-                            </p>
-                            <p className="litmap-region-identity-text">
-                                {currentRegionData.identity}
-                            </p>
-                        </div>
-
-                        {/* Landmark Nodes */}
-                        <div className="litmap-landmarks-col">
-                            <div className="litmap-landmarks-header">
-                                <h3 className="litmap-landmarks-heading">
-                                    <Navigation className="w-4 h-4 text-amber-600" />
-                                    Địa danh văn hóa nổi bật trong tác phẩm
-                                </h3>
-                                <span className="text-[11px] text-slate-400">Không gian thực địa</span>
-                            </div>
-
-                            <div className="litmap-landmarks-grid">
-                                {currentRegionData.landmarks.map((lm, idx) => (
-                                    <div key={idx} className="litmap-landmark-card group">
-                                        <div className="litmap-landmark-inner">
-                                            <div className="litmap-landmark-index">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <h4 className="litmap-landmark-name">
-                                                    {lm.name}
-                                                </h4>
-                                                <p className="litmap-landmark-desc">
-                                                    {lm.desc}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                                <BookOpen className="w-5 h-5 text-amber-400" />
+                                <div>
+                                    <span className="text-xs text-slate-400 block font-medium">Tác phẩm kết nối</span>
+                                    <span className="text-lg font-bold text-white font-heritage">{totalWorksCount}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </header>
 
-            {/* 3. REGIONAL WORKS LIST */}
-            <section className="litmap-works-section">
-                <div className="litmap-works-header">
-                    <div>
-                        <h2 className="litmap-works-title font-heritage">
-                            Tác Phẩm & Tích Xưa Vùng {currentRegionData.name}
-                        </h2>
-                        <p className="litmap-works-subtitle">
-                            Hiển thị các tác phẩm gắn liền với địa phương và xuất xứ {selectedRegion} Bộ
-                        </p>
-                    </div>
-
-                    <span className="litmap-works-count">
-                        Có <strong>{works.length}</strong> tư liệu được kết nối bản đồ
-                    </span>
-                </div>
-
-                {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 animate-pulse space-y-4">
-                                <div className="h-5 bg-slate-200 rounded w-1/3"></div>
-                                <div className="h-7 bg-slate-200 rounded w-3/4"></div>
-                                <div className="h-16 bg-slate-100 rounded-xl"></div>
-                            </div>
+            {/* 2. FILTER & TOOLBAR */}
+            <section className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    {/* Thể loại lọc (MAP06) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                        <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5 flex-shrink-0 mr-1">
+                            <Filter className="w-3.5 h-3.5 text-amber-600" />
+                            Thể loại:
+                        </span>
+                        {CATEGORY_FILTERS.map((cat) => (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                                    selectedCategory === cat.id
+                                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                                }`}
+                            >
+                                {cat.label}
+                            </button>
                         ))}
                     </div>
-                ) : works.length === 0 ? (
-                    <div className="litmap-empty-box">
-                        <MapPin className="w-10 h-10 text-amber-500 mx-auto" />
-                        <h3 className="text-base font-bold text-slate-900 font-heritage">
-                            Chưa có tác phẩm cụ thể cho vùng này
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                            Các tư liệu vùng miền đang tiếp tục được cập nhật vào kho tàng.
-                        </p>
-                        <Link to="/kham-pha" className="litmap-empty-btn">
-                            Khám phá toàn bộ thư viện
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="litmap-works-grid">
-                        {works.map((work) => {
-                            const isSaved = savedWorkIds.has(work._id);
-                            return (
-                                <article key={work._id} className="litmap-card group">
-                                    <div className="litmap-card-body">
-                                        <div className="litmap-card-top">
-                                            <span className="litmap-card-cat-badge">
-                                                {work.categoryName || work.category}
-                                            </span>
-                                            <span className="litmap-card-region-badge">
-                                                <MapPin className="w-3 h-3 text-amber-600" />
-                                                {work.region}
-                                            </span>
-                                        </div>
 
-                                        <h3 className="litmap-card-title font-heritage">
-                                            {work.title}
-                                        </h3>
-
-                                        <p className="litmap-card-meta">
-                                            {work.author || 'Dân gian'} • <span className="text-slate-400">{work.period}</span>
-                                        </p>
-
-                                        {work.quote && (
-                                            <div className="litmap-card-quote font-heritage">
-                                                <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
-                                            </div>
-                                        )}
-
-                                        <p className="litmap-card-summary">
-                                            {work.summary}
-                                        </p>
-                                    </div>
-
-                                    <div className="litmap-card-footer">
-                                        <div className="litmap-card-stats">
-                                            <span className="litmap-card-stat">
-                                                <Eye className="w-3.5 h-3.5" />
-                                                {work.viewsCount || 0}
-                                            </span>
-                                            <span className="litmap-card-stat">
-                                                <ThumbsUp className="w-3.5 h-3.5" />
-                                                {work.likesCount || 0}
-                                            </span>
-                                        </div>
-
-                                        <div className="litmap-card-actions">
-                                            <button
-                                                onClick={() => toggleSave(work._id)}
-                                                className={`litmap-btn-bookmark ${isSaved ? 'litmap-btn-bookmark-saved' : 'litmap-btn-bookmark-unsaved'}`}
-                                                title="Lưu vào sổ tay"
-                                            >
-                                                <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-600' : ''}`} />
-                                            </button>
-                                            <button
-                                                onClick={() => setActiveModalWork(work)}
-                                                className="litmap-btn-detail"
-                                            >
-                                                <span>Xem chi tiết</span>
-                                                <ArrowRight className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </article>
-                            );
-                        })}
-                    </div>
-                )}
-            </section>
-
-            {/* 4. MODAL CHI TIẾT TÁC PHẨM */}
-            {activeModalWork && (
-                <div className="litmap-modal-overlay">
-                    <div className="litmap-modal-box" onClick={(e) => e.stopPropagation()}>
-                        <div className="litmap-modal-header">
-                            <div className="space-y-1.5 pr-6">
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                        {activeModalWork.categoryName || activeModalWork.category}
-                                    </span>
-                                    <span className="text-xs text-slate-400">
-                                        Xuất xứ: <strong>{activeModalWork.region}</strong> • {activeModalWork.period}
-                                    </span>
-                                </div>
-                                <h2 className="text-2xl font-bold font-heritage text-white">
-                                    {activeModalWork.title}
-                                </h2>
-                                <p className="text-xs text-slate-300">
-                                    Tác giả: <strong>{activeModalWork.author || 'Dân gian'}</strong>
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                    {/* Vùng miền & Chọn nhanh địa phương */}
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+                            {REGION_FILTERS.map((reg) => (
+                                <button
+                                    key={reg.id}
+                                    type="button"
+                                    onClick={() => setSelectedRegion(reg.id)}
+                                    className={`px-2.5 py-1 rounded-lg font-medium transition ${
+                                        selectedRegion === reg.id
+                                            ? 'bg-white text-slate-900 shadow-xs font-bold'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                >
+                                    {reg.label}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="litmap-modal-body">
-                            {activeModalWork.quote && (
-                                <div className="litmap-modal-quote-box font-heritage">
-                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
-                                </div>
-                            )}
-
-                            <div className="space-y-1.5">
-                                <h4 className="litmap-modal-section-title">
-                                    Tóm tắt cốt truyện / nội dung
-                                </h4>
-                                <p className="litmap-modal-summary-text">
-                                    {activeModalWork.summary}
-                                </p>
-                            </div>
-
-                            {activeModalWork.content && (
-                                <div className="space-y-1.5">
-                                    <h4 className="litmap-modal-section-title">
-                                        Toàn văn tác phẩm
-                                    </h4>
-                                    <div className="litmap-modal-fullcontent">
-                                        {activeModalWork.content}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="litmap-modal-info-grid">
-                                {activeModalWork.historicalContext && (
-                                    <div className="litmap-modal-info-card-indigo">
-                                        <h5 className="text-[11px] font-bold text-indigo-900 uppercase">Dấu ấn địa phương & lịch sử</h5>
-                                        <p className="text-xs text-indigo-950/80 leading-relaxed">
-                                            {activeModalWork.historicalContext}
-                                        </p>
-                                    </div>
-                                )}
-                                {activeModalWork.thematicMeaning && (
-                                    <div className="litmap-modal-info-card-emerald">
-                                        <h5 className="text-[11px] font-bold text-emerald-900 uppercase">Ý nghĩa biểu tượng văn hóa</h5>
-                                        <p className="text-xs text-emerald-950/80 leading-relaxed">
-                                            {activeModalWork.thematicMeaning}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                                <div className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    <span>Nguồn học thuật: <strong>{activeModalWork.source}</strong></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="litmap-modal-footer">
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+                        {/* Dropdown nhảy nhanh tới địa phương */}
+                        <div className="relative min-w-[180px]">
+                            <select
+                                value={selectedLocation?._id || ''}
+                                onChange={(e) => {
+                                    const loc = locations.find((l) => l._id === e.target.value);
+                                    if (loc) handleSelectLocation(loc);
+                                }}
+                                className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                             >
-                                Đóng lại
-                            </button>
+                                <option value="">Nhảy tới địa phương...</option>
+                                {locations.map((loc) => (
+                                    <option key={loc._id} value={loc._id}>
+                                        {loc.name} ({loc.totalWorks || loc.worksCount || 0} tác phẩm)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>
-            )}
+            </section>
+
+            {/* 3. MAIN MAP WORKSPACE */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* KHU VỰC BẢN ĐỒ (Lg: 7 cột) */}
+                    <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+                        <div className="h-[560px] lg:h-[680px] w-full">
+                            <CulturalMap
+                                locations={locations}
+                                selectedLocation={selectedLocation}
+                                onSelectLocation={handleSelectLocation}
+                                isLoading={isLoadingLocations}
+                            />
+                        </div>
+
+                        {/* Ghi chú phân định quan hệ địa lý văn hóa (Học thuật) */}
+                        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-950">
+                            <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="font-bold">Lưu ý khoa học về địa lý văn hóa dân gian:</p>
+                                <p className="text-slate-600 leading-relaxed text-[11px]">
+                                    Ca dao và tục ngữ là sản phẩm truyền khẩu dân gian, thường lưu truyền qua nhiều vùng miền. 
+                                    VietHeritage AI phân biệt nghiêm ngặt giữa <strong className="text-emerald-800">Nơi khởi nguồn</strong> (khi có ghi chép nguồn gốc rõ ràng), 
+                                    <strong className="text-amber-800"> Gắn liền địa danh</strong> (địa danh xuất hiện trực tiếp trong văn bản) và 
+                                    <strong className="text-blue-800"> Vùng lưu truyền</strong> (không gian văn hóa diễn xướng), tuyệt đối không tự suy đoán.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SIDE PANEL / DRAWER CHI TIẾT ĐỊA PHƯƠNG & TÁC PHẨM (Lg: 5 cột) */}
+                    <aside
+                        className={`lg:col-span-5 xl:col-span-4 bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col transition-all duration-300 ${
+                            isMobileDrawerOpen ? 'block' : 'hidden lg:flex'
+                        } lg:sticky lg:top-20 max-h-[800px]`}
+                    >
+                        {selectedLocation ? (
+                            <div className="flex flex-col h-full overflow-hidden">
+                                {/* Banner / Header của địa phương */}
+                                <div className="relative p-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500 text-slate-950">
+                                                {selectedLocation.region || 'Bắc'} Bộ
+                                            </span>
+                                            <span className="text-[11px] text-slate-400 font-mono">
+                                                {selectedLocation.coordinates?.lat.toFixed(2)}°B, {selectedLocation.coordinates?.lng.toFixed(2)}°Đ
+                                            </span>
+                                        </div>
+                                        {/* Nút đóng drawer trên mobile */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsMobileDrawerOpen(false)}
+                                            className="lg:hidden p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <h2 className="text-xl font-bold font-heritage text-white">
+                                        {selectedLocation.name}
+                                    </h2>
+
+                                    <p className="text-xs text-slate-300 mt-2 line-clamp-3 leading-relaxed">
+                                        {selectedLocation.description}
+                                    </p>
+
+                                    {selectedLocation.sources && (
+                                        <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center gap-1.5 text-[10px] text-amber-200/90">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                                            <span className="truncate">Nguồn: {selectedLocation.sources}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Header danh sách tác phẩm */}
+                                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4 text-amber-600" />
+                                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                            Tác phẩm gắn liền
+                                        </h3>
+                                    </div>
+                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                                        {workTotal} tác phẩm
+                                    </span>
+                                </div>
+
+                                {/* Body danh sách tác phẩm (Scrollable) */}
+                                <div className="p-4 overflow-y-auto space-y-3 flex-grow max-h-[500px]">
+                                    {isLoadingWorks ? (
+                                        <div className="py-12 text-center space-y-2">
+                                            <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                            <p className="text-xs text-slate-500">Đang tải danh sách tác phẩm...</p>
+                                        </div>
+                                    ) : locationWorks.length === 0 ? (
+                                        <div className="py-12 text-center space-y-2 px-4">
+                                            <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                                            <h4 className="text-xs font-bold text-slate-700">
+                                                Chưa có tác phẩm {selectedCategory !== 'all' ? `thể loại "${selectedCategory}"` : ''} tại địa phương này
+                                            </h4>
+                                            <p className="text-[11px] text-slate-400">
+                                                Hãy thử chọn thể loại khác hoặc chọn toàn bộ để xem các tư liệu có sẵn.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        locationWorks.map((work) => {
+                                            const relInfo = RELATION_BADGES[work.relationType] || RELATION_BADGES.unknown;
+                                            return (
+                                                <article
+                                                    key={work._id || work.slug}
+                                                    onClick={() => setActiveModalWork(work)}
+                                                    className="p-3.5 rounded-2xl bg-white hover:bg-amber-50/50 border border-slate-200/80 hover:border-amber-300 shadow-2xs hover:shadow-sm cursor-pointer transition-all space-y-2 group"
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
+                                                            {work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ' : 'Ca dao')}
+                                                        </span>
+                                                        <span
+                                                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${relInfo.color}`}
+                                                            title={relInfo.desc}
+                                                        >
+                                                            {relInfo.label}
+                                                        </span>
+                                                    </div>
+
+                                                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-900 transition-colors line-clamp-1">
+                                                        {work.title}
+                                                    </h4>
+
+                                                    {work.quote && (
+                                                        <p className="text-[11px] font-heritage text-slate-700 italic bg-slate-50 p-2 rounded-xl border border-slate-100 line-clamp-2">
+                                                            "{work.quote}"
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400">
+                                                        <span>{work.author || 'Dân gian'}</span>
+                                                        <span className="text-amber-700 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                                                            Xem chi tiết <ArrowRight className="w-3 h-3" />
+                                                        </span>
+                                                    </div>
+                                                </article>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            /* State khi chưa chọn địa phương nào */
+                            <div className="p-8 text-center flex flex-col items-center justify-center space-y-4 my-auto">
+                                <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-700 flex items-center justify-center shadow-inner">
+                                    <MapIcon className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-base font-bold text-slate-900 font-heritage">
+                                        Chọn địa phương trên bản đồ
+                                    </h3>
+                                    <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+                                        Nhấp vào một điểm đánh dấu trên bản đồ để khám phá tư liệu văn hóa, nguồn gốc và tác phẩm gắn liền với địa danh.
+                                    </p>
+                                </div>
+
+                                {/* Danh sách địa phương gợi ý */}
+                                <div className="w-full pt-4 border-t border-slate-100 text-left space-y-2">
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                                        Địa phương tiêu biểu:
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {locations.slice(0, 5).map((loc) => (
+                                            <button
+                                                key={loc._id}
+                                                type="button"
+                                                onClick={() => handleSelectLocation(loc)}
+                                                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-amber-100 hover:text-amber-950 text-slate-700 text-xs font-medium transition"
+                                            >
+                                                {loc.name.split('(')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            </main>
+
+            {/* 4. TÁI SỬ DỤNG WORK DETAIL MODAL (MAP05) */}
+            <WorkDetailModal
+                work={activeModalWork}
+                isOpen={!!activeModalWork}
+                onClose={() => setActiveModalWork(null)}
+                onWorkSelect={(newWork) => setActiveModalWork(newWork)}
+            />
         </div>
     );
 };

@@ -7,6 +7,7 @@ router.use(protect);
 
 router.get('/', searchHistoryController.getHistory);
 router.delete('/', searchHistoryController.clearHistory);
+router.post('/bulk-delete', searchHistoryController.deleteMultipleHistoryItems);
 router.delete('/:id', searchHistoryController.deleteHistoryItem);
 
 module.exports = router;

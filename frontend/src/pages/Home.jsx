@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
+import WorkDetailModal from '../components/common/WorkDetailModal';
 import {
     Sparkles,
     Search,
@@ -20,7 +21,8 @@ import {
     Eye,
     ThumbsUp,
     RefreshCw,
-    Trophy
+    Trophy,
+    GraduationCap
 } from 'lucide-react';
 import { useAiChat } from '../context/AiChatContext';
 import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
@@ -347,54 +349,90 @@ const Home = () => {
                     </Link>
 
                     {/* Pillar 2 */}
-                    <div className="home-pillar-box group">
+                    <Link
+                        to="/gia-su-ai"
+                        className="home-pillar-box group block text-left"
+                    >
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
                         <div className="home-pillar-icon bg-red-100/70 text-red-900 border border-red-300/50 shadow-xs">
-                            <Bot className="w-6 h-6 text-red-800" />
+                            <GraduationCap className="w-6 h-6 text-red-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
-                            Trợ Lý AI Văn Học
+                            Gia Sư Văn Hóa AI
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                            Giải nghĩa từ cổ, điển tích điển cố, tóm tắt tác phẩm và hỗ trợ người học cảm thụ các tầng nghĩa biểu tượng một cách khoa học.
+                            Đồng hành học tập ca dao, tục ngữ theo chủ đề; giải thích nghĩa đen, nghĩa bóng, bài học đạo lý và vận dụng thực tiễn chuẩn xác.
                         </p>
-                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1 cursor-pointer" onClick={() => openAiChat()}>
-                            Thử nghiệm AI <ArrowRight className="w-3 h-3" />
+                        <span className="text-xs font-semibold text-red-800 inline-flex items-center gap-1 group-hover:text-amber-800 transition-colors">
+                            Học cùng Gia sư <ArrowRight className="w-3 h-3" />
                         </span>
-                    </div>
+                    </Link>
 
                     {/* Pillar 3 */}
-                    <Link to="/ban-do" className="home-pillar-box group block">
+                    <Link to="/kham-pha" className="home-pillar-box group block">
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
                         <div className="home-pillar-icon bg-emerald-100/70 text-emerald-900 border border-emerald-300/50 shadow-xs">
                             <Compass className="w-6 h-6 text-emerald-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
-                            Bản Đồ Văn Học 3 Miền
+                            Không Gian Di Sản 3 Miền
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
                             Gắn kết tác phẩm và tác giả với địa danh văn hóa thực địa: từ non thiêng Ba Vì, sông Bạch Đằng đến đất học Thừa Thiên và miệt vườn Cửu Long.
                         </p>
                         <span className="text-xs font-semibold text-emerald-800 inline-flex items-center gap-1">
-                            Mở bản đồ <ArrowRight className="w-3 h-3" />
+                            Khám phá ngay <ArrowRight className="w-3 h-3" />
                         </span>
                     </Link>
 
                     {/* Pillar 4 */}
-                    <div className="home-pillar-box group">
+                    <Link
+                        to="/studio-tho"
+                        className="home-pillar-box group block text-left"
+                    >
                         <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
                         <div className="home-pillar-icon bg-amber-100/70 text-amber-900 border border-amber-300/60 shadow-xs">
                             <Feather className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
-                            Cộng Đồng & Đánh Giá Thơ
+                            Studio Sáng Tác & Thơ Lục Bát
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                            Diễn đàn học thuật dành cho người yêu văn học trao đổi góc nhìn; tính năng AI Poetry Review giúp người sáng tác trau dồi thi luật.
+                            Soát niêm luật Bằng – Trắc chuẩn mực, hiệp vần tự động và nhận đánh giá từ AI Critic; đối câu Bát cùng thi sĩ AI thông minh.
                         </p>
-                        <span className="text-xs font-semibold text-amber-800 inline-flex items-center gap-1">
-                            Gia nhập nhóm <ArrowRight className="w-3 h-3" />
+                        <span className="text-xs font-semibold text-amber-800 inline-flex items-center gap-1 group-hover:text-red-800 transition-colors">
+                            Vào Studio Thơ <ArrowRight className="w-3 h-3" />
                         </span>
+                    </Link>
+                </div>
+            </section>
+
+            {/* 3.5. PERSONALIZED LEARNING PATH BANNER */}
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 p-8 sm:p-10 border border-amber-500/30 shadow-xl text-white">
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="space-y-3 max-w-2xl text-center md:text-left">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-wider border border-amber-400/30">
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Tính Năng Nổi Bật Mới
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-black font-heritage text-amber-100">
+                                Lộ Trình Học Văn Hóa Cá Nhân Hóa
+                            </h2>
+                            <p className="text-sm text-stone-300 leading-relaxed">
+                                Bạn muốn học ca dao, tục ngữ trong 7 hay 14 ngày, mỗi ngày 10 phút? Hệ thống kết nối kho tàng tác phẩm thật trong cơ sở dữ liệu với phân tích AI để xây dựng lộ trình từ cơ bản đến nâng cao, đi kèm câu hỏi luyện tập và gợi ý ôn tập thông minh!
+                            </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <Link
+                                to="/lo-trinh-hoc"
+                                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-red-950 font-bold shadow-lg shadow-amber-950/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer text-sm whitespace-nowrap"
+                            >
+                                <GraduationCap className="w-5 h-5" />
+                                <span>Khám Phá Lộ Trình Ngay</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -609,123 +647,13 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* 7. MODAL CHI TIẾT TÁC PHẨM TỪ DATABASE (UC08) */}
-            {activeModalWork && (
-                <div className="home-modal-overlay">
-                    <div
-                        className="home-modal-box"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 bg-slate-900 text-white flex items-start justify-between">
-                            <div className="space-y-1 pr-6">
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                        {activeModalWork.categoryName}
-                                    </span>
-                                    <span className="text-xs text-slate-400">
-                                        {activeModalWork.period}
-                                    </span>
-                                </div>
-                                <h2 className="text-2xl font-bold font-heritage text-white pt-1">
-                                    {activeModalWork.title}
-                                </h2>
-                                <p className="text-xs text-slate-300">
-                                    Tác giả: <strong>{activeModalWork.author || 'Dân gian'}</strong> • Xuất xứ: <strong>{activeModalWork.region}</strong>
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm">
-                            {activeModalWork.quote && (
-                                <div className="p-4 bg-amber-50 rounded-2xl border-l-4 border-amber-600 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
-                                </div>
-                            )}
-
-                            <div className="space-y-1.5">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                                    Tóm tắt cốt truyện
-                                </h4>
-                                <p className="text-xs text-slate-600 leading-relaxed">
-                                    {activeModalWork.summary}
-                                </p>
-                            </div>
-
-                            {activeModalWork.content && (
-                                <div className="space-y-1.5">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                                        Nội dung tác phẩm
-                                    </h4>
-                                    <div className="p-4 bg-slate-50 rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-line border border-slate-200">
-                                        {activeModalWork.content}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {activeModalWork.historicalContext && (
-                                    <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-1">
-                                        <h5 className="text-[11px] font-bold text-indigo-900 uppercase">Bối cảnh lịch sử</h5>
-                                        <p className="text-xs text-indigo-950/80 leading-relaxed">
-                                            {activeModalWork.historicalContext}
-                                        </p>
-                                    </div>
-                                )}
-                                {activeModalWork.thematicMeaning && (
-                                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-1">
-                                        <h5 className="text-[11px] font-bold text-emerald-900 uppercase">Ý nghĩa biểu tượng</h5>
-                                        <p className="text-xs text-emerald-950/80 leading-relaxed">
-                                            {activeModalWork.thematicMeaning}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                                <div className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    <span>Nguồn học thuật: <strong>{activeModalWork.source}</strong></span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="flex items-center gap-1">
-                                        <Eye className="w-3.5 h-3.5" />
-                                        {activeModalWork.viewsCount || 0}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <ThumbsUp className="w-3.5 h-3.5" />
-                                        {activeModalWork.likesCount || 0}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                            <button
-                                onClick={() => {
-                                    openAiChat(activeModalWork);
-                                    setActiveModalWork(null);
-                                }}
-                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm border border-amber-500/20 cursor-pointer"
-                            >
-                                <Bot className="w-3.5 h-3.5 text-amber-400" />
-                                <span>Hỏi Trợ lý AI về tác phẩm này</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
-                            >
-                                Đóng
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Modal xem chi tiết tác phẩm đồng bộ cùng Khám phá (UC08, UC10, UC11) */}
+            <WorkDetailModal
+                work={activeModalWork}
+                isOpen={Boolean(activeModalWork)}
+                onClose={() => setActiveModalWork(null)}
+                onWorkSelect={(newWork) => setActiveModalWork(newWork)}
+            />
         </div>
     );
 };

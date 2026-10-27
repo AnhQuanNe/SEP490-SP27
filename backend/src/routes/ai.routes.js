@@ -16,9 +16,16 @@ router.post('/explain', optionalAuth, checkGuestQuota, aiController.explain);
 // Lấy danh sách câu hỏi gợi ý khám phá nhanh
 router.get('/suggestions', aiController.getSuggestions);
 
+// Tính năng mới: Gia sư văn hóa AI (AI Cultural Tutor)
+router.get('/tutor/topics', aiController.getTutorTopics);
+router.post('/tutor', aiController.tutorChat);
 
 // Trợ lý AI hỗ trợ người dùng phân tích 4 tầng nghĩa khi đóng góp nội dung mới
 router.post('/draft-submission', optionalAuth, aiController.draftSubmission);
 
+// Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ theo đoạn trích bôi đen
+router.post('/analyze-snippet', optionalAuth, checkGuestQuota, aiController.analyzeSnippet);
+
 module.exports = router;
+
 
