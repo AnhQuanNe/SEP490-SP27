@@ -9,6 +9,7 @@ import AiTutor from '../pages/AiTutor';
 import PoetryStudio from '../pages/PoetryStudio';
 import Leaderboard from '../pages/Leaderboard';
 import HeritageArena from '../pages/HeritageArena';
+import VirtualExhibition from '../pages/VirtualExhibition';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -32,6 +33,8 @@ const AppRoutes = () => {
             <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
             <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/trien-lam-3d" element={<VirtualExhibition />} />
+            <Route path="/virtual-exhibition" element={<VirtualExhibition />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
             <Route path="/gia-su-ai" element={<AiTutor />} />
             <Route path="/ai-tutor" element={<AiTutor />} />

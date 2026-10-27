@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
+import WorkDetailModal from '../components/common/WorkDetailModal';
 import './FolkLiterature.css';
 import {
     BookOpen,
@@ -392,115 +393,12 @@ const FolkLiterature = () => {
                 )}
             </section>
 
-            {/* 4. MODAL CHI TIẾT */}
-            {activeModalWork && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div
-                        className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 bg-slate-950 text-white flex items-start justify-between border-b border-slate-800">
-                            <div className="space-y-1.5 pr-6">
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                        {activeModalWork.categoryName || activeModalWork.category}
-                                    </span>
-                                    <span className="text-xs text-slate-400">
-                                        Thời kỳ: <strong>{activeModalWork.period}</strong>
-                                    </span>
-                                </div>
-                                <h2 className="text-2xl font-bold font-heritage text-white">
-                                    {activeModalWork.title}
-                                </h2>
-                                <p className="text-xs text-slate-300">
-                                    Tác giả: <strong>{activeModalWork.author || 'Dân gian'}</strong> • Xuất xứ: <strong>{activeModalWork.region}</strong>
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm">
-                            {activeModalWork.quote && (
-                                <div className="p-4 bg-amber-50 rounded-2xl border-l-4 border-amber-600 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                    <PoemDisplay text={activeModalWork.quote} size="sm" showQuotes={true} />
-                                </div>
-                            )}
-
-                            <div className="space-y-1.5">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                    <Scroll className="w-4 h-4 text-amber-600" />
-                                    Tóm tắt tác phẩm
-                                </h4>
-                                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                                    {activeModalWork.summary}
-                                </p>
-                            </div>
-
-                            {activeModalWork.content && (
-                                <div className="space-y-1.5">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                        <BookOpen className="w-4 h-4 text-indigo-600" />
-                                        Nội dung tác phẩm
-                                    </h4>
-                                    <div className="p-4 bg-slate-50 rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-line border border-slate-200 max-h-72 overflow-y-auto">
-                                        {activeModalWork.content}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {activeModalWork.historicalContext && (
-                                    <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-1">
-                                        <h5 className="text-[11px] font-bold text-indigo-900 uppercase">Bối cảnh lịch sử & văn hóa</h5>
-                                        <p className="text-xs text-indigo-950/80 leading-relaxed">
-                                            {activeModalWork.historicalContext}
-                                        </p>
-                                    </div>
-                                )}
-                                {activeModalWork.thematicMeaning && (
-                                    <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-1">
-                                        <h5 className="text-[11px] font-bold text-emerald-900 uppercase">Ý nghĩa giáo dục & biểu tượng</h5>
-                                        <p className="text-xs text-emerald-950/80 leading-relaxed">
-                                            {activeModalWork.thematicMeaning}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                                <div className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    <span>Nguồn học thuật: <strong>{activeModalWork.source}</strong></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                            <button
-                                onClick={() => {
-                                    openAiChat(activeModalWork);
-                                    setActiveModalWork(null);
-                                }}
-                                className="px-4 py-2 bg-gradient-to-r from-slate-900 to-indigo-950 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm border border-amber-500/20"
-                            >
-                                <Bot className="w-3.5 h-3.5 text-amber-400" />
-                                <span>Hỏi Trợ lý AI về tác phẩm</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveModalWork(null)}
-                                className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
-                            >
-                                Đóng lại
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* 4. MODAL CHI TIẾT CHUẨN HÓA 4 TẦNG NGHĨA */}
+            <WorkDetailModal
+                work={activeModalWork}
+                isOpen={!!activeModalWork}
+                onClose={() => setActiveModalWork(null)}
+            />
         </div>
     );
 };

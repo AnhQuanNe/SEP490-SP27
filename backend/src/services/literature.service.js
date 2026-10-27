@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Work = require('../models/Work');
+require('../models/Location');
 const { buildVietnameseRegex } = require('../utils/vietnamese.utils');
 
 class LiteratureService {

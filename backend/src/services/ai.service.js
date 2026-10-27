@@ -72,9 +72,6 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
                     generationConfig: {
                         temperature: 0.6,
                         maxOutputTokens: 4096,
-                        thinkingConfig: {
-                            thinkingBudget: 0,
-                        },
                     },
                 }),
             });
@@ -107,7 +104,8 @@ function hasAnalyticalIntent(text) {
         'khat vong', 'thong diep', 'bai hoc', 'sao lai', 'bay ve troi', 'tieng dan',
         'nieu com', 'ken re', 'hoa than', 'chiec bong', 'tuyen ngon',
         'tai sao lai', 'vi sao lai', 'co y nghia gi', 'the hien dieu gi', 'chung minh',
-        'ran day', 'gia tri nhan dao', 'gia tri hien thuc', 'tinh than', 'phan tich'
+        'ran day', 'gia tri nhan dao', 'gia tri hien thuc', 'tinh than', 'phan tich',
+        'di ban', 'bien the', 'so sanh', 'khac nhau'
     ];
     return keywords.some((kw) => clean.includes(kw));
 }
@@ -466,6 +464,50 @@ Bốn lần hóa thân (chim Vàng Anh -> cây Xoan đào -> khung cửi -> qu�
     }
 
     // =========================================================================
+    // ƯU TIÊN 1.X: HỎI VỀ DỊ BẢN DÂN GIAN & SO SÁNH ĐỐI CHIẾU (FOLKLORIC VARIANTS & COMPARISON)
+    // =========================================================================
+    const isAskingVariants = qClean.includes('di ban') || qClean.includes('bien the') || qClean.includes('so sanh') || qClean.includes('khac nhau');
+    const targetVariantWork = primaryWork || (works && works.find(w => w.variants && w.variants.length > 0));
+
+    if (isAskingVariants && targetVariantWork && targetVariantWork.variants && targetVariantWork.variants.length > 0) {
+        const variantsList = targetVariantWork.variants;
+        const answer = `Dựa trên nghiên cứu học thuật của Viện Văn học và các công trình của GS. Vũ Ngọc Phan, GS. Đinh Gia Khánh, GS. Nguyễn Đổng Chi, tác phẩm dân gian **"${targetVariantWork.title}"** tồn tại **${variantsList.length} dị bản/biến thể chính thức** phản ánh quy luật truyền miệng và tính địa văn hóa:
+
+### 1. Khảo sát các Dị bản Dân gian:
+${variantsList.map((v, i) => `#### Dị bản ${i + 1}: ${v.name} (${v.region})
+- **Văn bản / Câu ca:** "${v.quote || v.content}"
+- **Điểm khác biệt cốt lõi:** ${v.differenceNote}
+- **Góc nhìn học thuật & nhân học:** ${v.scholarlyAnalysis}
+- **Tài liệu kiểm chứng:** ${v.source}`).join('\n\n')}
+
+### 2. Tổng kết Giá trị So sánh Đối chiếu:
+Hiện tượng dị bản chứng minh rằng tác phẩm dân gian không phải là một "văn bản đóng" bất biến, mà liên tục được tái sáng tạo trong quá trình diễn xướng để phù hợp với tâm thức, nếp sống và cảnh quan sinh thái của từng vùng miền và cộng đồng tộc người.
+
+---
+*Nguồn tham khảo học thuật kiểm chứng:* **${targetVariantWork.source || 'Kho tàng Văn học Dân gian Việt Nam'}**`;
+
+        return {
+            answer,
+            citations: [
+                {
+                    title: targetVariantWork.title,
+                    slug: targetVariantWork.slug,
+                    category: targetVariantWork.category,
+                    categoryName: targetVariantWork.categoryName || 'Văn học Dân gian',
+                    region: targetVariantWork.region,
+                    author: targetVariantWork.author || 'Dân gian',
+                    source: targetVariantWork.source,
+                },
+            ],
+            suggestedQuestions: [
+                `Ý nghĩa của việc so sánh dị bản trong nghiên cứu văn học dân gian?`,
+                `Tác phẩm ${targetVariantWork.title} phản ánh bối cảnh lịch sử nào?`,
+                `Bài học đạo lý nhân sinh của ${targetVariantWork.title}?`,
+            ],
+        };
+    }
+
+    // =========================================================================
     // ƯU TIÊN 2: NẾU NGƯỜI DÙNG HỎI TRA CỨU DANH TÍNH / THỰC THỂ (ENTITY LOOKUP)
     // =========================================================================
 
@@ -608,7 +650,20 @@ Bạn có thể thử tra cứu các tác phẩm kinh điển hiện có trong h
     }
 
     let specificAnalysis = '';
-    if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
+    if (main.variants && main.variants.length > 0 && (qClean.includes('di ban') || qClean.includes('bien the') || qClean.includes('so sanh') || qClean.includes('khac nhau') || qClean.includes('vung mien') || qClean.includes('mien nam') || qClean.includes('mien bac') || qClean.includes('muong'))) {
+        specificAnalysis = `
+### 1. Khảo sát Quy luật Dị bản trong Văn học Dân gian:
+Do phương thức truyền miệng và sự giao lưu văn hóa liên vùng, tác phẩm **"${main.title}"** tồn tại **${main.variants.length} dị bản/biến thể chính thức** được các nhà nghiên cứu dân gian học ghi nhận:
+
+${main.variants.map((v, i) => `#### Dị bản ${i + 1}: ${v.name} (${v.region})
+- **Văn bản / Câu ca:** "${v.quote || v.content}"
+- **Điểm khác biệt:** ${v.differenceNote}
+- **Góc nhìn học thuật & nhân học:** ${v.scholarlyAnalysis}
+- **Nguồn kiểm chứng:** ${v.source}`).join('\n\n')}
+
+### 2. Ý nghĩa Học thuật & Địa văn hóa:
+Sự xuất hiện của các dị bản minh chứng cho tính sinh động của văn học truyền miệng và quá trình "bản địa hóa" sâu sắc của văn hóa dân gian Việt Nam theo từng không gian sinh tồn.`;
+    } else if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
         specificAnalysis = `
 ### 1. Giới thiệu về tác giả ${main.author}:
 - **Vị thế văn học:** Là một trong những đại diện tiêu biểu nhất của nền văn học Việt Nam, gắn liền với tác phẩm **"${main.title}"** (${main.categoryName || 'Di sản văn học'}).
@@ -654,8 +709,10 @@ ${specificAnalysis}
 
     const suggestedQuestions = [
         `Bối cảnh lịch sử của tác phẩm ${main.title} là gì?`,
-        `Những chi tiết hoang đường kỳ ảo trong ${main.title} có ý nghĩa gì?`,
-        `Tác phẩm ${main.title} gửi gắm thông điệp gì cho thế hệ trẻ ngày nay?`,
+        `Những chi tiết biểu tượng trong ${main.title} có ý nghĩa gì?`,
+        main.variants && main.variants.length > 0
+            ? `Tác phẩm ${main.title} có những dị bản địa phương hoặc dân tộc nào?`
+            : `Tác phẩm ${main.title} gửi gắm thông điệp gì cho thế hệ trẻ ngày nay?`,
     ];
 
     return {
@@ -719,7 +776,10 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc nhân vật nào?`;
         const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
 
         // 1.5.a. Tìm xem câu hỏi có chứa tên của tác phẩm nào trong DB không
-        const allWorks = await Work.find({ status: 'published' }, 'title slug author tags summary historicalContext thematicMeaning categoryName region period source').lean();
+        const allWorks = await Work.find(
+            { status: 'published' },
+            'title slug author tags summary historicalContext thematicMeaning categoryName region period source variants quote literalMeaning figurativeMeaning lesson'
+        ).lean();
 
         for (const w of allWorks) {
             const titleClean = removeVietnameseTones(w.title).toLowerCase();
@@ -920,9 +980,15 @@ const explainWork = async ({ workId, slug }) => {
         throw new Error('Không tìm thấy câu ca dao hoặc tục ngữ trong hệ thống');
     }
 
+    const variantsSnippet = work.variants && work.variants.length > 0
+        ? `\nDữ liệu Dị bản Dân gian đã ghi nhận:\n` + work.variants.map((v, i) => 
+            `- Dị bản ${i + 1} (${v.name} - ${v.region}): "${v.quote || ''}"\n  + Nội dung/Ghi nhận: ${v.content}\n  + Điểm khác biệt: ${v.differenceNote}\n  + Phân tích học thuật: ${v.scholarlyAnalysis}\n  + Nguồn: ${v.source}`
+          ).join('\n')
+        : '';
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
-        const prompt = `Phân tích sâu sắc và toàn diện về câu ca dao / tục ngữ sau:
+        const prompt = `Phân tích sâu sắc và toàn diện về câu ca dao / tục ngữ / tác phẩm dân gian sau:
 Tiêu đề / Văn bản: "${work.title}"
 ${work.quote ? `Trích dẫn đầy đủ: "${work.quote}"` : ''}
 Chủ đề: ${work.topic || 'Văn hóa Dân gian'}
@@ -931,12 +997,14 @@ Nghĩa bóng đã ghi nhận: ${work.figurativeMeaning || work.thematicMeaning}
 Bài học đã ghi nhận: ${work.lesson || 'Đạo lý làm người'}
 Bối cảnh văn hóa: ${work.historicalContext || 'Nền văn minh nông nghiệp truyền thống'}
 Nguồn học thuật chính thức: ${work.source}
+${variantsSnippet}
 
-Hãy trình bày lời giải thích rõ ràng theo 4 phần:
+Hãy trình bày lời giải thích rõ ràng theo các phần:
 1. Nghĩa đen: Giải thích từ ngữ, hình ảnh cụ thể mộc mạc.
 2. Nghĩa bóng: Giá trị biểu tượng, tầng ý nghĩa ẩn dụ sâu xa.
 3. Bài học & Thông điệp: Lời răn dạy đạo đức, lối sống cho con người hôm nay.
-4. Bối cảnh văn hóa & Ứng dụng: Nguồn gốc phong tục tập quán và cách vận dụng câu này trong giao tiếp đời sống thực tế.`;
+4. Bối cảnh văn hóa & Ứng dụng: Nguồn gốc phong tục tập quán và cách vận dụng câu này trong giao tiếp đời sống thực tế.
+${work.variants && work.variants.length > 0 ? '5. Khảo sát Dị bản & So sánh Liên vùng: Phân tích sự biến đổi của tác phẩm qua các vùng miền/dân tộc, làm sáng tỏ tính linh hoạt của văn học truyền miệng và tâm thức địa phương.' : ''}`;
 
         const geminiAnswer = await callGeminiApi({
             question: prompt,
@@ -961,7 +1029,7 @@ Hãy trình bày lời giải thích rõ ràng theo 4 phần:
         }
     }
 
-    const formattedExplanation = `### 1. Nghĩa đen (Nghĩa hiển ngôn):
+    let formattedExplanation = `### 1. Nghĩa đen (Nghĩa hiển ngôn):
 ${work.literalMeaning || work.summary || 'Hình ảnh mộc mạc, gần gũi bắt nguồn từ đời sống sinh hoạt và lao động sản xuất thường nhật của người bình dân xưa.'}
 
 ### 2. Nghĩa bóng (Nghĩa hàm ẩn):
@@ -972,6 +1040,14 @@ ${work.lesson || 'Nhắc nhở mỗi cá nhân rèn luyện nhân cách, sống 
 
 ### 4. Bối cảnh văn hóa & Ứng dụng đời sống:
 ${work.historicalContext ? work.historicalContext : 'Hình thành từ nền văn minh lúa nước và nếp sống làng xã Việt Nam, thường được ông bà cha mẹ dùng để răn dạy con cháu trong gia đình và đời sống cộng đồng.'}`;
+
+    if (work.variants && work.variants.length > 0) {
+        formattedExplanation += `\n\n### 5. Dị bản Dân gian & So sánh Liên vùng:
+Tác phẩm ghi nhận **${work.variants.length} dị bản/biến thể** đặc sắc trong không gian văn hóa người Việt:\n` +
+            work.variants.map((v, i) => 
+                `* **${v.name} (${v.region}):**\n  - *Văn bản / Trích dẫn:* "${v.quote || v.content}"\n  - *Khác biệt cốt lõi:* ${v.differenceNote}\n  - *Góc nhìn học thuật:* ${v.scholarlyAnalysis}\n  - *Tài liệu kiểm chứng:* ${v.source}`
+            ).join('\n\n');
+    }
 
     return {
         work,
