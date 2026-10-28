@@ -6,6 +6,9 @@ const { protect, authorize } = require('../middlewares/auth.middlewares');
 // Tất cả các route quản trị đều yêu cầu đăng nhập và có vai trò 'admin'
 router.use(protect, authorize('admin'));
 
+// UC20: Dashboard Overview Stats
+router.get('/stats', adminController.getDashboardStats);
+
 // UC15: View and update user accounts
 router.get('/users', adminController.getUsers);
 router.patch('/users/:id/status', adminController.updateUserStatus);

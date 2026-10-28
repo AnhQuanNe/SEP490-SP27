@@ -100,7 +100,6 @@ const Navbar = () => {
                     { name: 'Lộ trình học cá nhân', path: '/lo-trinh-hoc', icon: GraduationCap, desc: 'Kế hoạch học tập & tiến độ' },
                     { name: 'Hồ sơ cá nhân', path: '/profile', icon: User, desc: 'Thông tin tài khoản & danh hiệu' }
                 ] : []),
-                ...(user?.role === 'admin' ? [{ name: 'Cổng Quản trị (Admin)', path: '/admin', icon: ShieldCheck, desc: 'Quản lý kho tư liệu & người dùng', badge: 'Admin', badgeColor: 'bg-purple-100 text-purple-900 border-purple-300' }] : []),
             ]
         }
     ];
@@ -192,11 +191,6 @@ const Navbar = () => {
                                     <span className="h-[2px] w-2.5 bg-amber-700 group-hover:bg-red-700 rounded-full transition-all duration-200 group-hover:w-4" />
                                     <span className="h-[2px] w-3.5 bg-amber-900 group-hover:bg-red-900 rounded-full transition-all duration-200 group-hover:w-2.5" />
                                 </div>
-
-                                <span className="text-xs font-semibold text-stone-800 group-hover:text-red-950 tracking-tight transition-colors whitespace-nowrap">
-                                    Danh mục
-                                </span>
-
                                 {/* Hoa văn hoàng triều nhỏ tinh xảo */}
                                 <span className="hidden sm:inline-block text-[9px] text-amber-600/70 group-hover:text-amber-700 group-hover:rotate-90 transition-transform duration-300 select-none">
                                     ❖
@@ -366,10 +360,10 @@ const Navbar = () => {
                                                     <Link
                                                         to="/admin"
                                                         onClick={() => setDropdownOpen(false)}
-                                                        className="flex items-center px-4 py-2.5 text-xs font-bold text-purple-800 bg-purple-50/80 mx-2 my-1 rounded-xl hover:bg-purple-100 transition-colors border border-purple-200"
+                                                        className="flex items-center px-4 py-2 text-xs font-bold text-amber-900 bg-amber-50 mx-2 my-1 rounded-xl hover:bg-amber-100 transition-colors border border-amber-300"
                                                     >
-                                                        <ShieldCheck className="w-4 h-4 mr-2 text-purple-700" />
-                                                        Cổng Quản trị viên (Admin)
+                                                        <ShieldCheck className="w-4 h-4 mr-2 text-amber-700" />
+                                                        Vào Bảng Điều Hành Quản Trị
                                                     </Link>
                                                 )}
                                             </div>
