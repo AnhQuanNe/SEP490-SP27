@@ -2,6 +2,14 @@ import api from './api';
 
 export const adminService = {
     // ==========================================
+    // UC20: DASHBOARD OVERVIEW STATS
+    // ==========================================
+    async getDashboardStats() {
+        const response = await api.get('/admin/stats');
+        return response.data || {};
+    },
+
+    // ==========================================
     // UC15: USER MANAGEMENT
     // ==========================================
     async getUsers({ page = 1, limit = 15, search = '', role = 'all', status = 'all' } = {}) {

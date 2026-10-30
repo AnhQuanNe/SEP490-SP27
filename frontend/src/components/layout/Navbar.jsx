@@ -24,7 +24,8 @@ import {
     Layers,
     Map,
     Bot,
-    Share2
+    Share2,
+    GitBranch
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -65,6 +66,7 @@ const Navbar = () => {
             items: [
                 { name: 'Trang chủ', path: '/', icon: BookOpen, desc: 'Tổng quan di sản & nổi bật' },
                 { name: 'Kho tàng Di sản', path: '/kham-pha', icon: Compass, desc: 'Ca dao, tục ngữ & văn học dân gian' },
+                { name: 'Dị bản Cổ tích Tương tác', path: '/di-ban-co-tich', icon: GitBranch, desc: 'Rẽ nhánh câu chuyện (If-Else) & kiến tạo hồi kết', badge: 'Tương tác AI', badgeColor: 'bg-rose-100 text-rose-800 border-rose-300' },
                 { name: 'Triển lãm Hiện vật 3D', path: '/trien-lam-3d', icon: Layers, desc: 'Bảo vật văn hóa & điển tích 3D tương tác', badge: '3D Mới', badgeColor: 'bg-red-100 text-red-800 border-red-300' },
                 { name: 'Bản đồ Văn hóa', path: '/ban-do', icon: Map, desc: 'Không gian văn hóa & địa danh 3 miền', badge: 'Mới', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
                 { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', icon: Share2, desc: 'Mạng lưới liên kết tác phẩm & nhân vật', badge: 'Graph', badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
@@ -98,7 +100,6 @@ const Navbar = () => {
                     { name: 'Lộ trình học cá nhân', path: '/lo-trinh-hoc', icon: GraduationCap, desc: 'Kế hoạch học tập & tiến độ' },
                     { name: 'Hồ sơ cá nhân', path: '/profile', icon: User, desc: 'Thông tin tài khoản & danh hiệu' }
                 ] : []),
-                ...(user?.role === 'admin' ? [{ name: 'Cổng Quản trị (Admin)', path: '/admin', icon: ShieldCheck, desc: 'Quản lý kho tư liệu & người dùng', badge: 'Admin', badgeColor: 'bg-purple-100 text-purple-900 border-purple-300' }] : []),
             ]
         }
     ];
@@ -175,12 +176,12 @@ const Navbar = () => {
                     <div className="flex items-center justify-between h-20 gap-3 lg:gap-4">
                         
                         {/* CỤM BÊN TRÁI: NÚT MỞ THANH DANH MỤC + LOGO THƯƠNG HIỆU */}
-                        <div className="flex items-center space-x-2.5 sm:space-x-3.5 flex-shrink-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                             {/* Nút bật Thanh bên trái (Menu Drawer Trigger) - Thiết kế cao cấp, thanh lịch */}
                             <button
                                 type="button"
                                 onClick={() => setSidebarOpen(true)}
-                                className="group relative flex items-center gap-2 h-10 px-3 sm:px-3.5 rounded-xl bg-white/70 hover:bg-amber-50/80 active:scale-[0.98] border border-stone-200/90 hover:border-amber-400/70 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 flex-shrink-0"
+                                className="group relative flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl bg-white/70 hover:bg-amber-50/80 active:scale-[0.98] border border-stone-200/90 hover:border-amber-400/70 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 flex-shrink-0"
                                 title="Mở danh mục di sản & công cụ văn hóa"
                                 aria-label="Mở thanh danh mục di sản bên trái"
                             >
@@ -190,11 +191,6 @@ const Navbar = () => {
                                     <span className="h-[2px] w-2.5 bg-amber-700 group-hover:bg-red-700 rounded-full transition-all duration-200 group-hover:w-4" />
                                     <span className="h-[2px] w-3.5 bg-amber-900 group-hover:bg-red-900 rounded-full transition-all duration-200 group-hover:w-2.5" />
                                 </div>
-
-                                <span className="text-xs font-semibold text-stone-800 group-hover:text-red-950 tracking-tight transition-colors whitespace-nowrap">
-                                    Danh mục
-                                </span>
-
                                 {/* Hoa văn hoàng triều nhỏ tinh xảo */}
                                 <span className="hidden sm:inline-block text-[9px] text-amber-600/70 group-hover:text-amber-700 group-hover:rotate-90 transition-transform duration-300 select-none">
                                     ❖
@@ -204,25 +200,25 @@ const Navbar = () => {
                             {/* Cụm Logo & Tiêu đề */}
                             <Link 
                                 to="/" 
-                                className="flex items-center space-x-2.5 sm:space-x-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 rounded-xl p-1 flex-shrink-0"
+                                className="flex items-center space-x-2 sm:space-x-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 rounded-xl p-1 flex-shrink-0"
                                 title="VietHeritage AI — Về trang chủ"
                             >
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 shadow-md shadow-red-950/20 group-hover:scale-105 transition-transform border border-amber-400/50 relative flex-shrink-0">
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 shadow-md shadow-red-950/20 group-hover:scale-105 transition-transform border border-amber-400/50 relative flex-shrink-0">
                                     <span className="absolute -top-1 -right-1 text-[8px] text-amber-300 font-bold select-none">❖</span>
-                                    <BookOpen className="w-5 h-5 text-amber-200" />
+                                    <BookOpen className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-amber-200" />
                                 </div>
 
                                 <div className="flex flex-col justify-center">
                                     <div className="flex items-center space-x-1.5 leading-none">
-                                        <span className="text-lg sm:text-2xl font-black text-red-950 tracking-tight font-heritage whitespace-nowrap">
+                                        <span className="text-base sm:text-xl xl:text-2xl font-black text-red-950 tracking-tight font-heritage whitespace-nowrap">
                                             VietHeritage
                                         </span>
-                                        <span className="px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase bg-amber-100 text-red-950 rounded border border-amber-300/90 flex items-center gap-1 shadow-2xs flex-shrink-0">
+                                        <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold tracking-wider uppercase bg-amber-100 text-red-950 rounded border border-amber-300/90 flex items-center gap-1 shadow-2xs flex-shrink-0">
                                             <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                                             AI
                                         </span>
                                     </div>
-                                    <span className="text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-1 flex items-center gap-1 whitespace-nowrap">
+                                    <span className="text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-0.5 flex items-center gap-1 whitespace-nowrap">
                                         <span className="text-amber-700 font-bold text-[9px]">❖</span> 
                                         <span className="hidden 2xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
                                         <span className="2xl:hidden hidden lg:inline">Di Sản Văn Hóa</span>
@@ -254,14 +250,14 @@ const Navbar = () => {
                                     >
                                         {IconComponent && (
                                             <IconComponent 
-                                                className={`w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0 ${active ? 'text-amber-700' : 'text-stone-400 group-hover:text-amber-700'}`} 
+                                                className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-amber-700' : 'text-stone-400 group-hover:text-amber-700'}`} 
                                             />
                                         )}
                                         <span>{item.name}</span>
                                         
                                         {/* Chỉ báo active */}
                                         {active && (
-                                            <span className="absolute -bottom-1 left-2.5 right-2.5 xl:left-3 xl:right-3 h-[2px] bg-red-800 rounded-full" />
+                                            <span className="absolute -bottom-1 left-2 right-2 xl:left-2.5 xl:right-2.5 h-[2px] bg-red-800 rounded-full" />
                                         )}
                                     </button>
                                 );
@@ -365,10 +361,10 @@ const Navbar = () => {
                                                     <Link
                                                         to="/admin"
                                                         onClick={() => setDropdownOpen(false)}
-                                                        className="flex items-center px-4 py-2.5 text-xs font-bold text-purple-800 bg-purple-50/80 mx-2 my-1 rounded-xl hover:bg-purple-100 transition-colors border border-purple-200"
+                                                        className="flex items-center px-4 py-2 text-xs font-bold text-amber-900 bg-amber-50 mx-2 my-1 rounded-xl hover:bg-amber-100 transition-colors border border-amber-300"
                                                     >
-                                                        <ShieldCheck className="w-4 h-4 mr-2 text-purple-700" />
-                                                        Cổng Quản trị viên (Admin)
+                                                        <ShieldCheck className="w-4 h-4 mr-2 text-amber-700" />
+                                                        Vào Bảng Điều Hành Quản Trị
                                                     </Link>
                                                 )}
                                             </div>
