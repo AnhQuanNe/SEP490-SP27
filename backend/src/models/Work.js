@@ -44,6 +44,11 @@ const workSchema = new mongoose.Schema(
             default: 'Dân gian',
             trim: true,
         },
+        coverImage: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         summary: {
             type: String,
             required: [true, 'Vui lòng nhập tóm tắt tác phẩm'],

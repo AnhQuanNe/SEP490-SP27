@@ -16,12 +16,14 @@ const locationRoutes = require('./location.routes');
 const mapRoutes = require('./map.routes');
 const learningPathRoutes = require('./learningPath.routes');
 const artifactRoutes = require('./artifact.routes');
+const ttsRoutes = require('./tts.routes');
 const SystemSetting = require('../models/SystemSetting');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/literature', literatureRoutes);
 router.use('/ai', aiRoutes);
+router.use('/tts', ttsRoutes);
 router.use('/quiz', quizRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/search-history', searchHistoryRoutes);

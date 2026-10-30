@@ -42,10 +42,9 @@ const DEFAULT_SUGGESTIONS = [
 ];
 
 const GEMINI_MODELS = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-1.5-flash-8b',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
     'gemini-2.5-flash',
 ];
 
@@ -979,6 +978,29 @@ function isConversationalGreeting(text) {
     return GREETING_PATTERNS.some((pattern) => pattern.test(clean));
 }
 
+const OFF_TOPIC_PATTERNS = [
+    // Ăn uống sinh hoạt đời thường
+    /\b(hom nay|trua nay|toi nay|sang nay|chieu nay)\s+an\s+gi\b/i,
+    /\ban\s+gi\s+(hom nay|trua nay|toi nay|sang nay|chieu nay|ngon|day|bay gio)\b/i,
+    /\b(thuc don|mon ngon|mon an hang ngay|nau mon gi|an gi bay gio)\b/i,
+    // Thời tiết
+    /\b(thoi tiet|du bao thoi tiet|troi mua|troi nang|nhiet do hom nay)\b/i,
+    // Lập trình / Tech
+    /\b(viet code|lap trinh|fix bug|code python|code java|code c\+\+|reactjs)\b/i,
+    // Toán / Khoa học
+    /\b(giai phuong trinh|dao ham|tich phan|cong thuc hoa hoc)\b/i,
+    // Tài chính đời thường / May rủi
+    /\b(gia vang|chung khoan|xo so|ty so bong da|soi keo)\b/i,
+    // Mua sắm đồ công nghệ
+    /\b(mua dien thoai|iphone bao nhieu|mua laptop|mua xe may)\b/i,
+];
+
+function isOffTopicQuery(text) {
+    if (!text) return false;
+    const clean = removeVietnameseTones(text).trim().toLowerCase();
+    return OFF_TOPIC_PATTERNS.some((pattern) => pattern.test(clean));
+}
+
 module.exports = {
     DEFAULT_SUGGESTIONS,
     GEMINI_MODELS,
@@ -990,4 +1012,6 @@ module.exports = {
     findCuratedTerm,
     GREETING_PATTERNS,
     isConversationalGreeting,
+    OFF_TOPIC_PATTERNS,
+    isOffTopicQuery,
 };

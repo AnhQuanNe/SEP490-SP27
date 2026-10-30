@@ -404,6 +404,7 @@ const createWork = async (req, res) => {
             period: period || 'Văn học Dân gian',
             region: region || 'Toàn quốc',
             author: author || 'Dân gian',
+            coverImage: req.body.coverImage?.trim() || '',
             topic: topic || 'Văn hóa & Đạo lý',
             summary: summary.trim(),
             quote: quote?.trim() || title.trim(),

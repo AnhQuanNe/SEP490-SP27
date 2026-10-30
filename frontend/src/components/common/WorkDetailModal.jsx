@@ -35,6 +35,8 @@ import favoriteService from '../../services/favorite.service';
 import PoemDisplay from './PoemDisplay';
 import GuestQuotaModal from './GuestQuotaModal';
 import SmartTextSelectionToolbar from './SmartTextSelectionToolbar';
+import HeritageAudioPlayer, { heritageAudioManager } from './HeritageAudioPlayer';
+import { getHeritageArtwork } from '../../data/heritageArtworks';
 import { useAiChat } from '../../context/AiChatContext';
 
 const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
@@ -91,6 +93,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
             setActiveTab('van-ban');
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
+            heritageAudioManager.stopCurrent();
             return;
         }
 
@@ -124,6 +127,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
 
         return () => {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
+            heritageAudioManager.stopCurrent();
         };
     }, [isOpen, work, isAuthenticated]);
 
@@ -229,6 +233,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
     if (!isOpen || !work) return null;
 
     const current = detail || work;
+    const artwork = getHeritageArtwork(current);
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
@@ -258,18 +263,13 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                        {/* Audio Voiceover button */}
-                        <button
-                            type="button"
-                            onClick={handleToggleSpeech}
-                            className={`p-2.5 rounded-xl border transition-all ${isSpeaking
-                                    ? 'bg-amber-500 border-amber-600 text-white animate-pulse'
-                                    : 'bg-white hover:bg-amber-50 border-slate-200 text-slate-600'
-                                }`}
-                            title={isSpeaking ? 'Dừng đọc giọng AI' : 'Nghe giọng đọc ngâm câu thơ'}
-                        >
-                            {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                        </button>
+                        {/* Audio Recitation button with Neural Edge-TTS (Hiện ở Header khi không ở tab Văn bản để tránh trùng thanh Bar) */}
+                        {activeTab !== 'van-ban' && (
+                            <HeritageAudioPlayer
+                                text={current.quote || current.content || current.summary}
+                                variant="button"
+                            />
+                        )}
 
                         {/* Copy quote button */}
                         <button
@@ -438,16 +438,81 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                             {/* ============================================================== */}
                             {(activeTab === 'van-ban' || activeTab === 'tat-ca') && (
                                 <div className="space-y-5 animate-in fade-in duration-150">
-                                    {/* Trích đoạn tiêu biểu */}
+                                    {/* HERO VISUAL ART BANNER (Chuẩn hóa Thị giác Di sản) */}
+                                    <div className="relative overflow-hidden rounded-2xl border border-amber-300/80 shadow-md group/art animate-in fade-in duration-300">
+                                        <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-950">
+                                            <img
+                                                src={current.coverImage || artwork.image}
+                                                alt={current.title || artwork.title}
+                                                className="w-full h-full object-cover object-center transform scale-100 group-hover/art:scale-105 transition-transform duration-1000 ease-out"
+                                            />
+                                            {/* Lớp phủ chuyển màu & khói sương mờ ảo */}
+                                            <div className={`absolute inset-0 bg-gradient-to-t ${artwork.overlayGradient} opacity-90`} />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-transparent to-slate-950/40" />
+
+                                            {/* Thông tin trên Hero Banner */}
+                                            <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between z-10 text-white">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md border border-white/30 text-amber-200 shadow-sm">
+                                                        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                                                        <span>{artwork.badge}</span>
+                                                    </span>
+                                                    <span className="text-[11px] font-medium text-slate-300/90 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-white/10 hidden sm:inline-flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3 text-amber-400" />
+                                                        <span>{artwork.locationTag || current.region || 'Di sản Việt Nam'}</span>
+                                                    </span>
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <div className="text-[11px] uppercase tracking-wider font-bold text-amber-300/90">
+                                                        {current.period || artwork.era} • {current.topic || artwork.theme}
+                                                    </div>
+                                                    <h3 className="text-xl sm:text-2xl font-bold font-heritage tracking-tight text-white drop-shadow-md">
+                                                        {current.title}
+                                                    </h3>
+                                                    <p className="text-xs sm:text-sm italic font-heritage text-amber-100/90 line-clamp-1 drop-shadow-sm">
+                                                        {(() => {
+                                                            if (current?.quote) {
+                                                                const verses = current.quote.split(/[\r\n/]+/).map(s => s.trim()).filter(Boolean);
+                                                                if (verses.length >= 2) return `“${verses[0]} — ${verses[1]}”`;
+                                                                if (verses.length === 1) return `“${verses[0]}”`;
+                                                            }
+                                                            return artwork.quoteHighlight || current?.summary || '';
+                                                        })()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* KHUNG TRÍCH ĐOẠN TIÊU BIỂU */}
                                     {current.quote && (
                                         <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-amber-50/90 via-amber-50/50 to-orange-50/30 border border-amber-200/90 relative shadow-sm">
                                             <Quote className="w-8 h-8 text-amber-300 absolute top-4 right-5 opacity-60" />
+
                                             <div className="pr-8">
                                                 <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800/80 mb-2 flex items-center gap-1.5">
                                                     <BookMarked className="w-3.5 h-3.5 text-amber-700" />
-                                                    Trích đoạn đắt giá / Điểm nhấn tác phẩm
+                                                    <span>Trích đoạn đắt giá / Điểm nhấn tác phẩm</span>
                                                 </div>
+
                                                 <PoemDisplay text={current.quote} size="lg" />
+
+                                                <div className="mt-4">
+                                                    <HeritageAudioPlayer
+                                                        text={current.quote}
+                                                        title={
+                                                            current.category === 'tuc-ngu'
+                                                                ? 'Diễn đọc Tục ngữ Dân gian'
+                                                                : current.category === 'ca-dao'
+                                                                ? 'Diễn ngâm Ca dao Dân ca'
+                                                                : current.category === 'trung-dai' || current.title?.includes('Sơn Hà') || current.title?.includes('Kiều')
+                                                                ? 'Diễn ngâm Thơ Di sản'
+                                                                : `Diễn ngâm ${current.categoryName || 'Tác phẩm Di sản'}`
+                                                        }
+                                                        variant="bar"
+                                                    />
+                                                </div>
                                             </div>
 
                                             {/* Metadata chips */}

@@ -51,10 +51,10 @@ const Navbar = () => {
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
         { name: 'Triển lãm Ảo', path: '/trien-lam-3d', isRoute: true, icon: Layers },
-        { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map },
-        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2 },
-        { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy, visibility: 'hidden xl:inline-flex' },
+        { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map, visibility: 'hidden lg:inline-flex' },
         { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden lg:inline-flex' },
+        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden xl:inline-flex' },
+        { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy, visibility: 'hidden xl:inline-flex' },
     ];
 
     // Cấu trúc danh mục toàn diện được chuyển vào Thanh bên trái (Left Sidebar)
@@ -171,8 +171,8 @@ const Navbar = () => {
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 
-                <div className="max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8">
-                    <div className="flex items-center justify-between h-20 gap-2 sm:gap-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-20 gap-3 lg:gap-4">
                         
                         {/* CỤM BÊN TRÁI: NÚT MỞ THANH DANH MỤC + LOGO THƯƠNG HIỆU */}
                         <div className="flex items-center space-x-2.5 sm:space-x-3.5 flex-shrink-0">
@@ -224,9 +224,9 @@ const Navbar = () => {
                                     </div>
                                     <span className="text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-1 flex items-center gap-1 whitespace-nowrap">
                                         <span className="text-amber-700 font-bold text-[9px]">❖</span> 
-                                        <span className="hidden xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
-                                        <span className="xl:hidden hidden md:inline">Di Sản Văn Hóa Việt</span>
-                                        <span className="md:hidden">Di Sản Việt</span>
+                                        <span className="hidden 2xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
+                                        <span className="2xl:hidden hidden lg:inline">Di Sản Văn Hóa</span>
+                                        <span className="lg:hidden hidden sm:inline">Di Sản Việt</span>
                                     </span>
                                 </div>
                             </Link>
@@ -235,7 +235,7 @@ const Navbar = () => {
                         {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (CHỈ GIỮ LẠI CÁC MỤC CỐT LÕI) */}
                         <nav
                             aria-label="Menu điều hướng chính"
-                            className="hidden md:flex items-center space-x-1 lg:space-x-1.5 flex-nowrap"
+                            className="hidden md:flex items-center justify-center space-x-1 lg:space-x-1.5 flex-1 mx-2 lg:mx-4"
                         >
                             {primaryHeaderItems.map((item) => {
                                 const active = isItemActive(item.path, item.isAction);
@@ -246,7 +246,7 @@ const Navbar = () => {
                                         key={item.name}
                                         type="button"
                                         onClick={(e) => handleNavClick(item, e)}
-                                        className={`relative px-2.5 py-1.5 xl:px-3.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 xl:gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
+                                        className={`relative px-2 py-1.5 lg:px-2.5 xl:px-3.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 xl:gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
                                             active
                                                 ? 'text-red-950 bg-amber-100/90 shadow-2xs border border-amber-300 font-bold'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
@@ -386,16 +386,24 @@ const Navbar = () => {
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
+                                <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
                                     <Link
                                         to="/login"
-                                        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold text-stone-700 hover:text-red-900 hover:bg-amber-100/50 rounded-xl transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0"
+                                        className={`px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${
+                                            location.pathname === '/login'
+                                                ? 'text-red-950 bg-amber-100/80 border border-amber-300/80 font-bold shadow-2xs'
+                                                : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
+                                        }`}
                                     >
                                         Đăng nhập
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-amber-50 bg-gradient-to-r from-red-800 via-red-800 to-amber-700 hover:from-red-700 hover:to-amber-600 rounded-xl shadow-xs border border-amber-400/40 transition-all hover:shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0"
+                                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl shadow-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 active:scale-[0.98] ${
+                                            location.pathname === '/register'
+                                                ? 'text-amber-50 bg-gradient-to-r from-red-900 to-amber-700 border-amber-400 shadow-md ring-2 ring-amber-400/50'
+                                                : 'text-amber-50 bg-gradient-to-r from-red-800 via-red-800 to-amber-700 hover:from-red-700 hover:to-amber-600 border-amber-400/40 hover:shadow-md'
+                                        }`}
                                     >
                                         Đăng ký
                                     </Link>

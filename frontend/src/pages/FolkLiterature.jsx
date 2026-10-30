@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
 import WorkDetailModal from '../components/common/WorkDetailModal';
+import HeritageAudioPlayer from '../components/common/HeritageAudioPlayer';
 import './FolkLiterature.css';
 import {
     BookOpen,
@@ -199,14 +200,17 @@ const FolkLiterature = () => {
                                     <Quote className="w-4 h-4 text-amber-400" />
                                     Túi Khôn Dân Gian
                                 </span>
-                                <button
-                                    onClick={changeQuote}
-                                    className="text-[11px] text-slate-300 hover:text-white flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-lg transition"
-                                    title="Đổi câu khác"
-                                >
-                                    <RefreshCw className="w-3 h-3" />
-                                    <span>Câu khác</span>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <HeritageAudioPlayer text={currentQuote.quote} variant="inline" />
+                                    <button
+                                        onClick={changeQuote}
+                                        className="text-[11px] text-slate-300 hover:text-white flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-lg transition"
+                                        title="Đổi câu khác"
+                                    >
+                                        <RefreshCw className="w-3 h-3" />
+                                        <span>Câu khác</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="py-6 space-y-3">
@@ -345,8 +349,11 @@ const FolkLiterature = () => {
                                         </p>
 
                                         {work.quote && (
-                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                                <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
+                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed flex items-start justify-between gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
+                                                </div>
+                                                <HeritageAudioPlayer text={work.quote} variant="button" className="flex-shrink-0" />
                                             </div>
                                         )}
 
