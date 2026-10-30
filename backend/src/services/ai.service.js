@@ -798,87 +798,24 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc nhân vật nào?`;
     // 1.5. Nếu chưa có primaryWork, nhận diện thông minh từ nội dung câu hỏi
     if (!primaryWork) {
         try {
-        // 1.5.a. Tìm xem câu hỏi có chứa tên của tác phẩm nào trong DB không
-        const allWorks = await Work.find(
-            { status: 'published' },
-            'title slug author tags summary historicalContext thematicMeaning categoryName region period source variants quote literalMeaning figurativeMeaning lesson'
-        ).lean();
+            // 1.5.a. Tìm xem câu hỏi có chứa tên của tác phẩm hoặc slug nào trong DB không
+            const allWorks = await Work.find(
+                { status: 'published' },
+                'title slug author tags summary historicalContext thematicMeaning categoryName region period source variants quote literalMeaning figurativeMeaning lesson'
+            ).lean();
 
-        for (const w of allWorks) {
-            const titleClean = removeVietnameseTones(w.title).toLowerCase();
-            // Khớp chính xác tên tác phẩm hoặc tên ngắn
-            if (qClean.includes(titleClean) || (titleClean.length > 5 && qClean.includes(titleClean.slice(0, 12)))) {
-                primaryWork = w;
-                break;
-            }
-        }
-
-        // 1.5.b. Nếu chưa thấy, tìm xem câu hỏi có chứa tên nhân vật quen thuộc không
-        if (!primaryWork) {
-            const matchedChar = findCuratedCharacter(cleanQuery);
-            if (matchedChar) {
-                primaryWork = allWorks.find((w) => w.slug === matchedChar.workSlug) || null;
-            }
-        }
-
-        // 1.5.c. Nếu chưa thấy, tìm xem câu hỏi có chứa địa danh quen thuộc không
-        if (!primaryWork) {
-            const matchedLoc = findCuratedLocation(cleanQuery);
-            if (matchedLoc && matchedLoc.workSlug) {
-                primaryWork = allWorks.find((w) => w.slug === matchedLoc.workSlug) || null;
-            }
-        }
-    }
-
-    // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database nếu vẫn chưa có primaryWork
-    if (!primaryWork) {
-        const fullRegex = buildVietnameseRegex(cleanQuery);
-
-        if (fullRegex) {
-            candidateWorks = await Work.find({
-                $or: [
-                    { title: fullRegex },
-                    { author: fullRegex },
-                    { tags: fullRegex },
-                    { summary: fullRegex },
-                    { thematicMeaning: fullRegex },
-                    { historicalContext: fullRegex },
-                ],
-                status: 'published',
-            })
-                .limit(3)
-                .lean();
-        }
-
-        // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa
-        if (candidateWorks.length === 0) {
-            const STOP_WORDS = new Set([
-                'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
-                'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
-                'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
-                'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
-                'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin', 'hay', 'hãy',
-                'phan', 'phân', 'tich', 'tích', 'y', 'ý', 'nghia', 'nghĩa', 'giai', 'giải', 'thich', 'thích', 'hom', 'hôm', 'ngay', 'ngày', 'an', 'ăn', 'uong', 'uống', 'di', 'đi', 'o', 'ở', 'dau', 'đâu', 'gio', 'giờ', 'trua', 'trưa', 'toi', 'tối', 'sang', 'sáng'
-            ]);
-
-            const rawTokens = cleanQuery.split(/[\s,?.!;:—–"']+/).filter(Boolean);
-            const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
-
-            const searchTerms = [];
-            for (let i = 0; i < filteredWords.length - 1; i++) {
-                searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
-            }
-            filteredWords.forEach((w) => {
-                if (w.length >= 2) searchTerms.push(w);
-            });
-
-            if (searchTerms.length > 0) {
-                const orConditions = [];
-                for (const term of searchTerms.slice(0, 10)) {
-                    const r = buildVietnameseRegex(term);
-                    if (r) {
-                        orConditions.push({ title: r }, { author: r }, { tags: r });
-                    }
+            for (const w of allWorks) {
+                const titleClean = removeVietnameseTones(w.title).toLowerCase();
+                const slugClean = (w.slug || '').replace(/-/g, ' ').toLowerCase();
+                // Khớp chính xác tên tác phẩm hoặc slug
+                if (
+                    qClean.includes(titleClean) ||
+                    (titleClean.length > 5 && qClean.includes(titleClean.slice(0, 12))) ||
+                    (slugClean.length >= 4 && qClean.includes(slugClean))
+                ) {
+                    primaryWork = w;
+                    candidateWorks = [w];
+                    break;
                 }
             }
 
@@ -913,25 +850,75 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc nhân vật nào?`;
                 }
             }
 
-            // 1.5.e. Nếu vẫn chưa có, tìm kiếm theo regex từ khóa
+            // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database nếu vẫn chưa có primaryWork
             if (!primaryWork) {
                 const fullRegex = buildVietnameseRegex(cleanQuery);
+
                 if (fullRegex) {
-                    const matchedWorks = await Work.find({
+                    candidateWorks = await Work.find({
                         $or: [
                             { title: fullRegex },
                             { author: fullRegex },
                             { tags: fullRegex },
                             { summary: fullRegex },
+                            { thematicMeaning: fullRegex },
+                            { historicalContext: fullRegex },
                         ],
                         status: 'published',
                     })
                         .limit(3)
                         .lean();
 
-                    if (matchedWorks.length > 0) {
-                        primaryWork = matchedWorks[0];
-                        candidateWorks = matchedWorks;
+                    if (candidateWorks.length > 0) {
+                        primaryWork = candidateWorks[0];
+                    }
+                }
+
+                // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa
+                if (candidateWorks.length === 0) {
+                    const STOP_WORDS = new Set([
+                        'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
+                        'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
+                        'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
+                        'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
+                        'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin', 'hay', 'hãy',
+                        'phan', 'phân', 'tich', 'tích', 'y', 'ý', 'nghia', 'nghĩa', 'giai', 'giải', 'thich', 'thích',
+                        'hom', 'hôm', 'ngay', 'ngày', 'an', 'ăn', 'uong', 'uống', 'di', 'đi', 'o', 'ở', 'dau', 'đâu',
+                        'gio', 'giờ', 'trua', 'trưa', 'toi', 'tối', 'sang', 'sáng'
+                    ]);
+
+                    const rawTokens = cleanQuery.split(/[\s,?.!;:—–"\']+/).filter(Boolean);
+                    const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
+
+                    const searchTerms = [];
+                    for (let i = 0; i < filteredWords.length - 1; i++) {
+                        searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
+                    }
+                    filteredWords.forEach((w) => {
+                        if (w.length >= 2) searchTerms.push(w);
+                    });
+
+                    if (searchTerms.length > 0) {
+                        const orConditions = [];
+                        for (const term of searchTerms.slice(0, 10)) {
+                            const r = buildVietnameseRegex(term);
+                            if (r) {
+                                orConditions.push({ title: r }, { author: r }, { tags: r });
+                            }
+                        }
+
+                        if (orConditions.length > 0) {
+                            candidateWorks = await Work.find({
+                                $or: orConditions,
+                                status: 'published',
+                            })
+                                .limit(3)
+                                .lean();
+
+                            if (candidateWorks.length > 0) {
+                                primaryWork = candidateWorks[0];
+                            }
+                        }
                     }
                 }
             }
@@ -939,7 +926,6 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc nhân vật nào?`;
             console.warn('[askAssistant] Lỗi tra cứu DB:', dbErr.message);
         }
     }
-
     // 2. Chuẩn bị context nếu có tác phẩm trùng khớp
     let contextText = null;
     if (primaryWork) {
