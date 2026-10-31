@@ -259,6 +259,20 @@ const approveSubmission = async (req, res) => {
         if (adminNote) submission.adminNote = adminNote;
         await submission.save();
 
+        // Tự động sinh Real AI Embedding trong background cho tác phẩm vừa duyệt
+        try {
+            const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+            const embedText = buildWorkEmbeddingText(newWork);
+            getEmbedding(embedText, 768).then((vector) => {
+                if (vector && vector.length === 768) {
+                    Work.updateOne({ _id: newWork._id }, { $set: { embedding: vector } }).exec();
+                    console.log(`[Admin] Đã tự động tạo vector embedding cho tác phẩm mới duyệt: "${newWork.title}"`);
+                }
+            }).catch((e) => console.warn('[Admin] Lỗi async embedding submission:', e.message));
+        } catch (embedHookErr) {
+            console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+        }
+
         res.status(200).json({
             success: true,
             message: `Phê duyệt bài đóng góp thành công! Đã xuất bản tác phẩm "${newWork.title}" vào kho tàng.`,
@@ -419,6 +433,20 @@ const createWork = async (req, res) => {
             isFeatured: !!isFeatured,
         });
 
+        // Tự động sinh Real AI Embedding trong background cho tác phẩm mới tạo
+        try {
+            const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+            const embedText = buildWorkEmbeddingText(work);
+            getEmbedding(embedText, 768).then((vector) => {
+                if (vector && vector.length === 768) {
+                    Work.updateOne({ _id: work._id }, { $set: { embedding: vector } }).exec();
+                    console.log(`[Admin] Đã tự động tạo vector embedding cho tác phẩm vừa thêm: "${work.title}"`);
+                }
+            }).catch((e) => console.warn('[Admin] Lỗi async embedding createWork:', e.message));
+        } catch (embedHookErr) {
+            console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+        }
+
         res.status(201).json({
             success: true,
             message: 'Thêm mới tác phẩm thành công',
@@ -453,6 +481,22 @@ const updateWork = async (req, res) => {
                 success: false,
                 message: 'Không tìm thấy tác phẩm để cập nhật',
             });
+        }
+
+        // Tự động cập nhật lại vector embedding nếu có thay đổi nội dung ngữ nghĩa
+        if (updateData.title || updateData.summary || updateData.figurativeMeaning || updateData.thematicMeaning || updateData.quote || updateData.tags) {
+            try {
+                const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+                const embedText = buildWorkEmbeddingText(updatedWork);
+                getEmbedding(embedText, 768).then((vector) => {
+                    if (vector && vector.length === 768) {
+                        Work.updateOne({ _id: updatedWork._id }, { $set: { embedding: vector } }).exec();
+                        console.log(`[Admin] Đã cập nhật vector embedding cho tác phẩm: "${updatedWork.title}"`);
+                    }
+                }).catch((e) => console.warn('[Admin] Lỗi async re-embedding updateWork:', e.message));
+            } catch (embedHookErr) {
+                console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+            }
         }
 
         res.status(200).json({

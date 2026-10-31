@@ -152,6 +152,10 @@ const workSchema = new mongoose.Schema(
                 },
             },
         ],
+        embedding: {
+            type: [Number],
+            default: undefined,
+        },
         variants: [
             {
                 name: {

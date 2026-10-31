@@ -1110,6 +1110,32 @@ const generateSemanticInsight = async ({ query, topWork, matchedConcept }) => {
         fallbackText += topWork.summary;
     }
 
+    if (process.env.GEMINI_API_KEY) {
+        try {
+            const prompt = `Bạn là Trợ lý Di sản VietHeritage AI. Người dùng vừa tìm kiếm ý nghĩa câu ca dao / tục ngữ với câu hỏi: "${query}".
+Tác phẩm phù hợp nhất trong kho tàng dữ liệu là: "${topWork.title}".
+- Nội dung / Trích dẫn: "${topWork.quote || topWork.title}"
+- Nghĩa bóng / Bài học: "${topWork.lesson || topWork.figurativeMeaning || topWork.thematicMeaning || topWork.summary || ''}"
+
+Hãy viết 1 đoạn văn ngắn (2-3 câu), truyền cảm, trang nhã, giải thích trực tiếp tại sao câu ca dao / tục ngữ này là minh chứng tiêu biểu và sâu sắc nhất cho tâm niệm tìm kiếm trên của người dùng.`;
+
+            const aiAnswer = await callGeminiApi({
+                question: prompt,
+                contextText: `Tác phẩm: ${topWork.title}\n${topWork.summary || ''}\n${topWork.lesson || ''}`,
+            });
+
+            if (aiAnswer && aiAnswer.length > 30) {
+                return {
+                    insight: aiAnswer,
+                    highlightWork: topWork.title,
+                    source: 'gemini_smart_semantic_insight',
+                };
+            }
+        } catch (err) {
+            console.warn('[generateSemanticInsight] Gemini fallback:', err.message);
+        }
+    }
+
     return {
         insight: fallbackText,
         highlightWork: topWork.title,

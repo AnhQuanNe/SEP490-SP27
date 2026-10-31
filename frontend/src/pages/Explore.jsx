@@ -12,15 +12,12 @@ import {
     BookOpen,
     Sparkles,
     Search,
-    Compass,
     MapPin,
     ArrowRight,
     CheckCircle2,
     Heart,
-    Bot,
     Quote,
     X,
-    Clock,
     Eye,
     ThumbsUp,
     SlidersHorizontal,
@@ -31,9 +28,13 @@ import {
     ShieldCheck,
     Layers,
     HelpCircle,
-    Lock
+    Lock,
+    RotateCcw,
+    ArrowDown
 } from 'lucide-react';
 import { useAiChat } from '../context/AiChatContext';
+
+const PAGE_SIZE = 12;
 
 const SEMANTIC_EXAMPLES = [
     'Tìm tục ngữ nói về lòng biết ơn những người đã giúp đỡ mình',
@@ -48,6 +49,7 @@ const Explore = () => {
     const { isAuthenticated } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const resultsRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     // Data states
     const [works, setWorks] = useState([]);
@@ -56,6 +58,12 @@ const Explore = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [showQuotaModal, setShowQuotaModal] = useState(false);
     const [guestQuota, setGuestQuota] = useState({ remaining: null, limit: 5 });
+
+    // Pagination & Load More states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalWorks, setTotalWorks] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     // Search Mode: 'keyword' (UC07) | 'semantic' (UC09)
     const initialMode = searchParams.get('mode') === 'semantic' ? 'semantic' : 'keyword';
@@ -154,7 +162,36 @@ const Explore = () => {
         }
     }, [isAuthenticated]);
 
-    // Fetch works (Keyword search UC07 vs Semantic Search UC09)
+    // Render huy hiệu đánh giá độ tương quan Cosine Vector (Google Text Embedding 768D)
+    const renderSemanticBadge = (score) => {
+        if (score === undefined || score === null) return null;
+        let badgeClass = 'bg-blue-50 text-blue-900 border-blue-200';
+        let label = 'Phù hợp';
+        let dotColor = 'bg-blue-500';
+
+        if (score >= 68) {
+            badgeClass = 'bg-emerald-50 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30';
+            label = 'Xuất sắc';
+            dotColor = 'bg-emerald-500';
+        } else if (score >= 62) {
+            badgeClass = 'bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-400/20';
+            label = 'Rất cao';
+            dotColor = 'bg-amber-500';
+        }
+
+        return (
+            <span
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border shadow-2xs ${badgeClass}`}
+                title={`Độ tương đồng Cosine Similarity: ${score}% (Không gian vector 768 chiều)`}
+            >
+                <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />
+                <span>Khớp {score}%</span>
+                <span className="opacity-40">•</span>
+                <span>{label}</span>
+            </span>
+        );
+    };
+
     const fetchWorks = async (targetQuery = searchQuery, targetMode = searchMode) => {
         setIsLoading(true);
         try {
@@ -165,6 +202,9 @@ const Explore = () => {
                         limit: 24,
                     });
                     setWorks(data.works || []);
+                    setCurrentPage(1);
+                    setTotalWorks(data.works?.length || 0);
+                    setHasMore(false);
                     setSemanticConcept(data.semanticConcept);
                     setConceptDescription(data.conceptDescription);
                     setAiInsight(data.aiInsight || null);
@@ -173,11 +213,10 @@ const Explore = () => {
                     }
                 } catch (err) {
                     if (err.code === 'GUEST_QUOTA_EXCEEDED' || err.status === 429) {
-                        setGuestQuota({ remaining: 0, limit: 5 });
                         setShowQuotaModal(true);
                         setWorks([]);
-                        setSemanticConcept('Đã hết lượt trải nghiệm AI miễn phí');
-                        setConceptDescription('Bạn đã sử dụng hết 5 lượt tìm kiếm AI miễn phí hôm nay. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục không giới hạn!');
+                        setSemanticConcept(null);
+                        setAiInsight(null);
                     } else {
                         throw err;
                     }
@@ -190,44 +229,137 @@ const Explore = () => {
                     query: targetQuery,
                     category: selectedCategory,
                     region: selectedRegion === 'all' ? '' : selectedRegion,
-                    limit: 24,
+                    page: 1,
+                    limit: PAGE_SIZE,
                 });
-                let resultList = data.works || [];
+                let list = data.works || [];
 
+                // Frontend sorting
                 if (sortBy === 'popular') {
-                    resultList.sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+                    list.sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
                 } else if (sortBy === 'latest') {
-                    resultList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 } else if (sortBy === 'title') {
-                    resultList.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+                    list.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
                 }
-                setWorks(resultList);
+                setWorks(list);
+                setCurrentPage(1);
+                const total = data.pagination?.total || list.length;
+                setTotalWorks(total);
+                setHasMore(1 < (data.pagination?.totalPages || 1));
             }
-        } catch (error) {
-            console.error('Lỗi khi tải danh sách tác phẩm:', error);
+        } catch (err) {
+            console.error('Lỗi khi tải tác phẩm:', err);
+            setWorks([]);
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Trigger fetch on filter change
     useEffect(() => {
-        fetchWorks(searchQuery, searchMode);
-    }, [selectedCategory, selectedRegion, sortBy, searchMode]);
+        if (searchMode === 'keyword') {
+            fetchWorks();
+        }
+    }, [selectedCategory, selectedRegion, sortBy]);
 
-    // Chuyển đổi tab chế độ tìm kiếm và đồng bộ ngay với URL
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setActiveSearchQuery(searchQuery);
+
+        const nextParams = new URLSearchParams(searchParams);
+        if (searchQuery.trim()) {
+            nextParams.set('q', searchQuery.trim());
+        } else {
+            nextParams.delete('q');
+            nextParams.delete('query');
+        }
+        nextParams.set('mode', searchMode);
+        setSearchParams(nextParams, { replace: true });
+
+        fetchWorks(searchQuery, searchMode);
+
+        // Tự động cuộn mượt xuống khu vực kết quả sau khi bấm Tra cứu (Auto-scroll UX)
+        setTimeout(() => {
+            if (resultsRef.current) {
+                resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 150);
+    };
+
+    // Tối ưu hành vi nút xóa nhanh X trong ô tìm kiếm
+    const handleClearSearchInput = () => {
+        setSearchQuery('');
+        // Nếu có truy vấn đang chạy, xóa bỏ và tự động tải lại danh sách
+        if (activeSearchQuery || searchParams.get('q') || searchParams.get('query')) {
+            setActiveSearchQuery('');
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete('q');
+            nextParams.delete('query');
+            setSearchParams(nextParams, { replace: true });
+
+            if (searchMode === 'semantic') {
+                setAiInsight(null);
+                setSemanticConcept(null);
+                setConceptDescription(null);
+                fetchWorks('', 'keyword');
+            } else {
+                fetchWorks('', 'keyword');
+            }
+        }
+
+        // Tự động focus lại vào ô input để người dùng sẵn sàng gõ tiếp
+        setTimeout(() => {
+            if (searchInputRef.current) {
+                searchInputRef.current.focus();
+            }
+        }, 50);
+    };
+
+    // Tải thêm tác phẩm (Load More)
+    const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+            const nextPage = currentPage + 1;
+            const data = await literatureService.searchWorks({
+                query: activeSearchQuery || searchQuery,
+                category: selectedCategory,
+                region: selectedRegion === 'all' ? '' : selectedRegion,
+                page: nextPage,
+                limit: PAGE_SIZE,
+            });
+
+            let nextWorks = data.works || [];
+            if (sortBy === 'popular') {
+                nextWorks.sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+            } else if (sortBy === 'latest') {
+                nextWorks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } else if (sortBy === 'title') {
+                nextWorks.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+            }
+
+            setWorks((prev) => [...prev, ...nextWorks]);
+            setCurrentPage(nextPage);
+            const total = data.pagination?.total || (works.length + nextWorks.length);
+            setTotalWorks(total);
+            setHasMore(nextPage < (data.pagination?.totalPages || 1));
+        } catch (err) {
+            console.error('Lỗi khi tải thêm tác phẩm:', err);
+            showToast('Không thể tải thêm tác phẩm lúc này');
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
     const handleSwitchMode = (newMode) => {
         if (newMode === searchMode) return;
-        if (newMode === 'semantic' && !isAuthenticated && guestQuota.remaining === 0) {
-            setShowQuotaModal(true);
-            return;
-        }
         setSearchMode(newMode);
 
         const nextParams = new URLSearchParams(searchParams);
-        if (newMode === 'semantic') {
-            nextParams.set('mode', 'semantic');
-        } else {
-            nextParams.delete('mode');
+        nextParams.set('mode', newMode);
+        if (searchQuery.trim()) {
+            nextParams.set('q', searchQuery.trim());
         }
         setSearchParams(nextParams, { replace: true });
 
@@ -240,65 +372,44 @@ const Explore = () => {
         fetchWorks(searchQuery, newMode);
     };
 
-    const handleSearchSubmit = (e) => {
-        if (e) e.preventDefault();
-        setActiveSearchQuery(searchQuery);
-
-        const nextParams = new URLSearchParams(searchParams);
-        if (searchQuery.trim()) {
-            nextParams.set('q', searchQuery.trim());
-        } else {
-            nextParams.delete('q');
-        }
-        if (searchMode === 'semantic') {
-            nextParams.set('mode', 'semantic');
-        } else {
-            nextParams.delete('mode');
-        }
-        setSearchParams(nextParams, { replace: true });
-
-        fetchWorks(searchQuery, searchMode);
-        setTimeout(() => {
-            resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-    };
-
     const handleTagClick = (tag) => {
         setSearchQuery(tag);
         setActiveSearchQuery(tag);
         setSearchMode('keyword');
 
         const nextParams = new URLSearchParams(searchParams);
-        nextParams.delete('mode');
         nextParams.set('q', tag);
+        nextParams.set('mode', 'keyword');
         setSearchParams(nextParams, { replace: true });
 
-        setTimeout(() => {
-            fetchWorks(tag, 'keyword');
-            resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 50);
+        setAiInsight(null);
+        setSemanticConcept(null);
+        setConceptDescription(null);
+        fetchWorks(tag, 'keyword');
     };
 
-    const handleSemanticExampleClick = (example) => {
-        setSearchQuery(example);
-        setActiveSearchQuery(example);
+    const handleSemanticExampleClick = (exampleQuery) => {
+        setSearchQuery(exampleQuery);
+        setActiveSearchQuery(exampleQuery);
         setSearchMode('semantic');
 
         const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('q', exampleQuery);
         nextParams.set('mode', 'semantic');
-        nextParams.set('q', example);
         setSearchParams(nextParams, { replace: true });
 
+        fetchWorks(exampleQuery, 'semantic');
+
         setTimeout(() => {
-            fetchWorks(example, 'semantic');
-            resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 50);
+            if (resultsRef.current) {
+                resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 150);
     };
 
     const handleClearFilters = () => {
         setSearchQuery('');
         setActiveSearchQuery('');
-        setSearchMode('keyword');
         setSelectedCategory('all');
         setSelectedRegion('all');
         setSortBy('popular');
@@ -335,17 +446,17 @@ const Explore = () => {
     const getCategoryBadgeClass = (category) => {
         switch (category) {
             case 'tuc-ngu':
-                return 'bg-amber-100 text-amber-900 border-amber-300';
+                return 'bg-amber-50 text-amber-900 border-amber-200/90';
             case 'ca-dao':
-                return 'bg-sky-100 text-sky-900 border-sky-300';
+                return 'bg-emerald-50 text-emerald-900 border-emerald-200/90';
             case 'co-tich':
-                return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+                return 'bg-teal-50 text-teal-900 border-teal-200/90';
             case 'truyen-thuyet':
-                return 'bg-purple-100 text-purple-900 border-purple-300';
+                return 'bg-indigo-50 text-indigo-900 border-indigo-200/90';
             case 'than-thoai':
-                return 'bg-orange-100 text-orange-900 border-orange-300';
+                return 'bg-purple-50 text-purple-900 border-purple-200/90';
             default:
-                return 'bg-slate-100 text-slate-800 border-slate-300';
+                return 'bg-stone-100 text-stone-800 border-stone-200/90';
         }
     };
 
@@ -353,28 +464,28 @@ const Explore = () => {
         <div className="explore-page">
             {/* Toast notification */}
             {toastMessage && (
-                <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                <div className="fixed bottom-6 right-6 z-50 bg-stone-900/95 backdrop-blur-md text-amber-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-amber-500/30 animate-in fade-in slide-in-from-bottom-4 duration-200">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <span className="text-xs font-semibold">{toastMessage}</span>
                 </div>
             )}
 
-            {/* 1. HERO HEADER BANNER */}
+            {/* 1. HERO HEADER BANNER (KHU VỰC KHÁM PHÁ HOÀNG GIA) */}
             <section className="explore-hero">
-                <div className="explore-hero-aura"></div>
-                <div className="explore-hero-aura-indigo"></div>
+                <div className="explore-hero-glow-gold"></div>
+                <div className="explore-hero-glow-crimson"></div>
 
                 <div className="explore-hero-container">
                     {/* Breadcrumb */}
                     <div className="explore-breadcrumb">
                         <Link to="/" className="explore-breadcrumb-link">Trang chủ</Link>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
                         <span className="explore-breadcrumb-current">Khám phá Ca dao & Tục ngữ</span>
                     </div>
 
                     {/* Header Main Grid: Left Title / Right Stats Card */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                        <div className="lg:col-span-8 space-y-3.5">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-8">
+                        <div className="lg:col-span-8 space-y-3.5 text-left">
                             <div className="explore-badge">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                 <span>Thư Viện Số Ca Dao - Tục Ngữ Việt Nam</span>
@@ -387,7 +498,7 @@ const Explore = () => {
                             </p>
                         </div>
 
-                        {/* Quick Stats Widget */}
+                        {/* Quick Stats Widget (Cột Phải Đúng Chuẩn Kỹ Thuật) */}
                         <div className="lg:col-span-4 flex justify-start lg:justify-end">
                             <div className="explore-quick-stats">
                                 <div className="px-3 py-1 flex flex-col items-center">
@@ -403,15 +514,15 @@ const Explore = () => {
                                     <p className="explore-stat-label">Kiểm chứng</p>
                                 </div>
                                 <div className="px-3 py-1 flex flex-col items-center">
-                                    <Sparkles className="w-4 h-4 text-indigo-400 mb-1 opacity-90" />
-                                    <p className="explore-stat-value text-indigo-300">AI RAG</p>
-                                    <p className="explore-stat-label">Giải nghĩa</p>
+                                    <Sparkles className="w-4 h-4 text-indigo-300 mb-1 opacity-90" />
+                                    <p className="explore-stat-value text-indigo-200">768D</p>
+                                    <p className="explore-stat-label">Vector Embedding</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* SEARCH BOX WITH MODE TOGGLE (UC07 vs UC09) */}
+                    {/* SEARCH HUB WITH MODE TOGGLE (UC07 vs UC09) */}
                     <div className="explore-search-wrapper">
                         {/* Search Mode Tabs */}
                         <div className="explore-mode-toggle">
@@ -431,7 +542,7 @@ const Explore = () => {
                                 <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                                 <span>Tìm kiếm theo ý nghĩa (AI Ngữ nghĩa)</span>
                                 {!isAuthenticated && guestQuota.remaining !== null && (
-                                    <span className="ml-1.5 text-[10px] font-semibold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                                    <span className="ml-1.5 text-[10px] font-semibold bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center gap-1">
                                         <Lock className="w-2.5 h-2.5" />
                                         <span>{guestQuota.remaining}/5</span>
                                     </span>
@@ -442,27 +553,28 @@ const Explore = () => {
                         {/* Search Input Box */}
                         <form onSubmit={handleSearchSubmit} className="explore-search-box">
                             {searchMode === 'semantic' ? (
-                                <Sparkles className="explore-search-icon text-amber-500" />
+                                <Sparkles className="explore-search-icon text-amber-600" />
                             ) : (
-                                <Search className="explore-search-icon text-slate-400" />
+                                <Search className="explore-search-icon text-stone-400" />
                             )}
                             <input
+                                ref={searchInputRef}
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={
                                     searchMode === 'semantic'
                                         ? 'Nhập câu hỏi bằng văn nói (vd: "Tìm tục ngữ nói về lòng biết ơn những người đã giúp đỡ mình")...'
-                                        : 'Tìm theo từ, cụm từ, câu ca dao hoặc tác giả (vd: nhớ nguồn, ăn quả, công cha, Thạch Sanh)...'
+                                        : 'Tìm theo từ khóa, câu ca dao hoặc tác giả (vd: nhớ nguồn, ăn quả, công cha, Thạch Sanh)...'
                                 }
                                 className="explore-search-input"
                             />
                             {searchQuery && (
                                 <button
                                     type="button"
-                                    onClick={() => setSearchQuery('')}
+                                    onClick={handleClearSearchInput}
                                     className="explore-search-clear"
-                                    title="Xóa ô tìm kiếm"
+                                    title="Xóa ô tìm kiếm và tải lại"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -479,7 +591,7 @@ const Explore = () => {
                         {/* Suggestion tags */}
                         {searchMode === 'semantic' ? (
                             <div className="explore-tags-container">
-                                <span className="flex items-center gap-1.5 text-xs text-amber-300/90 font-medium mr-1">
+                                <span className="flex items-center gap-1.5 text-xs text-amber-200/90 font-medium mr-1">
                                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                     Ví dụ tìm kiếm ý nghĩa:
                                 </span>
@@ -497,7 +609,7 @@ const Explore = () => {
                         ) : (
                             popularTags.length > 0 && (
                                 <div className="explore-tags-container">
-                                    <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mr-1">
+                                    <span className="flex items-center gap-1.5 text-xs text-stone-300 font-medium mr-1">
                                         <Flame className="w-3.5 h-3.5 text-amber-400" />
                                         Từ khóa gợi ý:
                                     </span>
@@ -518,12 +630,13 @@ const Explore = () => {
                 </div>
             </section>
 
-            {/* 2. FILTER & SORT TOOLBAR */}
+            {/* 2. FILTER & SORT TOOLBAR (HERITAGE CONTROL DECK) */}
             <section className="explore-filter-section">
                 <div className="explore-filter-card">
                     {/* Categories Filter Tabs */}
                     <div className="explore-cat-tabs">
                         <span className="explore-cat-label">
+                            <Layers className="w-3.5 h-3.5 text-amber-700" />
                             Thể loại:
                         </span>
                         {categories.map((cat) => (
@@ -551,15 +664,15 @@ const Explore = () => {
                     </div>
 
                     {/* Secondary Filters */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                                <MapPin className="w-4 h-4 text-slate-400" />
-                                <span className="font-medium text-slate-500">Vùng miền:</span>
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-amber-900/10 text-xs">
+                        <div className="flex items-center gap-3.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 text-stone-700">
+                                <MapPin className="w-4 h-4 text-amber-700" />
+                                <span className="font-semibold text-stone-600">Vùng miền:</span>
                                 <select
                                     value={selectedRegion}
                                     onChange={(e) => setSelectedRegion(e.target.value)}
-                                    className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                                    className="px-2.5 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-medium outline-none focus:ring-1 focus:ring-amber-600 cursor-pointer"
                                 >
                                     <option value="all">Toàn quốc & Vùng miền</option>
                                     <option value="Bắc">Miền Bắc</option>
@@ -568,13 +681,13 @@ const Explore = () => {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                                <SlidersHorizontal className="w-4 h-4 text-slate-400" />
-                                <span className="font-medium text-slate-500">Sắp xếp:</span>
+                            <div className="flex items-center gap-1.5 text-stone-700">
+                                <SlidersHorizontal className="w-4 h-4 text-amber-700" />
+                                <span className="font-semibold text-stone-600">Sắp xếp:</span>
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
-                                    className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                                    className="px-2.5 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-medium outline-none focus:ring-1 focus:ring-amber-600 cursor-pointer"
                                 >
                                     <option value="popular">Xem nhiều nhất</option>
                                     <option value="latest">Mới cập nhật</option>
@@ -585,17 +698,18 @@ const Explore = () => {
                             {(searchQuery || selectedCategory !== 'all' || selectedRegion !== 'all') && (
                                 <button
                                     onClick={handleClearFilters}
-                                    className="text-amber-800 hover:text-amber-900 underline font-semibold text-xs ml-2"
+                                    className="text-amber-800 hover:text-amber-950 font-bold text-xs ml-2 flex items-center gap-1 underline cursor-pointer"
                                 >
-                                    Xóa bộ lọc
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Xóa bộ lọc</span>
                                 </button>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200/60">
                             <button
                                 onClick={() => setViewMode('grid')}
-                                className={`p-1.5 rounded-lg transition ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                                className={`p-1.5 rounded-lg transition cursor-pointer ${viewMode === 'grid' ? 'bg-white text-stone-900 shadow-xs font-bold' : 'text-stone-500 hover:text-stone-900'
                                     }`}
                                 title="Chế độ lưới"
                             >
@@ -603,7 +717,7 @@ const Explore = () => {
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                                className={`p-1.5 rounded-lg transition cursor-pointer ${viewMode === 'list' ? 'bg-white text-stone-900 shadow-xs font-bold' : 'text-stone-500 hover:text-stone-900'
                                     }`}
                                 title="Chế độ danh sách"
                             >
@@ -614,129 +728,147 @@ const Explore = () => {
                 </div>
             </section>
 
-            {/* 3. SEMANTIC RECOGNITION BANNER (UC09) */}
-            {semanticConcept && (
-                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-                    <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-transparent border border-amber-300/80 flex items-start gap-3.5">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
-                            <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                                    Đã nhận diện ý nghĩa:
-                                </span>
-                                <span className="px-2.5 py-0.5 rounded-md bg-amber-200/80 text-amber-950 font-bold text-xs">
-                                    {semanticConcept}
-                                </span>
-                            </div>
-                            <p className="text-xs text-slate-700 mt-1">
-                                {conceptDescription || 'Hệ thống đã phân tích ngữ nghĩa và xếp hạng các câu ca dao, tục ngữ phù hợp nhất với câu hỏi của bạn.'}
-                            </p>
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* 4. WORKS DISPLAY AREA */}
+            {/* 3. WORKS DISPLAY AREA & UNIFIED AI INTELLIGENCE DASHBOARD */}
             <section ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-                {searchMode === 'semantic' && activeSearchQuery && (
-                    <div className="mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-300 flex items-center justify-between text-xs text-amber-950 shadow-xs">
-                        <div className="flex items-center gap-2.5">
-                            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                            <span>
-                                Đang hiển thị kết quả phân tích AI theo ý nghĩa: <strong>&ldquo;{activeSearchQuery}&rdquo;</strong> (Đã tinh lọc các tác phẩm chuẩn xác nhất)
-                            </span>
-                        </div>
-                        <button
-                            onClick={handleClearFilters}
-                            className="text-amber-800 hover:text-amber-950 font-bold text-[11px] underline ml-3 flex-shrink-0"
-                        >
-                            Xem tất cả
-                        </button>
-                    </div>
-                )}
-
-                {/* AI Insight Box: Luận giải & Lời khuyên trực tiếp từ Trợ lý AI */}
-                {searchMode === 'semantic' && aiInsight && (
-                    <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-amber-100/50 border border-amber-200/90 shadow-sm relative overflow-hidden">
-                        <div className="absolute -top-12 -right-12 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
-
-                        <div className="flex items-start gap-3.5">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-600/20">
-                                <Sparkles className="w-5 h-5 animate-pulse" />
-                            </div>
-                            <div className="flex-grow space-y-2">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                                            VietHeritage AI • Luận Giải & Lời Khuyên
-                                        </span>
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-900 border border-amber-300">
-                                            {aiInsight.source === 'gemini_ai' ? 'Mô hình Gemini 2.5 Flash' : 'Động cơ Tri thức Học thuật'}
-                                        </span>
-                                    </div>
-                                    {aiInsight.highlightWork && (
-                                        <span className="text-xs font-semibold text-amber-800">
-                                            Khuyên đọc: <strong className="underline cursor-pointer hover:text-amber-950" onClick={() => {
-                                                const found = works.find(w => w.title === aiInsight.highlightWork);
-                                                if (found) setActiveModalWork(found);
-                                            }}>{aiInsight.highlightWork}</strong>
-                                        </span>
-                                    )}
+                {/* UNIFIED AI CULTURAL INTELLIGENCE PANEL (UC09) */}
+                {searchMode === 'semantic' && (semanticConcept || aiInsight || activeSearchQuery) && (
+                    <div className="explore-ai-panel mb-8">
+                        {/* Panel Header */}
+                        <div className="explore-ai-panel-header">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 text-white flex items-center justify-center shadow-xs">
+                                    <Sparkles className="w-4 h-4 animate-pulse" />
                                 </div>
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                                    Vector Semantic Search
+                                </span>
+                                {semanticConcept && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-amber-200/80 text-amber-950 font-bold text-xs border border-amber-300">
+                                        Chủ đề: {semanticConcept}
+                                    </span>
+                                )}
+                                {aiInsight?.source && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-200">
+                                        {aiInsight.source?.includes('gemini') ? 'Mô hình Gemini Flash AI' : 'Động cơ Tri thức'}
+                                    </span>
+                                )}
+                            </div>
 
-                                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
-                                    {aiInsight.insight}
-                                </p>
+                            <div className="flex items-center gap-3 text-xs">
+                                {activeSearchQuery && (
+                                    <span className="text-stone-600 hidden md:inline">
+                                        Ý nghĩa: <strong className="text-stone-900 font-semibold">&ldquo;{activeSearchQuery}&rdquo;</strong>
+                                    </span>
+                                )}
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="text-amber-900 hover:text-amber-950 font-bold text-xs underline flex items-center gap-1 cursor-pointer"
+                                >
+                                    <span>Xem tất cả tác phẩm</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Panel Body: Gemini Flash Real-Time Insight */}
+                        {aiInsight && (
+                            <div className="explore-ai-panel-body">
+                                <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                        <span className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                            <Quote className="w-3.5 h-3.5 text-amber-600" />
+                                            VietHeritage AI • Luận Giải Triết Lý & Đạo Đức
+                                        </span>
+                                        {aiInsight.highlightWork && (
+                                            <span className="text-xs font-semibold text-amber-800">
+                                                Tác phẩm tiêu biểu: <strong className="underline cursor-pointer hover:text-amber-950" onClick={() => {
+                                                    const found = works.find(w => w.title === aiInsight.highlightWork);
+                                                    if (found) setActiveModalWork(found);
+                                                }}>{aiInsight.highlightWork}</strong>
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs sm:text-[13.5px] text-stone-800 leading-relaxed font-medium">
+                                        {aiInsight.insight}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Panel Footer: Cosine AI Scale Legend */}
+                        <div className="explore-ai-panel-footer">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-stone-700">
+                                <span className="font-bold text-amber-950 flex items-center gap-1">
+                                    <HelpCircle className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+                                    Thang đo Cosine AI:
+                                </span>
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                    <strong>&ge; 68%:</strong> Xuất sắc (Cùng ý nghĩa sâu xa)
+                                </span>
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                    <strong>62% - 67%:</strong> Rất cao (Tương đồng cao)
+                                </span>
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                    <strong>60% - 61%:</strong> Phù hợp
+                                </span>
+                                <span className="text-stone-500 italic hidden sm:inline">
+                                    (&lt; 60% được coi là nhiễu và AI đã tự động loại bỏ)
+                                </span>
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* Results Section Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-xl font-extrabold text-slate-900 font-heritage">
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 font-heritage tracking-tight">
                             {searchMode === 'semantic' ? 'Kết Quả Phân Tích Ý Nghĩa' : 'Kho Tàng Ca Dao & Tục Ngữ'}
                         </h2>
-                        <p className="text-xs text-slate-500">
-                            Hiển thị <strong>{works.length}</strong> câu ca dao, tục ngữ chuẩn học thuật
+                        <p className="text-xs text-stone-500 mt-0.5">
+                            {searchMode === 'semantic'
+                                ? <>Hiển thị <strong>{works.length}</strong> câu ca dao, tục ngữ phù hợp nhất (Đã lọc theo độ tương quan)</>
+                                : <>Đang hiển thị <strong>{works.length}</strong> / <strong>{totalWorks || works.length}</strong> câu ca dao, tục ngữ</>
+                            }
                         </p>
                     </div>
 
-                    <div className="text-xs text-slate-500 hidden sm:flex items-center gap-1.5 font-medium">
+                    <div className="text-xs text-stone-600 hidden sm:flex items-center gap-1.5 font-medium px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200">
                         <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                        <span>Nguồn học thuật kiểm chứng (GS. Vũ Ngọc Phan, Nguyễn Lân)</span>
+                        <span>Nguồn kiểm chứng: GS. Vũ Ngọc Phan, GS. Nguyễn Lân</span>
                     </div>
                 </div>
 
+                {/* Work Cards Loading / Empty / Grid / List */}
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 animate-pulse space-y-4">
+                            <div key={i} className="bg-white/80 rounded-2xl p-6 border border-stone-200 animate-pulse space-y-4">
                                 <div className="flex justify-between">
-                                    <div className="h-5 bg-slate-200 rounded-md w-24"></div>
-                                    <div className="h-5 bg-slate-200 rounded-md w-16"></div>
+                                    <div className="h-5 bg-stone-200 rounded-md w-24"></div>
+                                    <div className="h-5 bg-stone-200 rounded-md w-16"></div>
                                 </div>
-                                <div className="h-7 bg-slate-200 rounded-md w-3/4"></div>
-                                <div className="h-16 bg-slate-100 rounded-xl"></div>
+                                <div className="h-7 bg-stone-200 rounded-md w-3/4"></div>
+                                <div className="h-16 bg-stone-100 rounded-xl"></div>
                             </div>
                         ))}
                     </div>
                 ) : works.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-xl mx-auto space-y-4 my-8 shadow-sm">
-                        <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
-                            <Search className="w-7 h-7" />
+                    <div className="bg-[#fffdfa] rounded-3xl p-12 text-center border border-amber-900/15 max-w-xl mx-auto space-y-4 my-8 shadow-sm">
+                        <div className="w-16 h-16 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center mx-auto shadow-xs border border-amber-200">
+                            <Search className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 font-heritage">
+                        <h3 className="text-lg font-bold text-stone-900 font-heritage">
                             Chưa tìm thấy câu ca dao, tục ngữ phù hợp
                         </h3>
-                        <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                        <p className="text-xs text-stone-500 max-w-sm mx-auto leading-relaxed">
                             Thử tìm kiếm với cụm từ khác như "uống nước nhớ nguồn", "công cha", "đoàn kết" hoặc xóa bộ lọc để xem toàn bộ kho tàng.
                         </p>
                         <button
                             onClick={handleClearFilters}
-                            className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+                            className="px-5 py-2.5 bg-gradient-to-r from-amber-800 to-amber-950 text-amber-50 rounded-xl text-xs font-bold hover:shadow-md transition cursor-pointer"
                         >
                             Xem tất cả tác phẩm
                         </button>
@@ -745,63 +877,67 @@ const Explore = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {works.map((work) => {
                             const isFavorited = favoriteWorkIds.has(work._id);
+                            const cleanTitle = (work.title || '').replace(/^["“']|["”']$/g, '').trim();
+
                             return (
                                 <article
                                     key={work._id}
                                     onClick={() => setActiveModalWork(work)}
-                                    className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between overflow-hidden group cursor-pointer"
+                                    className="explore-card group"
                                 >
-                                    <div className="p-6 space-y-3.5">
-                                        <div className="flex items-center justify-between gap-2">
+                                    <div className="p-5 sm:p-6 space-y-3.5">
+                                        {/* Top Badges */}
+                                        <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <span
                                                 className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getCategoryBadgeClass(
                                                     work.category
                                                 )}`}
                                             >
-                                                {work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ' : 'Ca dao')}
+                                                {work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ Việt Nam' : 'Ca dao Dân ca')}
                                             </span>
                                             <div className="flex items-center gap-1.5">
-                                                {work._semanticScore !== undefined && searchMode === 'semantic' && (
-                                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                                                        Khớp {work._semanticScore}đ
-                                                    </span>
-                                                )}
+                                                {work._semanticScore !== undefined && searchMode === 'semantic' && renderSemanticBadge(work._semanticScore)}
                                                 {work.topic && (
-                                                    <span className="text-[11px] text-slate-500 font-medium">
+                                                    <span className="text-[11px] text-stone-500 font-medium px-2 py-0.5 rounded-md bg-stone-100/80">
                                                         {work.topic}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <h3 className="text-lg font-bold text-slate-900 font-heritage group-hover:text-amber-800 transition-colors line-clamp-2">
-                                            "{work.title}"
+                                        {/* Title */}
+                                        <h3 className="text-lg font-bold text-stone-900 font-heritage group-hover:text-amber-800 transition-colors line-clamp-2">
+                                            &ldquo;{cleanTitle}&rdquo;
                                         </h3>
 
+                                        {/* Poetic Inscription Callout */}
                                         {work.quote && (
-                                            <div className="p-3 bg-amber-50/70 rounded-xl border-l-2 border-amber-500 text-amber-950 font-heritage italic text-xs leading-relaxed">
-                                                <PoemDisplay text={work.quote} size="xs" showQuotes={true} />
+                                            <div className="explore-poem-box">
+                                                <PoemDisplay text={work.quote} size="xs" showQuotes={false} />
                                             </div>
                                         )}
 
-                                        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                                        {/* Meaning Excerpt */}
+                                        <p className="text-xs text-stone-600 line-clamp-3 leading-relaxed">
                                             {work.literalMeaning || work.summary}
                                         </p>
 
-                                        <p className="text-[11px] text-slate-400 italic line-clamp-1">
-                                            Nguồn: {work.source}
+                                        {/* Academic Source */}
+                                        <p className="text-[11px] text-stone-400 italic line-clamp-1 flex items-center gap-1">
+                                            <BookOpen className="w-3 h-3 text-stone-400 flex-shrink-0" />
+                                            <span>Nguồn: {work.source}</span>
                                         </p>
                                     </div>
 
                                     {/* Card Footer */}
-                                    <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-3 text-slate-400 font-medium">
+                                    <div className="px-5 sm:px-6 py-3.5 bg-stone-50/80 border-t border-amber-900/10 flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-3.5 text-stone-400 font-medium">
                                             <span className="flex items-center gap-1" title="Lượt xem">
-                                                <Eye className="w-3.5 h-3.5" />
+                                                <Eye className="w-3.5 h-3.5 text-stone-400" />
                                                 {work.viewsCount || 0}
                                             </span>
                                             <span className="flex items-center gap-1" title="Lượt thích">
-                                                <ThumbsUp className="w-3.5 h-3.5" />
+                                                <ThumbsUp className="w-3.5 h-3.5 text-stone-400" />
                                                 {work.likesCount || 0}
                                             </span>
                                         </div>
@@ -811,9 +947,9 @@ const Explore = () => {
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleToggleFavorite(e, work._id)}
-                                                className={`p-2 rounded-lg transition ${isFavorited
-                                                        ? 'text-rose-600 bg-rose-50 font-bold'
-                                                        : 'text-slate-400 hover:text-rose-600 hover:bg-white'
+                                                className={`p-2 rounded-xl transition cursor-pointer ${isFavorited
+                                                        ? 'text-rose-600 bg-rose-50 font-bold shadow-2xs'
+                                                        : 'text-stone-400 hover:text-rose-600 hover:bg-stone-100'
                                                     }`}
                                                 title={isFavorited ? 'Bỏ lưu' : 'Lưu vào mục yêu thích'}
                                             >
@@ -824,10 +960,10 @@ const Explore = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setActiveModalWork(work)}
-                                                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-sm"
+                                                className="explore-detail-btn cursor-pointer"
                                             >
                                                 <span>Chi tiết</span>
-                                                <ArrowRight className="w-3 h-3" />
+                                                <ArrowRight className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     </div>
@@ -839,11 +975,13 @@ const Explore = () => {
                     <div className="space-y-4">
                         {works.map((work) => {
                             const isFavorited = favoriteWorkIds.has(work._id);
+                            const cleanTitle = (work.title || '').replace(/^["“']|["”']$/g, '').trim();
+
                             return (
                                 <article
                                     key={work._id}
                                     onClick={() => setActiveModalWork(work)}
-                                    className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-5 group cursor-pointer"
+                                    className="bg-[#fffdfa] rounded-2xl border border-amber-900/15 p-5 shadow-sm hover:shadow-lg hover:border-amber-600/50 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-5 group cursor-pointer"
                                 >
                                     <div className="space-y-2 flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
@@ -852,28 +990,27 @@ const Explore = () => {
                                                     work.category
                                                 )}`}
                                             >
-                                                {work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ' : 'Ca dao')}
+                                                {work.categoryName || (work.category === 'tuc-ngu' ? 'Tục ngữ Việt Nam' : 'Ca dao Dân ca')}
                                             </span>
-                                            {work._semanticScore !== undefined && searchMode === 'semantic' && (
-                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                                                    Khớp {work._semanticScore}đ
-                                                </span>
-                                            )}
+                                            {work._semanticScore !== undefined && searchMode === 'semantic' && renderSemanticBadge(work._semanticScore)}
                                             {work.topic && (
-                                                <span className="text-xs text-slate-500">Chủ đề: {work.topic}</span>
+                                                <span className="text-xs text-stone-500 font-medium px-2 py-0.5 rounded-md bg-stone-100">
+                                                    Chủ đề: {work.topic}
+                                                </span>
                                             )}
                                         </div>
 
-                                        <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-800 transition font-heritage">
-                                            "{work.title}"
+                                        <h3 className="text-base font-bold text-stone-900 group-hover:text-amber-800 transition font-heritage">
+                                            &ldquo;{cleanTitle}&rdquo;
                                         </h3>
 
-                                        <p className="text-xs text-slate-600 line-clamp-2">
+                                        <p className="text-xs text-stone-600 line-clamp-2">
                                             {work.literalMeaning || work.summary}
                                         </p>
 
-                                        <p className="text-[11px] text-slate-400 italic">
-                                            Nguồn: {work.source}
+                                        <p className="text-[11px] text-stone-400 italic flex items-center gap-1">
+                                            <BookOpen className="w-3 h-3 text-stone-400 flex-shrink-0" />
+                                            <span>Nguồn: {work.source}</span>
                                         </p>
                                     </div>
 
@@ -881,24 +1018,73 @@ const Explore = () => {
                                         <button
                                             type="button"
                                             onClick={(e) => handleToggleFavorite(e, work._id)}
-                                            className={`p-2 rounded-xl border ${isFavorited
+                                            className={`p-2.5 rounded-xl border transition cursor-pointer ${isFavorited
                                                     ? 'bg-rose-50 border-rose-200 text-rose-600'
-                                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-400 border-slate-200'
+                                                    : 'bg-stone-50 hover:bg-stone-100 text-stone-400 border-stone-200'
                                                 }`}
+                                            title={isFavorited ? 'Bỏ lưu' : 'Lưu vào mục yêu thích'}
                                         >
-                                            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-rose-500' : ''}`} />
+                                            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-rose-500 text-rose-500' : ''}`} />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setActiveModalWork(work)}
-                                            className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800"
+                                            className="explore-detail-btn cursor-pointer py-2 px-4"
                                         >
-                                            Xem chi tiết
+                                            <span>Xem chi tiết</span>
+                                            <ArrowRight className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </article>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* 5. LOAD MORE & PROGRESS CONTROLLER */}
+                {!isLoading && works.length > 0 && searchMode === 'keyword' && (
+                    <div className="mt-12 text-center max-w-md mx-auto space-y-4">
+                        {/* Progress Bar & Counter */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs text-stone-500 font-medium px-1">
+                                <span>Tiến trình khám phá</span>
+                                <span>
+                                    Đang xem <strong className="text-amber-950 font-bold">{works.length}</strong> / <strong>{totalWorks || works.length}</strong> tác phẩm
+                                </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-stone-200/80 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-amber-600 to-amber-800 rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(100, Math.round((works.length / Math.max(1, totalWorks || works.length)) * 100))}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Button or Completion Notice */}
+                        {hasMore ? (
+                            <button
+                                type="button"
+                                onClick={handleLoadMore}
+                                disabled={isLoadingMore}
+                                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-[#220707] via-[#450a0a] to-[#78350f] hover:from-[#450a0a] hover:to-[#92400e] text-amber-100 border border-amber-500/40 font-bold text-xs shadow-md shadow-amber-950/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer disabled:opacity-60"
+                            >
+                                {isLoadingMore ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
+                                        <span>Đang tải thêm tác phẩm...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Xem thêm {Math.min(PAGE_SIZE, (totalWorks || works.length) - works.length)} tác phẩm tiếp theo</span>
+                                        <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <div className="py-3 px-6 rounded-2xl bg-amber-50/70 border border-amber-900/15 text-amber-950 text-xs font-serif italic flex items-center justify-center gap-2 shadow-2xs">
+                                <span>❖ Bạn đã khám phá toàn bộ {totalWorks || works.length} tác phẩm trong kho tàng ❖</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </section>

@@ -65,6 +65,8 @@ export const literatureService = {
             works: response.works || [],
             semanticConcept: response.semanticConcept,
             conceptDescription: response.conceptDescription,
+            searchMethod: response.searchMethod || null,
+            aiInsight: response.aiInsight || null,
             pagination: response.pagination || { total: 0, page: 1, limit, totalPages: 1 },
             quota: response.quota || null,
         };

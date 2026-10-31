@@ -1,50 +1,60 @@
 /* ==========================================================================
-   EXPLORE PAGE (KHÁM PHÁ & TRA CỨU DI SẢN) — STYLESHEET CHUẨN MỰC
-   Thiết kế mỹ thuật Hoàng Triều Di Sản kết hợp UI Công Nghệ AI Hiện Đại
+   VIETHERITAGE AI — EXPLORE PAGE (KHÁM PHÁ & TRA CỨU DI SẢN)
+   Phong cách Mỹ thuật: Sơn Mài Hoàng Triều & Vàng Kim Cung Đình
    ========================================================================== */
 
 .explore-page {
     min-height: 100vh;
-    background-color: #faf8f5;
-    padding-bottom: 6rem;
+    background-color: #faf7f0;
+    background-image: 
+        radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.04) 0%, transparent 35%),
+        radial-gradient(circle at 85% 85%, rgba(139, 24, 24, 0.035) 0%, transparent 40%),
+        linear-gradient(to right, rgba(146, 64, 14, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(146, 64, 14, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    padding-bottom: 7rem;
+    color: #292524;
 }
 
 /* --------------------------------------------------------------------------
-   1. HERO HEADER BANNER
+   1. HERO HEADER BANNER (GIỮ NGUYÊN MÀU NỀN SƠN MÀI HOÀNG GIA ĐƯỢC ƯA CHUỘNG)
    -------------------------------------------------------------------------- */
 .explore-hero {
-    background: radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.15), transparent 40%),
-                radial-gradient(circle at 15% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
-                linear-gradient(160deg, #020617 0%, #0f172a 55%, #1e1b4b 100%);
+    background: 
+        radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.18), transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(185, 28, 28, 0.16), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.1), transparent 45%),
+        linear-gradient(165deg, #220707 0%, #160404 45%, #0f0202 100%);
     color: #ffffff;
     padding-top: 2.75rem;
-    padding-bottom: 5.5rem;
+    padding-bottom: 5rem;
     position: relative;
     overflow: hidden;
-    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+    border-bottom: 2px solid rgba(212, 175, 55, 0.35);
+    box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.5);
 }
 
-.explore-hero-aura {
+.explore-hero-glow-gold {
     position: absolute;
-    top: -5rem;
-    right: 20%;
-    width: 28rem;
-    height: 28rem;
-    background-color: rgba(245, 158, 11, 0.12);
+    top: -8rem;
+    right: 15%;
+    width: 32rem;
+    height: 32rem;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, transparent 70%);
     border-radius: 9999px;
-    filter: blur(64px);
+    filter: blur(72px);
     pointer-events: none;
 }
 
-.explore-hero-aura-indigo {
+.explore-hero-glow-crimson {
     position: absolute;
-    bottom: -4rem;
+    bottom: -6rem;
     left: 5%;
-    width: 26rem;
-    height: 26rem;
-    background-color: rgba(99, 102, 241, 0.12);
+    width: 28rem;
+    height: 28rem;
+    background: radial-gradient(circle, rgba(185, 28, 28, 0.16) 0%, transparent 70%);
     border-radius: 9999px;
-    filter: blur(60px);
+    filter: blur(64px);
     pointer-events: none;
 }
 
@@ -52,8 +62,8 @@
     max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
     position: relative;
     z-index: 10;
 }
@@ -65,20 +75,20 @@
     }
 }
 
-/* Breadcrumb */
+/* Breadcrumb Navigation */
 .explore-breadcrumb {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.8125rem;
-    color: #94a3b8;
-    margin-bottom: 1.75rem;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
     font-weight: 500;
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 0.35rem 0.85rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.35rem 1rem;
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .explore-breadcrumb-link {
@@ -96,30 +106,30 @@
     font-weight: 600;
 }
 
-/* Badge thông báo */
+/* Badge Thư Viện Số */
 .explore-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 1rem;
+    gap: 0.55rem;
+    padding: 0.4rem 1.25rem;
     border-radius: 9999px;
-    background: linear-gradient(to right, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+    background: linear-gradient(135deg, rgba(69, 10, 10, 0.9) 0%, rgba(120, 53, 15, 0.75) 100%);
     color: #fde68a;
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    font-size: 0.75rem;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    font-size: 0.8125rem;
     font-weight: 700;
-    letter-spacing: 0.025em;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .explore-hero-title {
     font-size: 2.25rem;
     font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    color: #ffffff;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    line-height: 1.22;
+    letter-spacing: -0.015em;
+    color: #fffbeb;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.7);
 }
 
 @media (min-width: 640px) {
@@ -135,24 +145,25 @@
 }
 
 .explore-hero-desc {
-    font-size: 0.9375rem;
-    color: #cbd5e1;
-    font-weight: 300;
-    line-height: 1.65;
+    font-size: 0.95rem;
+    color: #fef3c7;
+    opacity: 0.9;
+    font-weight: 350;
+    line-height: 1.7;
     max-width: 48rem;
 }
 
-/* Widget Thống kê Di sản (Cột Phải) */
+/* Quick Stats Widget (Khối 3 thông số cột phải chuẩn kỹ thuật) */
 .explore-quick-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: rgba(26, 6, 6, 0.75);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(212, 175, 55, 0.35);
     border-radius: 1.25rem;
     padding: 1.25rem 1.5rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     text-align: center;
     width: 100%;
 }
@@ -160,7 +171,7 @@
 @media (min-width: 1024px) {
     .explore-quick-stats {
         width: auto;
-        min-width: 22rem;
+        min-width: 22.5rem;
     }
 }
 
@@ -175,39 +186,39 @@
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #94a3b8;
+    color: #cbd5e1;
     font-weight: 600;
-    margin-top: 0.25rem;
+    margin-top: 0.35rem;
 }
 
 /* --------------------------------------------------------------------------
-   2. SEARCH INTERFACE: MODE TOGGLE & SMART SEARCH BAR
+   2. SEARCH HUB (BỘ TÌM KIẾM CỘT TRÁI CHUẨN CŨ)
    -------------------------------------------------------------------------- */
 .explore-search-wrapper {
-    margin-top: 2rem;
     max-width: 56rem;
+    margin-top: 2rem;
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
 }
 
-/* Mode Switcher Buttons */
+/* Mode Switcher Tabs */
 .explore-mode-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    background: rgba(15, 23, 42, 0.75);
-    padding: 0.3rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(12px);
+    gap: 0.4rem;
+    background: rgba(18, 4, 4, 0.85);
+    padding: 0.35rem;
+    border-radius: 1.15rem;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     width: fit-content;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .explore-mode-btn {
-    padding: 0.5rem 1.125rem;
-    border-radius: 0.75rem;
+    padding: 0.55rem 1.25rem;
+    border-radius: 0.85rem;
     font-size: 0.8125rem;
     font-weight: 700;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -219,55 +230,54 @@
 }
 
 .explore-mode-btn.active-keyword {
-    background: linear-gradient(135deg, #d97706, #b45309);
-    color: #ffffff;
-    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.35);
-    border-color: rgba(252, 211, 77, 0.4);
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+    color: #fffbeb;
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.45);
+    border-color: rgba(253, 224, 71, 0.4);
 }
 
 .explore-mode-btn.active-semantic {
-    background: linear-gradient(135deg, #d97706 0%, #6366f1 60%, #4338ca 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
-    border-color: rgba(165, 180, 252, 0.5);
-    animation: pulse-glow 3s infinite;
+    background: linear-gradient(135deg, #78350f 0%, #4338ca 65%, #312e81 100%);
+    color: #fffbeb;
+    box-shadow: 0 4px 18px rgba(67, 56, 202, 0.55);
+    border-color: rgba(199, 210, 254, 0.5);
+    animation: explore-ai-pulse 3s infinite;
 }
 
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
-    50% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.6); }
+@keyframes explore-ai-pulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(67, 56, 202, 0.45); }
+    50% { box-shadow: 0 4px 24px rgba(212, 175, 55, 0.55), 0 0 12px rgba(99, 102, 241, 0.45); }
 }
 
 .explore-mode-btn.inactive {
     background-color: transparent;
-    color: #94a3b8;
+    color: #a8a29e;
 }
 
 .explore-mode-btn.inactive:hover {
-    color: #f8fafc;
+    color: #fffbeb;
     background-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Smart Search Box Form Container */
+/* Search Box Form */
 .explore-search-box {
     position: relative;
     width: 100%;
     display: flex;
     align-items: center;
-    border-radius: 1.25rem;
-    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    border-radius: 1.35rem;
+    box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(212, 175, 55, 0.35);
     background-color: #ffffff;
     transition: all 0.25s ease-in-out;
 }
 
 .explore-search-box:focus-within {
-    box-shadow: 0 20px 40px -5px rgba(217, 119, 6, 0.25), 0 0 0 2.5px #f59e0b;
+    box-shadow: 0 20px 45px -5px rgba(180, 83, 9, 0.35), 0 0 0 3px #f59e0b;
 }
 
-/* Icon kính lúp / tia sao bên trong ô input */
 .explore-search-icon {
     position: absolute;
-    left: 1.25rem;
+    left: 1.35rem;
     top: 50%;
     transform: translateY(-50%);
     width: 1.35rem;
@@ -276,18 +286,17 @@
     z-index: 10;
 }
 
-/* Trường nhập liệu chính */
 .explore-search-input {
     width: 100%;
-    padding-left: 3.5rem;
-    padding-right: 9.5rem;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-left: 3.75rem;
+    padding-right: 9.75rem;
+    padding-top: 1.05rem;
+    padding-bottom: 1.05rem;
     background-color: transparent;
-    color: #0f172a;
-    border-radius: 1.25rem;
+    color: #1c1917;
+    border-radius: 1.35rem;
     outline: none;
-    font-size: 0.9375rem;
+    font-size: 0.95rem;
     font-weight: 500;
     border: none;
     line-height: 1.5;
@@ -298,14 +307,13 @@
     font-weight: 400;
 }
 
-/* Nút xóa nhanh nội dung */
 .explore-search-clear {
     position: absolute;
-    right: 8rem;
+    right: 8.5rem;
     top: 50%;
     transform: translateY(-50%);
     color: #94a3b8;
-    padding: 0.35rem;
+    padding: 0.4rem;
     border-radius: 9999px;
     display: flex;
     align-items: center;
@@ -313,40 +321,39 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: color 0.15s;
+    transition: all 0.15s;
     z-index: 10;
 }
 
 .explore-search-clear:hover {
-    color: #475569;
+    color: #334155;
     background-color: #f1f5f9;
 }
 
-/* Nút Tra cứu chính nằm gọn bên trong ô input */
 .explore-search-btn {
     position: absolute;
     right: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
-    padding: 0.65rem 1.35rem;
-    background: linear-gradient(135deg, #d97706, #b45309);
-    color: #ffffff;
+    padding: 0.7rem 1.45rem;
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+    color: #fffbeb;
     font-size: 0.8125rem;
     font-weight: 700;
-    border-radius: 0.875rem;
-    box-shadow: 0 4px 10px rgba(180, 83, 9, 0.35);
+    border-radius: 0.95rem;
+    box-shadow: 0 4px 12px rgba(120, 53, 15, 0.4);
     transition: all 0.2s ease-in-out;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border: none;
+    border: 1px solid rgba(253, 224, 71, 0.35);
     cursor: pointer;
     z-index: 10;
 }
 
 .explore-search-btn:hover {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    box-shadow: 0 6px 15px rgba(217, 119, 6, 0.45);
+    background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+    box-shadow: 0 6px 18px rgba(180, 83, 9, 0.55);
     transform: translateY(-50%) scale(1.02);
 }
 
@@ -354,7 +361,7 @@
     transform: translateY(-50%) scale(0.98);
 }
 
-/* Dãy thẻ gợi ý (Suggestions) */
+/* Suggestion tags flow */
 .explore-tags-container {
     display: flex;
     align-items: center;
@@ -365,53 +372,57 @@
 }
 
 .explore-tag-pill {
-    padding: 0.3rem 0.75rem;
-    border-radius: 0.625rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 0.75rem;
     font-size: 0.75rem;
     font-weight: 500;
-    transition: all 0.15s ease-in-out;
+    transition: all 0.18s ease-in-out;
     cursor: pointer;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .explore-tag-pill.keyword {
-    background-color: rgba(30, 41, 59, 0.7);
-    color: #cbd5e1;
-    border: 1px solid rgba(71, 85, 105, 0.6);
+    background: rgba(30, 10, 10, 0.65);
+    color: #fde68a;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    backdrop-filter: blur(8px);
 }
 
 .explore-tag-pill.keyword:hover {
-    background-color: rgba(51, 65, 85, 0.9);
-    color: #fde68a;
-    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(69, 10, 10, 0.9);
+    color: #ffffff;
+    border-color: rgba(245, 158, 11, 0.6);
     transform: translateY(-1px);
 }
 
 .explore-tag-pill.semantic {
-    background-color: rgba(49, 46, 129, 0.45);
+    background: rgba(49, 46, 129, 0.45);
     color: #e0e7ff;
-    border: 1px solid rgba(99, 102, 241, 0.4);
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    backdrop-filter: blur(8px);
 }
 
 .explore-tag-pill.semantic:hover {
-    background-color: rgba(67, 56, 202, 0.65);
+    background: rgba(67, 56, 202, 0.7);
     color: #ffffff;
-    border-color: rgba(165, 180, 252, 0.6);
+    border-color: rgba(165, 180, 252, 0.7);
     transform: translateY(-1px);
 }
 
 /* --------------------------------------------------------------------------
-   3. BỘ LỌC THỂ LOẠI & SẮP XẾP (FILTER TOOLBAR)
+   3. BỘ ĐIỀU KHIỂN & BỘ LỌC (HERITAGE CONTROL DECK)
    -------------------------------------------------------------------------- */
 .explore-filter-section {
     max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-    margin-top: -1.75rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    margin-top: -1.85rem;
     position: relative;
-    z-index: 20;
+    z-index: 25;
 }
 
 @media (min-width: 640px) {
@@ -422,22 +433,23 @@
 }
 
 .explore-filter-card {
-    background-color: #ffffff;
-    border-radius: 1.25rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    padding: 1.125rem 1.35rem;
+    background: #ffffff;
+    border-radius: 1.35rem;
+    box-shadow: 0 10px 30px -6px rgba(139, 24, 24, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    padding: 1.25rem 1.6rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.15rem;
 }
 
 .explore-cat-tabs {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     overflow-x: auto;
     padding-bottom: 0.25rem;
+    scrollbar-width: none;
 }
 
 .explore-cat-tabs::-webkit-scrollbar {
@@ -446,79 +458,176 @@
 
 .explore-cat-label {
     font-size: 0.75rem;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 800;
+    color: #78716c;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     white-space: nowrap;
-    margin-right: 0.25rem;
+    margin-right: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .explore-cat-btn {
-    padding: 0.45rem 0.875rem;
-    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.85rem;
     font-size: 0.8125rem;
     font-weight: 600;
     white-space: nowrap;
-    transition: all 0.15s ease-in-out;
+    transition: all 0.18s ease-in-out;
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.45rem;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
 }
 
 .explore-cat-btn.active {
-    background-color: #0f172a;
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+    background: linear-gradient(135deg, #450a0a 0%, #78350f 100%);
+    color: #fef3c7;
+    border-color: rgba(212, 175, 55, 0.5);
+    box-shadow: 0 4px 12px rgba(69, 10, 10, 0.25);
 }
 
 .explore-cat-btn.inactive {
-    background-color: #f1f5f9;
-    color: #334155;
+    background-color: #f5f2ea;
+    color: #44403c;
+    border-color: rgba(168, 162, 158, 0.2);
 }
 
 .explore-cat-btn.inactive:hover {
-    background-color: #e2e8f0;
-    color: #0f172a;
+    background-color: #ebe5d8;
+    color: #1c1917;
+    border-color: rgba(212, 175, 55, 0.4);
 }
 
 .explore-cat-badge {
     font-size: 0.6875rem;
-    padding: 0.1rem 0.45rem;
+    padding: 0.12rem 0.5rem;
     border-radius: 9999px;
     font-weight: 700;
 }
 
 .explore-cat-badge.active {
-    background-color: #1e293b;
-    color: #fde68a;
+    background: rgba(254, 243, 199, 0.25);
+    color: #fef08a;
+    border: 1px solid rgba(254, 240, 138, 0.3);
 }
 
 .explore-cat-badge.inactive {
-    background-color: #cbd5e1;
-    color: #475569;
+    background-color: #e7e2d5;
+    color: #57534e;
 }
 
 /* --------------------------------------------------------------------------
-   4. THẺ TÁC PHẨM & LƯỚI GRID
+   4. THẺ TÁC PHẨM DI SẢN (HERITAGE WORK CARDS)
    -------------------------------------------------------------------------- */
 .explore-card {
-    background-color: #ffffff;
-    border-radius: 1.25rem;
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    background: #fffdfa;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    box-shadow: 0 4px 12px rgba(139, 24, 24, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    cursor: pointer;
 }
 
 .explore-card:hover {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: translateY(-0.25rem);
-    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 18px 32px -8px rgba(139, 24, 24, 0.12), 0 0 15px rgba(212, 175, 55, 0.22);
+    transform: translateY(-0.3rem);
+    border-color: rgba(180, 83, 9, 0.55);
+}
+
+.explore-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.explore-card:hover::before {
+    opacity: 1;
+}
+
+.explore-poem-box {
+    background: linear-gradient(135deg, rgba(254, 243, 199, 0.45) 0%, rgba(255, 237, 213, 0.3) 100%);
+    border-left: 3px solid #b45309;
+    border-radius: 1rem;
+    padding: 0.85rem 1rem;
+    color: #451a03;
+    font-family: 'Lora', 'Be Vietnam Pro', serif;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    position: relative;
+}
+
+.explore-detail-btn {
+    padding: 0.45rem 1rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+    color: #fef3c7;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.explore-detail-btn:hover {
+    background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(146, 64, 14, 0.3);
+    border-color: rgba(253, 224, 71, 0.5);
+    transform: translateX(2px);
+}
+
+/* --------------------------------------------------------------------------
+   5. UNIFIED AI CULTURAL INSIGHT PANEL
+   -------------------------------------------------------------------------- */
+.explore-ai-panel {
+    background: linear-gradient(140deg, #fffcf5 0%, #fef8ee 50%, #fbf3e4 100%);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-radius: 1.65rem;
+    box-shadow: 0 10px 28px -5px rgba(180, 83, 9, 0.08), 0 0 15px rgba(212, 175, 55, 0.12);
+    overflow: hidden;
+    position: relative;
+}
+
+.explore-ai-panel-header {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.15) 0%, rgba(99, 102, 241, 0.08) 60%, transparent 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.explore-ai-panel-body {
+    padding: 1.5rem;
+}
+
+.explore-ai-panel-footer {
+    background: rgba(245, 238, 224, 0.6);
+    border-top: 1px solid rgba(212, 175, 55, 0.25);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.75rem;
 }
