@@ -406,9 +406,6 @@ const HeritageQuiz = () => {
                         </div>
                     </div>
                 )}
-                        </div>
-                    </div>
-                )}
 
                 {/* 4. Tab Header Notice nếu đang ở Daily Challenge hoặc Personalized */}
                 {!quizResult && !loading && activeTab === 'daily' && (
