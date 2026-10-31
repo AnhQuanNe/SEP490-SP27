@@ -151,7 +151,7 @@ const Home = () => {
                     </div>
 
                     {/* SEARCH BOX (Core feature for UC06/UC07) */}
-                    <div className="mt-10 max-w-3xl mx-auto">
+                    <div className="mt-10 w-full max-w-3xl lg:max-w-4xl mx-auto">
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
@@ -194,7 +194,7 @@ const Home = () => {
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Tra cứu ca dao, tục ngữ, tích truyện dân gian (vd: Uống nước nhớ nguồn, Thạch Sanh)..."
+                                        placeholder="Tra cứu ca dao, tục ngữ, tích truyện dân gian (vd: Uống nước nhớ nguồn)..."
                                         className="home-search-input"
                                     />
                                     {searchQuery && (

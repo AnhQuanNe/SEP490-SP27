@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/ai.controller');
+const ttsController = require('../controllers/tts.controller');
 const { optionalAuth } = require('../middlewares/auth.middlewares');
 const { checkGuestQuota, getGuestQuotaStatus } = require('../middlewares/guestQuota.middleware');
 
@@ -25,6 +26,11 @@ router.post('/draft-submission', optionalAuth, aiController.draftSubmission);
 
 // Smart Text Selection: Phân tích địa danh, bối cảnh lịch sử hoặc biện pháp tu từ theo đoạn trích bôi đen
 router.post('/analyze-snippet', optionalAuth, checkGuestQuota, aiController.analyzeSnippet);
+
+// Tính năng Ngâm ca dao / Đọc truyền cảm (Text-to-Speech Neural)
+router.all('/tts', ttsController.speak);
+router.all('/tts/speak', ttsController.speak);
+router.get('/tts/voices', ttsController.getVoices);
 
 module.exports = router;
 

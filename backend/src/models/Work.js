@@ -44,6 +44,11 @@ const workSchema = new mongoose.Schema(
             default: 'Dân gian',
             trim: true,
         },
+        coverImage: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         summary: {
             type: String,
             required: [true, 'Vui lòng nhập tóm tắt tác phẩm'],
@@ -141,6 +146,48 @@ const workSchema = new mongoose.Schema(
                     default: 'unknown',
                 },
                 notes: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+            },
+        ],
+        embedding: {
+            type: [Number],
+            default: undefined,
+        },
+        variants: [
+            {
+                name: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+                region: {
+                    type: String,
+                    default: 'Toàn quốc',
+                    trim: true,
+                },
+                quote: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                content: {
+                    type: String,
+                    default: '',
+                },
+                differenceNote: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                scholarlyAnalysis: {
+                    type: String,
+                    default: '',
+                    trim: true,
+                },
+                source: {
                     type: String,
                     default: '',
                     trim: true,

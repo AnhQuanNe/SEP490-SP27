@@ -51,7 +51,7 @@ const DragonPhoenixHeritage = ({ variant = 'hero' }) => {
             </div>
 
             {/* 2. RỒNG THỜI LÝ UỐN LƯỢN (THĂNG LONG KIM LONG - PHÍA TẢ / BÊN TRÁI) */}
-            <div className="absolute -left-6 sm:left-4 lg:left-12 top-4 sm:top-10 w-52 sm:w-72 lg:w-96 h-64 sm:h-80 lg:h-96 animate-dragon-soar">
+            <div className="absolute -left-8 sm:left-1 lg:left-2 xl:left-4 2xl:left-12 top-2 sm:top-6 w-40 sm:w-56 lg:w-64 xl:w-72 2xl:w-96 h-52 sm:h-72 lg:h-80 xl:h-88 2xl:h-96 opacity-30 sm:opacity-45 lg:opacity-65 xl:opacity-85 2xl:opacity-95 animate-dragon-soar">
                 <svg
                     viewBox="0 0 320 320"
                     className="w-full h-full filter drop-shadow-[0_0_18px_rgba(234,179,8,0.45)]"
@@ -146,7 +146,7 @@ const DragonPhoenixHeritage = ({ variant = 'hero' }) => {
             </div>
 
             {/* 3. PHƯỢNG HOÀNG MÚA LƯỢN (HOÀNG CUNG KIM PHƯỢNG - PHÍA HỮU / BÊN PHẢI) */}
-            <div className="absolute -right-6 sm:right-4 lg:right-12 top-2 sm:top-8 w-52 sm:w-72 lg:w-96 h-64 sm:h-80 lg:h-96 animate-phoenix-dance">
+            <div className="absolute -right-8 sm:right-1 lg:right-2 xl:right-4 2xl:right-12 top-2 sm:top-6 w-40 sm:w-56 lg:w-64 xl:w-72 2xl:w-96 h-52 sm:h-72 lg:h-80 xl:h-88 2xl:h-96 opacity-30 sm:opacity-45 lg:opacity-65 xl:opacity-85 2xl:opacity-95 animate-phoenix-dance">
                 <svg
                     viewBox="0 0 320 320"
                     className="w-full h-full filter drop-shadow-[0_0_18px_rgba(220,38,38,0.45)]"

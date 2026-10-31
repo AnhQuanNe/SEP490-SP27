@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node test-api.js"
+    "seed:admin": "node src/utils/seedAdmin.js",
+    "test": "node test-api.js",
+    "embed": "node src/utils/generateWorkEmbeddings.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +22,7 @@
     "google-auth-library": "^11.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
+    "msedge-tts": "^2.1.1",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.10",
     "socket.io": "^4.8.4"

@@ -1,0 +1,188 @@
+@startuml VietHeritage_Full_Database_ERD
+skinparam linetype ortho
+hide circle
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #1E293B
+skinparam classBorderThickness 1.2
+skinparam classFontName "Segoe UI", Arial, sans-serif
+skinparam classFontSize 11
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam roundcorner 6
+
+title **THIẾT KẾ CƠ SỞ DỮ LIỆU TOÀN DIỆN HỆ THỐNG (FULL DATABASE ERD)**\nVietHeritage AI — Cơ sở dữ liệu MongoDB NoSQL (Mongoose ODM)
+
+class users {
+    + _id: ObjectId <<PK>>
+    + name: String
+    + email: String <<UK>>
+    + password: String
+    + avatar: String
+    + phone: String
+    + address: String
+    + role: Enum('customer', 'staff', 'admin')
+    + isVerified: Boolean
+    + googleId: String
+    + verificationCode: String
+    + verificationExpires: Date
+    + resetPasswordToken: String
+    + resetPasswordExpires: Date
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class works {
+    + _id: ObjectId <<PK>>
+    + title: String
+    + slug: String <<UK>>
+    + category: Enum('ca-dao', 'tuc-ngu', 'co-tich', 'truyen-thuyet', 'than-thoai', 'trung-dai', 'hien-dai', 'khac')
+    + categoryName: String
+    + period: String
+    + region: String
+    + author: String
+    + summary: String
+    + quote: String
+    + content: String
+    + literalMeaning: String
+    + figurativeMeaning: String
+    + lesson: String
+    + historicalContext: String
+    + thematicMeaning: String
+    + topic: String
+    + source: String
+    + tags: Array<String>
+    + readTime: String
+    + viewsCount: Number
+    + likesCount: Number
+    + isFeatured: Boolean
+    + status: Enum('published', 'draft', 'archived')
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class favorites {
+    + _id: ObjectId <<PK>>
+    + user: ObjectId <<FK>>
+    + work: ObjectId <<FK>>
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class searchhistories {
+    + _id: ObjectId <<PK>>
+    + user: ObjectId <<FK>>
+    + query: String
+    + searchType: Enum('keyword', 'semantic')
+    + resultsCount: Number
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class contentsubmissions {
+    + _id: ObjectId <<PK>>
+    + user: ObjectId <<FK>>
+    + title: String
+    + category: Enum('ca-dao', 'tuc-ngu', 'than-thoai', 'truyen-thuyet', 'co-tich', 'khac')
+    + topic: String
+    + summary: String
+    + meaning: String
+    + literalMeaning: String
+    + figurativeMeaning: String
+    + lesson: String
+    + historicalContext: String
+    + region: String
+    + source: String
+    + status: Enum('pending', 'approved', 'rejected')
+    + adminNote: String
+    + reviewedBy: ObjectId <<FK>>
+    + reviewedAt: Date
+    + publishedWorkId: ObjectId <<FK>>
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class quizquestions {
+    + _id: ObjectId <<PK>>
+    + questionId: String <<UK>>
+    + category: Enum('co-tich', 'truyen-thuyet', 'than-thoai', 'ca-dao', 'trung-dai', 'hien-dai', 'khac')
+    + categoryName: String
+    + difficulty: Enum('de', 'trung-binh', 'kho')
+    + relatedWorkSlug: String
+    + relatedWork: ObjectId <<FK>>
+    + question: String
+    + options: Array<String>
+    + correctIndex: Number
+    + explanation: String
+    + culturalContext: String
+    + academicSource: String
+    + isActive: Boolean
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class quizprogresses {
+    + _id: ObjectId <<PK>>
+    + user: ObjectId <<FK, UK>>
+    + totalQuizzes: Number
+    + totalQuestions: Number
+    + totalCorrect: Number
+    + categoryStats: Map<String, Object>
+    + badges: Array<Object>
+    + dailyChallenge: Object
+    + history: Array<Object>
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class systemsettings {
+    + _id: ObjectId <<PK>>
+    + key: String <<UK>>
+    + value: Mixed
+    + description: String
+    + category: String
+    + updatedBy: ObjectId <<FK>>
+    + createdAt: Date
+    + updatedAt: Date
+}
+
+class guestusages {
+    + _id: ObjectId <<PK>>
+    + identifier: String <<UK>>
+    + ip: String
+    + date: String <<UK>>
+    + count: Number
+    + lastUsedAt: Date
+    + createdAt: Date
+}
+
+' =====================================================================
+' MỐI QUAN HỆ GIỮA CÁC THỰC THỂ (ENTITY RELATIONSHIPS)
+' =====================================================================
+
+' 1. Người dùng lưu tác phẩm yêu thích (n-n qua favorites)
+users ||--o{ favorites : "1..*"
+works ||--o{ favorites : "1..*"
+
+' 2. Người dùng ghi nhận lịch sử tìm kiếm (1-n)
+users ||--o{ searchhistories : "1..*"
+
+' 3. Người dùng gửi bài đóng góp ngữ liệu (1-n)
+users ||--o{ contentsubmissions : "gửi bài (user)"
+
+' 4. Ban quản trị thẩm định bài đóng góp (0..1-n)
+users |o--o{ contentsubmissions : "kiểm duyệt (reviewedBy)"
+
+' 5. Bài đóng góp được duyệt liên kết vào kho tác phẩm chính thức (0..1-1)
+works |o--o| contentsubmissions : "xuất bản (publishedWorkId)"
+
+' 6. Tác phẩm di sản liên kết với câu hỏi trắc nghiệm (0..1-n)
+works |o--o{ quizquestions : "ngữ liệu đố vui (relatedWork)"
+
+' 7. Người dùng sở hữu 1 bản ghi tiến độ học tập & huy hiệu (1-1)
+users ||--|| quizprogresses : "tiến độ học tập (user)"
+
+' 8. Quản trị viên cập nhật cấu hình hệ thống (0..1-n)
+users |o--o{ systemsettings : "cập nhật (updatedBy)"
+
+@enduml

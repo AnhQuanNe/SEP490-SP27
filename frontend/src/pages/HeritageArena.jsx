@@ -7,15 +7,22 @@ import {
     RotateCcw, 
     Loader2, 
     Users,
-    Award
+    Award,
+    Lock,
+    X,
+    LogIn,
+    UserPlus,
+    Sparkles
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { gamificationService } from '../services/gamification.service';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const HeritageArena = () => {
     const { user, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
     const currentUserId = user?._id || user?.id;
 
     // Match status state
@@ -27,6 +34,7 @@ const HeritageArena = () => {
     const [searchTime, setSearchTime] = useState(0); // Thời gian đã chờ ghép (giây)
     const [history, setHistory] = useState([]);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     // Socket & Timer references
     const socketRef = useRef(null);
@@ -129,7 +137,7 @@ const HeritageArena = () => {
     const handleStartMatchmaking = async () => {
         const activeUserId = user?._id || user?.id;
         if (!isAuthenticated || !activeUserId) {
-            alert('Vui lòng đăng nhập để bước vào Đấu trường Thi Đình');
+            setShowAuthModal(true);
             return;
         }
 
@@ -355,10 +363,19 @@ const HeritageArena = () => {
                             ) : (
                                 <button
                                     onClick={handleStartMatchmaking}
-                                    className="px-8 py-3 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-2xl text-sm font-bold transition shadow-md shadow-red-950/20 flex items-center gap-2"
+                                    className="px-8 py-3 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-2xl text-sm font-bold transition shadow-md shadow-red-950/20 flex items-center gap-2 group cursor-pointer"
                                 >
-                                    <Swords className="w-4 h-4 text-amber-300" />
-                                    <span>Vào Thi Đình Ngay</span>
+                                    {!isAuthenticated ? (
+                                        <>
+                                            <Lock className="w-4 h-4 text-amber-300" />
+                                            <span>Vào Thi Đình Ngay</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Swords className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />
+                                            <span>Vào Thi Đình Ngay</span>
+                                        </>
+                                    )}
                                 </button>
                             )}
                         </div>
@@ -579,6 +596,78 @@ const HeritageArena = () => {
                 )}
 
             </div>
+
+            {/* ============================================================ */}
+            {/* MODAL YÊU CẦU ĐĂNG NHẬP (CHIẾU CHỈ THI ĐÌNH) */}
+            {/* ============================================================ */}
+            {showAuthModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-md rounded-3xl bg-[#fffdf9] border-2 border-amber-600/40 p-6 sm:p-8 shadow-2xl shadow-stone-900/40 overflow-hidden text-center text-stone-800">
+                        {/* 4 họa tiết góc truyền thống ❖ */}
+                        <span className="absolute top-2.5 left-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                        <span className="absolute top-2.5 right-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                        <span className="absolute bottom-2.5 left-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
+                        <span className="absolute bottom-2.5 right-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
+
+                        {/* Dải vân màu cung đình trên đỉnh modal */}
+                        <div className="h-1.5 w-full bg-gradient-to-r from-red-800 via-amber-500 to-red-800 absolute top-0 left-0" />
+
+                        {/* Nút đóng X */}
+                        <button
+                            onClick={() => setShowAuthModal(false)}
+                            className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 p-1.5 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                            aria-label="Đóng"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        {/* Biểu tượng Võ Trạng Nguyên / Kiếm & Mũ Trạng Nguyên */}
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-red-800 to-amber-800 text-amber-200 border-2 border-amber-400/60 flex items-center justify-center mb-4 shadow-lg shadow-red-950/30">
+                            <Swords className="w-8 h-8 text-amber-200" />
+                        </div>
+
+                        {/* Tiêu đề & Tag Chiếu chỉ */}
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-300 mb-2">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Chiếu Chỉ Khởi Thí</span>
+                        </div>
+
+                        <h3 className="text-xl sm:text-2xl font-bold font-heritage text-stone-900 mb-2">
+                            Ghi Danh Bước Vào Trường Thi
+                        </h3>
+
+                        <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
+                            Đấu trường <strong>Thi Đình Đối Kháng 1v1</strong> yêu cầu danh tính sĩ tử để kết nối phòng thi thời gian thực, tích lũy điểm kinh nghiệm (<span className="text-amber-800 font-bold">+30 EXP</span>) và vinh danh trên Bảng Vàng Trạng Nguyên.
+                        </p>
+
+                        {/* Danh sách nút hành động */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => navigate('/login', { state: { from: location } })}
+                                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-red-950/30 transition-all duration-200 active:scale-95 cursor-pointer"
+                            >
+                                <LogIn className="w-4 h-4 text-amber-300" />
+                                <span>Đăng nhập để vào thi ngay</span>
+                            </button>
+
+                            <button
+                                onClick={() => navigate('/register', { state: { from: location } })}
+                                className="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-300/80 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
+                            >
+                                <UserPlus className="w-4 h-4 text-amber-800" />
+                                <span>Ghi danh sĩ tử mới (Đăng ký)</span>
+                            </button>
+
+                            <button
+                                onClick={() => setShowAuthModal(false)}
+                                className="text-stone-400 hover:text-stone-600 text-xs transition-colors pt-2 block mx-auto cursor-pointer"
+                            >
+                                Để sau, tôi muốn xem lại quy chế thi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -12,6 +12,7 @@ const {
     findCuratedTerm,
     GREETING_PATTERNS,
     isConversationalGreeting,
+    isOffTopicQuery,
 } = require('../constants/aiKnowledge.constants');
 /**
  * Gọi Google Gemini API với danh sách model hoạt động thực tế
@@ -27,32 +28,44 @@ Nhiệm vụ của bạn:
    - Các nhân vật văn học, thần thoại, truyền thuyết, cổ tích (Mỵ Nương, Sơn Tinh, Thủy Tinh, Thạch Sanh, Thánh Gióng, Thúy Kiều, Kim Trọng, v.v.): Luôn giải thích rõ Đây là ai, Vai trò trong tác phẩm và Ý nghĩa biểu tượng văn hóa.
    - Các địa danh thực tế và bối cảnh lịch sử gắn liền với tác phẩm văn học.
    - Giải nghĩa các từ khó, từ Hán Việt, từ cổ, từ tượng hình tượng thanh, ca dao, tục ngữ và biện pháp nghệ thuật.
-3. Luôn giữ phong thái uyên bác, trang nhã, chuẩn mực tiếng Việt có trích dẫn học thuật.`;
+3. Luôn giữ phong thái uyên bác, trang nhã, chuẩn mực tiếng Việt có trích dẫn học thuật.
+4. NGUYÊN TẮC GIỚI HẠN PHẠM VI (SCOPE GUARDRAIL - RẤT QUAN TRỌNG):
+   - Bạn CHỈ hỗ trợ các câu hỏi liên quan đến: Di sản văn học, văn hóa dân gian, lịch sử, nhân vật, tác phẩm, ca dao, tục ngữ, nghệ thuật truyền thống Việt Nam.
+   - Khi người dùng hỏi những câu hỏi HOÀN TOÀN KHÔNG LIÊN QUAN đến văn học/di sản (ví dụ: hỏi ăn uống đời thường như "hôm nay ăn gì", "trưa nay ăn gì", thời tiết, lập trình, toán học, y tế, mua sắm, giá vàng, chuyện phiếm đời thường...):
+     + BẠN PHẢI LỊCH SỰ TỪ CHỐI trả lời một cách nhã nhặn, ngắn gọn.
+     + TUYỆT ĐỐI KHÔNG gượng ép liên hệ, không "bẻ lái" câu hỏi đời thường sang các tác phẩm văn học nếu người dùng không hỏi về văn học.
+     + Nhắc lại vai trò là Trợ lý Di sản Văn học và gợi ý người dùng các chủ đề văn học phù hợp.`;
 
     const contents = [];
 
     // Thêm lịch sử hội thoại gần nhất (nếu có)
     if (Array.isArray(history) && history.length > 0) {
         for (const msg of history.slice(-4)) {
-            contents.push({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }],
-            });
+            if (msg && msg.content && typeof msg.content === 'string') {
+                contents.push({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.content }],
+                });
+            }
         }
     }
 
     const userPrompt = contextText && contextText.trim() !== ''
-        ? `[KHO TƯ LIỆU THAM KHẢO TỪ HỆ THỐNG]:
+        ? `[TƯ LIỆU THAM KHẢO TỪ CƠ SỞ DỮ LIỆU]:
 ${contextText}
+
+(Lưu ý: Chỉ tham khảo tư liệu trên nếu nó thực sự phù hợp với câu hỏi của người dùng. Nếu câu hỏi về chủ đề khác, hãy bỏ qua và trả lời trực tiếp câu hỏi).
 
 [CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy phân tích và trả lời câu hỏi trên dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng (nếu có). Trình bày mạch lạc, đầy đủ, không cắt ngắn.`
+HƯỚNG DẪN XỬ LÝ QUAN TRỌNG:
+- Nếu câu hỏi của người dùng KHÔNG liên quan đến văn học hay di sản văn hóa Việt Nam (ví dụ hỏi sinh hoạt đời thường như "hôm nay ăn gì", thời tiết, công nghệ, toán...), hãy LỊCH SỰ TỪ CHỐI và hướng dẫn người dùng quay lại chủ đề di sản; TUYỆT ĐỐI KHÔNG gượng ép liên hệ với các tư liệu trên.
+- Nếu câu hỏi phù hợp với chủ đề văn học/di sản, hãy phân tích và trả lời câu hỏi dựa trên sự am hiểu sâu sắc về văn học Việt Nam và kết hợp tư liệu kiểm chứng trên. Trình bày mạch lạc, đầy đủ, không cắt ngắn.`
         : `[CÂU HỎI CỦA NGƯỜI DÙNG]:
 ${question}
 
-Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn xác, làm nổi bật giá trị văn hóa và văn học Việt Nam. Trình bày trọn vẹn, sinh động.`;
+Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên theo đúng ý câu hỏi của người dùng.`;
 
     contents.push({
         role: 'user',
@@ -63,7 +76,7 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-            const response = await fetch(url, {
+                        const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -72,11 +85,9 @@ Hãy giải thích và trả lời câu hỏi trên thật dễ hiểu, chuẩn 
                     generationConfig: {
                         temperature: 0.6,
                         maxOutputTokens: 4096,
-                        thinkingConfig: {
-                            thinkingBudget: 0,
-                        },
                     },
                 }),
+                signal: AbortSignal.timeout(25000),
             });
 
             if (response.ok) {
@@ -107,7 +118,8 @@ function hasAnalyticalIntent(text) {
         'khat vong', 'thong diep', 'bai hoc', 'sao lai', 'bay ve troi', 'tieng dan',
         'nieu com', 'ken re', 'hoa than', 'chiec bong', 'tuyen ngon',
         'tai sao lai', 'vi sao lai', 'co y nghia gi', 'the hien dieu gi', 'chung minh',
-        'ran day', 'gia tri nhan dao', 'gia tri hien thuc', 'tinh than', 'phan tich'
+        'ran day', 'gia tri nhan dao', 'gia tri hien thuc', 'tinh than', 'phan tich',
+        'di ban', 'bien the', 'so sanh', 'khac nhau'
     ];
     return keywords.some((kw) => clean.includes(kw));
 }
@@ -466,6 +478,50 @@ Bốn lần hóa thân (chim Vàng Anh -> cây Xoan đào -> khung cửi -> qu�
     }
 
     // =========================================================================
+    // ƯU TIÊN 1.X: HỎI VỀ DỊ BẢN DÂN GIAN & SO SÁNH ĐỐI CHIẾU (FOLKLORIC VARIANTS & COMPARISON)
+    // =========================================================================
+    const isAskingVariants = qClean.includes('di ban') || qClean.includes('bien the') || qClean.includes('so sanh') || qClean.includes('khac nhau');
+    const targetVariantWork = primaryWork || (works && works.find(w => w.variants && w.variants.length > 0));
+
+    if (isAskingVariants && targetVariantWork && targetVariantWork.variants && targetVariantWork.variants.length > 0) {
+        const variantsList = targetVariantWork.variants;
+        const answer = `Dựa trên nghiên cứu học thuật của Viện Văn học và các công trình của GS. Vũ Ngọc Phan, GS. Đinh Gia Khánh, GS. Nguyễn Đổng Chi, tác phẩm dân gian **"${targetVariantWork.title}"** tồn tại **${variantsList.length} dị bản/biến thể chính thức** phản ánh quy luật truyền miệng và tính địa văn hóa:
+
+### 1. Khảo sát các Dị bản Dân gian:
+${variantsList.map((v, i) => `#### Dị bản ${i + 1}: ${v.name} (${v.region})
+- **Văn bản / Câu ca:** "${v.quote || v.content}"
+- **Điểm khác biệt cốt lõi:** ${v.differenceNote}
+- **Góc nhìn học thuật & nhân học:** ${v.scholarlyAnalysis}
+- **Tài liệu kiểm chứng:** ${v.source}`).join('\n\n')}
+
+### 2. Tổng kết Giá trị So sánh Đối chiếu:
+Hiện tượng dị bản chứng minh rằng tác phẩm dân gian không phải là một "văn bản đóng" bất biến, mà liên tục được tái sáng tạo trong quá trình diễn xướng để phù hợp với tâm thức, nếp sống và cảnh quan sinh thái của từng vùng miền và cộng đồng tộc người.
+
+---
+*Nguồn tham khảo học thuật kiểm chứng:* **${targetVariantWork.source || 'Kho tàng Văn học Dân gian Việt Nam'}**`;
+
+        return {
+            answer,
+            citations: [
+                {
+                    title: targetVariantWork.title,
+                    slug: targetVariantWork.slug,
+                    category: targetVariantWork.category,
+                    categoryName: targetVariantWork.categoryName || 'Văn học Dân gian',
+                    region: targetVariantWork.region,
+                    author: targetVariantWork.author || 'Dân gian',
+                    source: targetVariantWork.source,
+                },
+            ],
+            suggestedQuestions: [
+                `Ý nghĩa của việc so sánh dị bản trong nghiên cứu văn học dân gian?`,
+                `Tác phẩm ${targetVariantWork.title} phản ánh bối cảnh lịch sử nào?`,
+                `Bài học đạo lý nhân sinh của ${targetVariantWork.title}?`,
+            ],
+        };
+    }
+
+    // =========================================================================
     // ƯU TIÊN 2: NẾU NGƯỜI DÙNG HỎI TRA CỨU DANH TÍNH / THỰC THỂ (ENTITY LOOKUP)
     // =========================================================================
 
@@ -557,7 +613,7 @@ ${matchedLoc.literaryRole}
     }
 
     // 2.C. Tra cứu từ ngữ khó / Điển tích
-    if (matchedTerm && (!isAnalytical || qClean.includes('nghia la gi') || qClean.includes('giai nghia'))) {
+    if (matchedTerm) {
         const targetWork = primaryWork || (works && works[0]) || {
             title: 'Văn học Việt Nam',
             source: 'Từ điển Thành ngữ và Tục ngữ Việt Nam',
@@ -599,16 +655,32 @@ ${matchedTerm.expressiveValue}
     // =========================================================================
     if (!main) {
         return {
-            answer: `Xin chào bạn! Hiện tại trong kho tàng dữ liệu VietHeritage AI, câu hỏi của bạn có thể liên quan đến một chủ đề dân gian phong phú chưa được lập chỉ mục cụ thể. 
-Tuy nhiên, theo các nghiên cứu dân gian học, văn học dân gian Việt Nam luôn mang đậm tinh thần nhân đạo, lòng yêu chuộng hòa bình, và đạo lý "Uống nước nhớ nguồn".
-Bạn có thể thử tra cứu các tác phẩm kinh điển hiện có trong hệ thống như: **Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Truyện Kiều, Nam quốc sơn hà, Tấm Cám** để xem phân tích chi tiết nhé!`,
+            answer: `Chào bạn! Tôi đã ghi nhận câu hỏi của bạn: *"${question}"*.
+
+VietHeritage AI luôn sẵn sàng đồng hành cùng bạn khám phá mọi khía cạnh của di sản văn hóa và văn học Việt Nam. Để có câu trả lời sâu sắc nhất, bạn có thể thử:
+1. **Hỏi về truyện cổ tích / truyền thuyết:** Thạch Sanh, Thánh Gióng, Sơn Tinh - Thủy Tinh, Tấm Cám, Chử Đồng Tử...
+2. **Hỏi về danh nhân / tác phẩm kinh điển:** Nguyễn Du (Truyện Kiều), Nguyễn Trãi (Bình Ngô đại cáo), Lý Thường Kiệt (Nam quốc sơn hà)...
+3. **Phân tích ca dao, tục ngữ:** Giải nghĩa đen, nghĩa bóng và bài học làm người.`,
             citations: [],
             suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
         };
     }
 
     let specificAnalysis = '';
-    if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
+    if (main.variants && main.variants.length > 0 && (qClean.includes('di ban') || qClean.includes('bien the') || qClean.includes('so sanh') || qClean.includes('khac nhau') || qClean.includes('vung mien') || qClean.includes('mien nam') || qClean.includes('mien bac') || qClean.includes('muong'))) {
+        specificAnalysis = `
+### 1. Khảo sát Quy luật Dị bản trong Văn học Dân gian:
+Do phương thức truyền miệng và sự giao lưu văn hóa liên vùng, tác phẩm **"${main.title}"** tồn tại **${main.variants.length} dị bản/biến thể chính thức** được các nhà nghiên cứu dân gian học ghi nhận:
+
+${main.variants.map((v, i) => `#### Dị bản ${i + 1}: ${v.name} (${v.region})
+- **Văn bản / Câu ca:** "${v.quote || v.content}"
+- **Điểm khác biệt:** ${v.differenceNote}
+- **Góc nhìn học thuật & nhân học:** ${v.scholarlyAnalysis}
+- **Nguồn kiểm chứng:** ${v.source}`).join('\n\n')}
+
+### 2. Ý nghĩa Học thuật & Địa văn hóa:
+Sự xuất hiện của các dị bản minh chứng cho tính sinh động của văn học truyền miệng và quá trình "bản địa hóa" sâu sắc của văn hóa dân gian Việt Nam theo từng không gian sinh tồn.`;
+    } else if (main.author && (qClean.includes('la ai') || qClean.includes('ai la') || qClean.includes('tac gia') || qClean.includes('nguyen du') || qClean.includes('nguyen trai'))) {
         specificAnalysis = `
 ### 1. Giới thiệu về tác giả ${main.author}:
 - **Vị thế văn học:** Là một trong những đại diện tiêu biểu nhất của nền văn học Việt Nam, gắn liền với tác phẩm **"${main.title}"** (${main.categoryName || 'Di sản văn học'}).
@@ -626,12 +698,8 @@ ${main.quote ? `\n> *"${main.quote}"*` : ''}
 ### 1. Bối cảnh lịch sử & Hoàn cảnh ra đời:
 ${main.historicalContext || main.summary || 'Tác phẩm gắn liền với cội nguồn văn hóa và lịch sử dựng nước của dân tộc Việt Nam.'}
 
-### 2. Ý nghĩa chủ đề & Biểu tượng nghệ thuật:
-${main.thematicMeaning || 'Tác phẩm kết tinh trí tuệ dân gian, đạo lý sống ân nghĩa thủy chung và khát vọng về công bằng xã hội của dân tộc ta.'}
-${main.quote ? `\n> *"${main.quote}"*` : ''}
-
-### 3. Bài học nhân sinh sâu sắc:
-Tác phẩm là lời nhắc nhở thế hệ hôm nay về cội nguồn văn hóa, bài học ứng xử trọng nghĩa khinh tài và lòng tự tôn đối với di sản văn học nghìn năm.`;
+- **Ý nghĩa chủ đề:** ${main.thematicMeaning || 'Gửi gắm ước mơ của nhân dân về công lý, hòa bình và đạo nghĩa làm người.'}
+${main.quote ? `\n> *"${main.quote}"*` : ''}`;
     }
 
     const authorHeader = main.author && main.author !== 'Dân gian' ? ` — Tác giả: **${main.author}**` : '';
@@ -654,8 +722,10 @@ ${specificAnalysis}
 
     const suggestedQuestions = [
         `Bối cảnh lịch sử của tác phẩm ${main.title} là gì?`,
-        `Những chi tiết hoang đường kỳ ảo trong ${main.title} có ý nghĩa gì?`,
-        `Tác phẩm ${main.title} gửi gắm thông điệp gì cho thế hệ trẻ ngày nay?`,
+        `Những chi tiết biểu tượng trong ${main.title} có ý nghĩa gì?`,
+        main.variants && main.variants.length > 0
+            ? `Tác phẩm ${main.title} có những dị bản địa phương hoặc dân tộc nào?`
+            : `Tác phẩm ${main.title} gửi gắm thông điệp gì cho thế hệ trẻ ngày nay?`,
     ];
 
     return {
@@ -669,7 +739,7 @@ ${specificAnalysis}
 
 
 /**
- * Service chính: Trả lời câu hỏi thông minh có RAG & Dẫn nguồn kiểm chứng (UC09)
+ * Service chính: Trả lời câu hỏi thông minh linh hoạt, đúng trọng tâm
  */
 const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
     if (!question || typeof question !== 'string' || question.trim() === '') {
@@ -677,18 +747,28 @@ const askAssistant = async ({ question, contextSlug = null, history = [] }) => {
     }
 
     const cleanQuery = question.trim();
+    const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
+
+    // 0.5. Nhận diện và từ chối các câu hỏi nằm ngoài phạm vi di sản (Out-of-scope Guardrail)
+    if (!contextSlug && isOffTopicQuery(cleanQuery)) {
+        return {
+            answer: `Xin chào bạn! Tôi là **VietHeritage AI** — Trợ lý chuyên sâu về Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸\n\nRất tiếc tôi **chỉ hỗ trợ giải đáp các câu hỏi trong phạm vi Văn học, Văn hóa Dân gian và Lịch sử truyền thống Việt Nam**, nên không thể tư vấn về các chủ đề đời sống thường nhật như thực đơn ăn uống hàng ngày, thời tiết, công nghệ hay tài chính.\n\n💡 **Bạn có thể hỏi tôi về các chủ đề văn học hấp dẫn như:**\n- *Ý nghĩa các phong tục và ẩm thực truyền thống trong văn học (Sự tích bánh chưng bánh giầy, tục ăn trầu...)*\n- *Phân tích hình tượng nhân vật (Thạch Sanh, Thánh Gióng, Sơn Tinh, Thúy Kiều...)*\n- *Khám phá bối cảnh lịch sử và ý nghĩa của các tác phẩm (Bình Ngô Đại Cáo, Nam Quốc Sơn Hà, Tây Tiến...)*\n\nBạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
+            citations: [],
+            suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
+            sourceType: 'out_of_scope_guardrail',
+        };
+    }
 
     // 0. Nhận diện các câu chào hỏi xã giao thông thường
     if (!contextSlug && isConversationalGreeting(cleanQuery)) {
-        const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
         let greetingText = '';
 
         if (qClean.includes('cam on') || qClean.includes('thank')) {
-            greetingText = `Không có chi! Rất vui được đồng hành cùng bạn khám phá di sản văn hóa và văn học dân gian Việt Nam. Nếu bạn có bất kỳ câu hỏi nào về các tích truyện, nhân vật hay câu ca dao, đừng ngần ngại hỏi tôi nhé! 😊`;
+            greetingText = `Không có chi! Rất vui được đồng hành cùng bạn khám phá di sản văn hóa và văn học Việt Nam. Nếu bạn có bất kỳ câu hỏi nào về các tích truyện, nhân vật hay câu ca dao, đừng ngần ngại hỏi tôi nhé! 😊`;
         } else if (qClean.includes('tam biet') || qClean.includes('bye')) {
             greetingText = `Tạm biệt bạn! Chúc bạn có những phút giây học tập và trải nghiệm văn hóa thật nhiều niềm vui. Hẹn gặp lại bạn lần sau! 👋`;
         } else {
-            greetingText = `Chào bạn! Tôi là **VietHeritage AI** — Trợ lý nghiên cứu Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸
+            greetingText = `Chào bạn! Tôi là **VietHeritage AI** — Trợ lý nghiên cứu và đàm đạo Di sản Văn học & Văn hóa Dân gian Việt Nam. 🌸
 
 Tôi có thể hỗ trợ bạn:
 - **Giải thích nhân vật**: Giới thiệu nhân vật là ai, vai trò và ý nghĩa biểu tượng (Mỵ Nương, Sơn Tinh, Thủy Tinh, Thạch Sanh, Thúy Kiều...).
@@ -712,193 +792,203 @@ Hôm nay bạn muốn tìm hiểu tác phẩm hoặc nhân vật nào?`;
     // 1. Nếu có contextSlug cụ thể (ví dụ người dùng bấm từ modal chi tiết tác phẩm)
     if (contextSlug) {
         primaryWork = await Work.findOne({ slug: contextSlug }).lean();
+        if (primaryWork) candidateWorks = [primaryWork];
     }
 
     // 1.5. Nếu chưa có primaryWork, nhận diện thông minh từ nội dung câu hỏi
     if (!primaryWork) {
-        const qClean = removeVietnameseTones(cleanQuery).toLowerCase();
+        try {
+            // 1.5.a. Tìm xem câu hỏi có chứa tên của tác phẩm hoặc slug nào trong DB không
+            const allWorks = await Work.find(
+                { status: 'published' },
+                'title slug author tags summary historicalContext thematicMeaning categoryName region period source variants quote literalMeaning figurativeMeaning lesson'
+            ).lean();
 
-        // 1.5.a. Tìm xem câu hỏi có chứa tên của tác phẩm nào trong DB không
-        const allWorks = await Work.find({ status: 'published' }, 'title slug author tags summary historicalContext thematicMeaning categoryName region period source').lean();
-
-        for (const w of allWorks) {
-            const titleClean = removeVietnameseTones(w.title).toLowerCase();
-            // Khớp chính xác tên tác phẩm hoặc tên ngắn
-            if (qClean.includes(titleClean) || (titleClean.length > 5 && qClean.includes(titleClean.slice(0, 12)))) {
-                primaryWork = w;
-                break;
-            }
-        }
-
-        // 1.5.b. Nếu chưa thấy, tìm xem câu hỏi có chứa tên nhân vật quen thuộc không
-        if (!primaryWork) {
-            const matchedChar = findCuratedCharacter(cleanQuery);
-            if (matchedChar) {
-                primaryWork = allWorks.find((w) => w.slug === matchedChar.workSlug) || null;
-            }
-        }
-
-        // 1.5.c. Nếu chưa thấy, tìm xem câu hỏi có chứa địa danh quen thuộc không
-        if (!primaryWork) {
-            const matchedLoc = findCuratedLocation(cleanQuery);
-            if (matchedLoc && matchedLoc.workSlug) {
-                primaryWork = allWorks.find((w) => w.slug === matchedLoc.workSlug) || null;
-            }
-        }
-    }
-
-    // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database nếu vẫn chưa có primaryWork
-    if (!primaryWork) {
-        const fullRegex = buildVietnameseRegex(cleanQuery);
-
-        if (fullRegex) {
-            candidateWorks = await Work.find({
-                $or: [
-                    { title: fullRegex },
-                    { author: fullRegex },
-                    { tags: fullRegex },
-                    { summary: fullRegex },
-                    { thematicMeaning: fullRegex },
-                    { historicalContext: fullRegex },
-                ],
-                status: 'published',
-            })
-                .limit(3)
-                .lean();
-        }
-
-        // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa
-        if (candidateWorks.length === 0) {
-            const STOP_WORDS = new Set([
-                'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
-                'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
-                'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
-                'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
-                'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin', 'hay', 'hãy',
-                'phan', 'phân', 'tich', 'tích', 'y', 'ý', 'nghia', 'nghĩa', 'giai', 'giải', 'thich', 'thích'
-            ]);
-
-            const rawTokens = cleanQuery.split(/[\s,?.!;:—–"']+/).filter(Boolean);
-            const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
-
-            const searchTerms = [];
-            for (let i = 0; i < filteredWords.length - 1; i++) {
-                searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
-            }
-            filteredWords.forEach((w) => {
-                if (w.length >= 2) searchTerms.push(w);
-            });
-
-            if (searchTerms.length > 0) {
-                const orConditions = [];
-                for (const term of searchTerms.slice(0, 10)) {
-                    const r = buildVietnameseRegex(term);
-                    if (r) {
-                        orConditions.push({ title: r }, { author: r }, { tags: r });
-                    }
+            for (const w of allWorks) {
+                const titleClean = removeVietnameseTones(w.title).toLowerCase();
+                const slugClean = (w.slug || '').replace(/-/g, ' ').toLowerCase();
+                // Khớp chính xác tên tác phẩm hoặc slug
+                if (
+                    qClean.includes(titleClean) ||
+                    (titleClean.length > 5 && qClean.includes(titleClean.slice(0, 12))) ||
+                    (slugClean.length >= 4 && qClean.includes(slugClean))
+                ) {
+                    primaryWork = w;
+                    candidateWorks = [w];
+                    break;
                 }
+            }
 
-                if (orConditions.length > 0) {
+            // 1.5.b. Nếu chưa thấy, tìm xem câu hỏi có chứa tên nhân vật quen thuộc không
+            if (!primaryWork) {
+                const matchedChar = findCuratedCharacter(cleanQuery);
+                if (matchedChar) {
+                    primaryWork = allWorks.find((w) => w.slug === matchedChar.workSlug) || null;
+                    if (primaryWork) candidateWorks = [primaryWork];
+                }
+            }
+
+            // 1.5.c. Nếu chưa thấy, tìm xem câu hỏi có chứa địa danh quen thuộc không
+            if (!primaryWork) {
+                const matchedLoc = findCuratedLocation(cleanQuery);
+                if (matchedLoc && matchedLoc.workSlug) {
+                    primaryWork = allWorks.find((w) => w.slug === matchedLoc.workSlug) || null;
+                    if (primaryWork) candidateWorks = [primaryWork];
+                }
+            }
+
+            // 1.5.d. Nếu chưa thấy, tìm theo tác giả nổi tiếng
+            if (!primaryWork) {
+                const matchedByAuthor = allWorks.filter((w) => {
+                    if (!w.author || w.author === 'Dân gian') return false;
+                    const authorNorm = removeVietnameseTones(w.author).toLowerCase();
+                    return authorNorm.length >= 4 && qClean.includes(authorNorm);
+                });
+                if (matchedByAuthor.length > 0) {
+                    primaryWork = matchedByAuthor[0];
+                    candidateWorks = matchedByAuthor.slice(0, 3);
+                }
+            }
+
+            // 2. RAG: Tìm kiếm các tác phẩm liên quan trong Database nếu vẫn chưa có primaryWork
+            if (!primaryWork) {
+                const fullRegex = buildVietnameseRegex(cleanQuery);
+
+                if (fullRegex) {
                     candidateWorks = await Work.find({
-                        $or: orConditions,
+                        $or: [
+                            { title: fullRegex },
+                            { author: fullRegex },
+                            { tags: fullRegex },
+                            { summary: fullRegex },
+                            { thematicMeaning: fullRegex },
+                            { historicalContext: fullRegex },
+                        ],
                         status: 'published',
                     })
                         .limit(3)
                         .lean();
+
+                    if (candidateWorks.length > 0) {
+                        primaryWork = candidateWorks[0];
+                    }
+                }
+
+                // Nếu tìm theo toàn bộ câu không ra, tách các từ khóa
+                if (candidateWorks.length === 0) {
+                    const STOP_WORDS = new Set([
+                        'toi', 'tôi', 'ban', 'bạn', 'minh', 'mình', 'em', 'anh', 'chi', 'chị',
+                        'khong', 'không', 'chua', 'chưa', 'hieu', 'hiểu', 'biet', 'biết', 'cho',
+                        'hoi', 'hỏi', 've', 'về', 'la', 'là', 'ai', 'gi', 'gì', 'sao', 'nhu', 'như',
+                        'the', 'thế', 'nao', 'nào', 'tai', 'tại', 'cua', 'của', 'trong', 'va', 'và',
+                        'co', 'có', 'duoc', 'được', 'nay', 'này', 'do', 'đó', 'xin', 'hay', 'hãy',
+                        'phan', 'phân', 'tich', 'tích', 'y', 'ý', 'nghia', 'nghĩa', 'giai', 'giải', 'thich', 'thích',
+                        'hom', 'hôm', 'ngay', 'ngày', 'an', 'ăn', 'uong', 'uống', 'di', 'đi', 'o', 'ở', 'dau', 'đâu',
+                        'gio', 'giờ', 'trua', 'trưa', 'toi', 'tối', 'sang', 'sáng'
+                    ]);
+
+                    const rawTokens = cleanQuery.split(/[\s,?.!;:—–"\']+/).filter(Boolean);
+                    const filteredWords = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
+
+                    const searchTerms = [];
+                    for (let i = 0; i < filteredWords.length - 1; i++) {
+                        searchTerms.push(`${filteredWords[i]} ${filteredWords[i + 1]}`);
+                    }
+                    filteredWords.forEach((w) => {
+                        if (w.length >= 2) searchTerms.push(w);
+                    });
+
+                    if (searchTerms.length > 0) {
+                        const orConditions = [];
+                        for (const term of searchTerms.slice(0, 10)) {
+                            const r = buildVietnameseRegex(term);
+                            if (r) {
+                                orConditions.push({ title: r }, { author: r }, { tags: r });
+                            }
+                        }
+
+                        if (orConditions.length > 0) {
+                            candidateWorks = await Work.find({
+                                $or: orConditions,
+                                status: 'published',
+                            })
+                                .limit(3)
+                                .lean();
+
+                            if (candidateWorks.length > 0) {
+                                primaryWork = candidateWorks[0];
+                            }
+                        }
+                    }
                 }
             }
-        }
-
-        if (candidateWorks.length > 0) {
-            primaryWork = candidateWorks[0];
-        } else if (!process.env.GEMINI_API_KEY) {
-            // Kiểm tra xem câu hỏi có chứa nhân vật, địa danh hay từ ngữ nào trong kho tri thức không
-            const directChar = findCuratedCharacter(cleanQuery);
-            const directLoc = findCuratedLocation(cleanQuery);
-            const directTerm = findCuratedTerm(cleanQuery);
-
-            if (directChar || directLoc || directTerm) {
-                // Tự động tổng hợp câu trả lời dựa trên kho tri thức chuyên sâu
-                const synthesized = synthesizeHeritageAnswer({
-                    question: cleanQuery,
-                    primaryWork: null,
-                    candidateWorks: [],
-                });
-                return {
-                    ...synthesized,
-                    sourceType: 'heritage_knowledge_engine',
-                };
-            }
-
-            // Fallback gợi ý khi hoàn toàn không có dữ liệu khớp
-            return {
-                answer: `Tôi đã tra cứu trong kho tư liệu của VietHeritage AI nhưng chưa thấy tài liệu khớp trực tiếp với câu hỏi: *"${cleanQuery}"*.
-
-💡 **Gợi ý cho bạn:**
-1. Khám phá nhân vật tiêu biểu: **Mỵ Nương, Sơn Tinh, Thủy Tinh, Thạch Sanh, Thánh Gióng, Thúy Kiều**.
-2. Tra cứu địa danh thực tế: **Núi Ba Vì (Tản Viên), Biển Đông, Sài Khao, Mường Lát, Sông Như Nguyệt**.
-3. Tìm theo chủ đề: *đạo lý chữ Hiếu, lòng yêu nước, tinh thần tương thân tương ái, ước mơ công lý*.
-4. Bấm vào một trong các câu hỏi gợi ý bên dưới để bắt đầu!`,
-                citations: [],
-                suggestedQuestions: DEFAULT_SUGGESTIONS.map((s) => s.question).slice(0, 3),
-                sourceType: 'no_match_guidance',
-            };
+        } catch (dbErr) {
+            console.warn('[askAssistant] Lỗi tra cứu DB:', dbErr.message);
         }
     }
+    // 2. Chuẩn bị context nếu có tác phẩm trùng khớp
+    let contextText = null;
+    if (primaryWork) {
+        contextText = `[Tác phẩm đối chiếu]:
+- Tên tác phẩm: ${primaryWork.title} (${primaryWork.categoryName || 'Di sản văn học'})
+${primaryWork.author ? `- Tác giả: ${primaryWork.author}\n` : ''}- Khu vực / Thời kỳ: ${primaryWork.region || 'Toàn quốc'} — ${primaryWork.period || 'Dân gian'}
+- Tóm tắt: ${primaryWork.summary || 'N/A'}
+- Trích đoạn / Câu tiêu biểu: ${primaryWork.quote || 'N/A'}
+- Bối cảnh lịch sử: ${primaryWork.historicalContext || 'N/A'}
+- Ý nghĩa chủ đề & Biểu tượng: ${primaryWork.thematicMeaning || 'N/A'}
+- Nguồn học thuật kiểm chứng: ${primaryWork.source || 'Kho tàng Di sản Văn học Việt Nam'}`;
+    }
 
-    // 3. Chuẩn bị context để đưa vào RAG Prompt
-    const allRelevantWorks = primaryWork
-        ? [primaryWork, ...candidateWorks.filter((w) => w.slug !== primaryWork.slug)].slice(0, 3)
-        : candidateWorks;
-
-    const contextText = allRelevantWorks
-        .map(
-            (w, i) => `[Tư liệu ${i + 1}]:
-- Tên tác phẩm: ${w.title} (${w.categoryName || 'Di sản văn học'})
-${w.author ? `- Tác giả: ${w.author}\n` : ''}- Khu vực / Thời kỳ: ${w.region || 'Toàn quốc'} — ${w.period || 'Dân gian'}
-- Tóm tắt: ${w.summary || 'N/A'}
-- Trích đoạn / Câu tiêu biểu: ${w.quote || 'N/A'}
-- Bối cảnh lịch sử: ${w.historicalContext || 'N/A'}
-- Ý nghĩa chủ đề & Biểu tượng: ${w.thematicMeaning || 'N/A'}
-- Nguồn học thuật kiểm chứng: ${w.source || 'Kho tàng Di sản Văn học Việt Nam'}`
-        )
-        .join('\n\n');
-
-    // 4. Ưu tiên gọi Gemini AI nếu có key
+    // 3. Ưu tiên gọi Gemini AI nếu có key
     const geminiAnswer = await callGeminiApi({
         question: cleanQuery,
         contextText,
         history,
     });
 
-    const citations = allRelevantWorks.map((w) => ({
-        title: w.title,
-        slug: w.slug,
-        category: w.category,
-        categoryName: w.categoryName,
-        region: w.region,
-        author: w.author,
-        source: w.source,
-    }));
+    const citations = primaryWork
+        ? [
+              {
+                  title: primaryWork.title,
+                  slug: primaryWork.slug,
+                  category: primaryWork.category,
+                  categoryName: primaryWork.categoryName,
+                  region: primaryWork.region,
+                  author: primaryWork.author,
+                  source: primaryWork.source,
+              },
+          ]
+        : [];
+
+    let suggestedQuestions = [];
+    if (primaryWork) {
+        suggestedQuestions = [
+            `Ý nghĩa biểu tượng nổi bật nhất trong "${primaryWork.title}"?`,
+            `Bối cảnh lịch sử và hoàn cảnh ra đời của "${primaryWork.title}"?`,
+            `Những bài học nhân sinh giá trị từ "${primaryWork.title}" cho hôm nay?`,
+        ];
+    } else {
+        suggestedQuestions = [
+            'Ý nghĩa tiếng đàn thần Thạch Sanh là gì?',
+            'Tại sao Thánh Gióng bay về trời sau khi đánh tan giặc?',
+            'Những câu ca dao sâu sắc nhất về tình cảm gia đình?',
+        ];
+    }
 
     if (geminiAnswer) {
         return {
             answer: geminiAnswer,
             citations,
-            suggestedQuestions: [
-                `Ý nghĩa nhân văn của tác phẩm ${primaryWork ? primaryWork.title : 'này'} là gì?`,
-                `Bối cảnh lịch sử ra đời của ${primaryWork ? primaryWork.title : 'tác phẩm'}?`,
-                `Còn câu ca dao / tích truyện nào liên quan đến chủ đề này không?`,
-            ],
-            sourceType: 'gemini_rag',
+            suggestedQuestions,
+            sourceType: 'gemini_smart_dialogue',
         };
     }
 
-    // 5. Fallback về động cơ nội bộ (chắc chắn luôn chạy 100% không sợ lỗi mạng hay hết quota)
+    // 4. Fallback thông minh nội bộ
     const localResult = synthesizeHeritageAnswer({
         question: cleanQuery,
         primaryWork,
-        candidateWorks: allRelevantWorks,
+        candidateWorks: candidateWorks || [],
     });
 
     return {
@@ -920,9 +1010,15 @@ const explainWork = async ({ workId, slug }) => {
         throw new Error('Không tìm thấy câu ca dao hoặc tục ngữ trong hệ thống');
     }
 
+    const variantsSnippet = work.variants && work.variants.length > 0
+        ? `\nDữ liệu Dị bản Dân gian đã ghi nhận:\n` + work.variants.map((v, i) => 
+            `- Dị bản ${i + 1} (${v.name} - ${v.region}): "${v.quote || ''}"\n  + Nội dung/Ghi nhận: ${v.content}\n  + Điểm khác biệt: ${v.differenceNote}\n  + Phân tích học thuật: ${v.scholarlyAnalysis}\n  + Nguồn: ${v.source}`
+          ).join('\n')
+        : '';
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
-        const prompt = `Phân tích sâu sắc và toàn diện về câu ca dao / tục ngữ sau:
+        const prompt = `Phân tích sâu sắc và toàn diện về câu ca dao / tục ngữ / tác phẩm dân gian sau:
 Tiêu đề / Văn bản: "${work.title}"
 ${work.quote ? `Trích dẫn đầy đủ: "${work.quote}"` : ''}
 Chủ đề: ${work.topic || 'Văn hóa Dân gian'}
@@ -931,12 +1027,14 @@ Nghĩa bóng đã ghi nhận: ${work.figurativeMeaning || work.thematicMeaning}
 Bài học đã ghi nhận: ${work.lesson || 'Đạo lý làm người'}
 Bối cảnh văn hóa: ${work.historicalContext || 'Nền văn minh nông nghiệp truyền thống'}
 Nguồn học thuật chính thức: ${work.source}
+${variantsSnippet}
 
-Hãy trình bày lời giải thích rõ ràng theo 4 phần:
+Hãy trình bày lời giải thích rõ ràng theo các phần:
 1. Nghĩa đen: Giải thích từ ngữ, hình ảnh cụ thể mộc mạc.
 2. Nghĩa bóng: Giá trị biểu tượng, tầng ý nghĩa ẩn dụ sâu xa.
 3. Bài học & Thông điệp: Lời răn dạy đạo đức, lối sống cho con người hôm nay.
-4. Bối cảnh văn hóa & Ứng dụng: Nguồn gốc phong tục tập quán và cách vận dụng câu này trong giao tiếp đời sống thực tế.`;
+4. Bối cảnh văn hóa & Ứng dụng: Nguồn gốc phong tục tập quán và cách vận dụng câu này trong giao tiếp đời sống thực tế.
+${work.variants && work.variants.length > 0 ? '5. Khảo sát Dị bản & So sánh Liên vùng: Phân tích sự biến đổi của tác phẩm qua các vùng miền/dân tộc, làm sáng tỏ tính linh hoạt của văn học truyền miệng và tâm thức địa phương.' : ''}`;
 
         const geminiAnswer = await callGeminiApi({
             question: prompt,
@@ -961,7 +1059,7 @@ Hãy trình bày lời giải thích rõ ràng theo 4 phần:
         }
     }
 
-    const formattedExplanation = `### 1. Nghĩa đen (Nghĩa hiển ngôn):
+    let formattedExplanation = `### 1. Nghĩa đen (Nghĩa hiển ngôn):
 ${work.literalMeaning || work.summary || 'Hình ảnh mộc mạc, gần gũi bắt nguồn từ đời sống sinh hoạt và lao động sản xuất thường nhật của người bình dân xưa.'}
 
 ### 2. Nghĩa bóng (Nghĩa hàm ẩn):
@@ -972,6 +1070,14 @@ ${work.lesson || 'Nhắc nhở mỗi cá nhân rèn luyện nhân cách, sống 
 
 ### 4. Bối cảnh văn hóa & Ứng dụng đời sống:
 ${work.historicalContext ? work.historicalContext : 'Hình thành từ nền văn minh lúa nước và nếp sống làng xã Việt Nam, thường được ông bà cha mẹ dùng để răn dạy con cháu trong gia đình và đời sống cộng đồng.'}`;
+
+    if (work.variants && work.variants.length > 0) {
+        formattedExplanation += `\n\n### 5. Dị bản Dân gian & So sánh Liên vùng:
+Tác phẩm ghi nhận **${work.variants.length} dị bản/biến thể** đặc sắc trong không gian văn hóa người Việt:\n` +
+            work.variants.map((v, i) => 
+                `* **${v.name} (${v.region}):**\n  - *Văn bản / Trích dẫn:* "${v.quote || v.content}"\n  - *Khác biệt cốt lõi:* ${v.differenceNote}\n  - *Góc nhìn học thuật:* ${v.scholarlyAnalysis}\n  - *Tài liệu kiểm chứng:* ${v.source}`
+            ).join('\n\n');
+    }
 
     return {
         work,
@@ -1002,6 +1108,32 @@ const generateSemanticInsight = async ({ query, topWork, matchedConcept }) => {
         fallbackText += topWork.figurativeMeaning;
     } else {
         fallbackText += topWork.summary;
+    }
+
+    if (process.env.GEMINI_API_KEY) {
+        try {
+            const prompt = `Bạn là Trợ lý Di sản VietHeritage AI. Người dùng vừa tìm kiếm ý nghĩa câu ca dao / tục ngữ với câu hỏi: "${query}".
+Tác phẩm phù hợp nhất trong kho tàng dữ liệu là: "${topWork.title}".
+- Nội dung / Trích dẫn: "${topWork.quote || topWork.title}"
+- Nghĩa bóng / Bài học: "${topWork.lesson || topWork.figurativeMeaning || topWork.thematicMeaning || topWork.summary || ''}"
+
+Hãy viết 1 đoạn văn ngắn (2-3 câu), truyền cảm, trang nhã, giải thích trực tiếp tại sao câu ca dao / tục ngữ này là minh chứng tiêu biểu và sâu sắc nhất cho tâm niệm tìm kiếm trên của người dùng.`;
+
+            const aiAnswer = await callGeminiApi({
+                question: prompt,
+                contextText: `Tác phẩm: ${topWork.title}\n${topWork.summary || ''}\n${topWork.lesson || ''}`,
+            });
+
+            if (aiAnswer && aiAnswer.length > 30) {
+                return {
+                    insight: aiAnswer,
+                    highlightWork: topWork.title,
+                    source: 'gemini_smart_semantic_insight',
+                };
+            }
+        } catch (err) {
+            console.warn('[generateSemanticInsight] Gemini fallback:', err.message);
+        }
     }
 
     return {
@@ -1435,10 +1567,12 @@ const analyzeSnippet = async ({ snippet, workSlug = null, workTitle = null, anal
     // 0. Tải thông tin tác phẩm liên quan trong Database (nếu có)
     let workContext = null;
     if (workSlug || workTitle) {
-        workContext = await Work.findOne({
-            $or: [{ slug: workSlug }, { title: workTitle }],
-            status: 'published',
-        }).lean();
+        try {
+            workContext = await Work.findOne({
+                $or: [{ slug: workSlug }, { title: workTitle }],
+                status: 'published',
+            }).maxTimeMS(2000).lean();
+        } catch (e) {}
     }
 
     const workName = workContext?.title || 'Di sản Văn học';
@@ -1450,9 +1584,11 @@ const analyzeSnippet = async ({ snippet, workSlug = null, workTitle = null, anal
         ['day-thon-vi-da', 'tay-tien', 'dong-chi', 'qua-deo-ngang', 'thu-dieu', 'bai-tho-ve-tieu-doi-xe-khong-kinh'].includes(workContext?.slug);
     const isFolk = categoryLower.includes('dân gian') || categoryLower.includes('cổ tích') || categoryLower.includes('truyền thuyết') || categoryLower.includes('ca dao');
 
-    // 1. PHÂN TÍCH LOẠI NHÂN VẬT & TÁC GIẢ
+    // 1. NHẬN DIỆN THỰC THỂ & ĐIỀU HƯỚNG CHÉO THÔNG MINH (CROSS-CATEGORY RESOLVER)
     const matchedChar = findCuratedCharacter(cleanSnippet);
-    
+    const matchedLoc = findCuratedLocation(cleanSnippet);
+    const matchedTerm = findCuratedTerm(cleanSnippet);
+
     // Kiểm tra xem đoạn bôi đen có phải là tác giả của tác phẩm hiện tại không
     const isAuthorOfWork = authorNoTone && (
         cleanNoTone === authorNoTone ||
@@ -1462,6 +1598,118 @@ const analyzeSnippet = async ({ snippet, workSlug = null, workTitle = null, anal
         cleanNoTone.includes('thi si') ||
         cleanNoTone.includes('nha tho')
     );
+
+    // =========================================================================
+    // BỘ ĐIỀU PHỐI CHÉO THỰC THỂ THÔNG MINH TOÀN DIỆN (FULL CROSS-CATEGORY RESOLVER)
+    // Tự động nhận diện bản chất thực thể khi người dùng bấm nhầm tab,
+    // ưu tiên trả tri thức chuẩn đã kiểm chứng (0s, 0 token) và bảo vệ Quota Gemini.
+    // =========================================================================
+
+    // TÌNH HUỐNG 1: Người dùng bấm "Nhân vật & Tác giả" (analysisType === 'character')
+    if (analysisType === 'character' && !matchedChar && !isAuthorOfWork) {
+        // 1.A. Nhưng từ này thực chất là ĐỊA DANH
+        if (matchedLoc) {
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'location',
+                suggestedType: 'location',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là ĐỊA DANH / KHÔNG GIAN ĐỊA LÝ, không phải nhân vật hay tác giả. Hệ thống đã tự động chuyển sang mục Địa danh để cung cấp tư liệu chuẩn xác nhất.`,
+                title: `📍 Vị trí địa lý: ${matchedLoc.title}`,
+                details: `**1. Vị trí địa lý thực tế:**\n${matchedLoc.realLocation}\n\n**2. Bối cảnh lịch sử thực tế:**\n${matchedLoc.historicalContext}\n\n**3. Ý nghĩa không gian trong tác phẩm:**\n${matchedLoc.literaryRole}`,
+                source: matchedLoc.source || workContext?.source || 'Địa chí & Lịch sử Việt Nam — VietHeritage AI',
+                sourceType: 'curated_location_ontology',
+            };
+        }
+        // 1.B. Nhưng từ này thực chất là TỪ KHÓ / THUẬT NGỮ VĂN HỌC (như "mặt chữ điền", "súng ngửi trời"...)
+        if (matchedTerm) {
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'definition',
+                suggestedType: 'definition',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là TỪ NGỮ / HÌNH ẢNH NGHỆ THUẬT, không phải nhân vật hay tác giả. Hệ thống đã tự động chuyển sang mục Giải nghĩa từ.`,
+                title: `📖 Giải nghĩa từ ngữ: "${matchedTerm.term}"`,
+                details: `**1. Giải nghĩa từ vựng (Nghĩa từ điển / Nhân trắc / Cổ ngữ):**\n${matchedTerm.definition}\n\n**2. Ý nghĩa trong ngữ cảnh tác phẩm:**\n${matchedTerm.contextualMeaning}\n\n**3. Giá trị biểu đạt & Cách hiểu chuẩn xác:**\n${matchedTerm.expressiveValue}`,
+                source: 'Từ điển Tiếng Việt & Kho tàng Ngôn ngữ Di sản — VietHeritage AI',
+                sourceType: 'curated_term_ontology',
+            };
+        }
+    }
+
+    // TÌNH HUỐNG 2: Người dùng bấm "Địa danh" (analysisType === 'location')
+    if (analysisType === 'location' && !matchedLoc) {
+        // 2.A. Nhưng từ này thực chất là TÁC GIẢ hoặc NHÂN VẬT
+        if (matchedChar || isAuthorOfWork) {
+            const finalChar = matchedChar || findCuratedCharacter(authorName);
+            const displayWork = workContext?.title || finalChar?.workTitle || workName;
+            const charName = finalChar?.name || (isAuthorOfWork ? authorName : cleanSnippet);
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'character',
+                suggestedType: 'character',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là TÁC GIẢ / NHÂN VẬT VĂN HỌC, không phải địa danh. Hệ thống đã tự động chuyển sang mục Nhân vật & Tác giả.`,
+                title: `👤 Nhân vật & Tác giả: ${charName} (${displayWork})`,
+                details: finalChar
+                    ? `**1. Đây là ai? (Xuất thân & Danh tính):**\n${finalChar.identity}\n\n**2. Vai trò trong tác phẩm "${displayWork}":**\n${finalChar.role}\n\n**3. Ý nghĩa biểu tượng & Giá trị văn hóa:**\n${finalChar.symbolicMeaning}`
+                    : `**1. Tác giả sáng tạo:**\n**${authorName}** là tác giả của tác phẩm "${workName}".\n\n**2. Vai trò & Phong cách sáng tác:**\nHóa thân vào cái tôi trữ tình, định hình phong cách nghệ thuật độc đáo và truyền tải thông điệp nhân văn sâu sắc.`,
+                source: finalChar?.source || workContext?.source || 'Kho tàng Di sản Văn học Việt Nam — VietHeritage AI',
+                sourceType: 'curated_character_ontology',
+            };
+        }
+        // 2.B. Nhưng từ này thực chất là TỪ KHÓ / THUẬT NGỮ VĂN HỌC (Ví dụ: "mặt chữ điền", "súng ngửi trời"...)
+        if (matchedTerm) {
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'definition',
+                suggestedType: 'definition',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là TỪ NGỮ / HÌNH ẢNH NGHỆ THUẬT, không phải địa danh. Hệ thống đã tự động chuyển sang mục Giải nghĩa từ.`,
+                title: `📖 Giải nghĩa từ ngữ: "${matchedTerm.term}"`,
+                details: `**1. Giải nghĩa từ vựng (Nghĩa từ điển / Nhân trắc / Cổ ngữ):**\n${matchedTerm.definition}\n\n**2. Ý nghĩa trong ngữ cảnh tác phẩm:**\n${matchedTerm.contextualMeaning}\n\n**3. Giá trị biểu đạt & Cách hiểu chuẩn xác:**\n${matchedTerm.expressiveValue}`,
+                source: 'Từ điển Tiếng Việt & Kho tàng Ngôn ngữ Di sản — VietHeritage AI',
+                sourceType: 'curated_term_ontology',
+            };
+        }
+    }
+
+    // TÌNH HUỐNG 3: Người dùng bấm "Giải nghĩa từ" (analysisType === 'definition')
+    if (analysisType === 'definition' && !matchedTerm) {
+        // 3.A. Nhưng từ này thực chất là ĐỊA DANH
+        if (matchedLoc) {
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'location',
+                suggestedType: 'location',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là ĐỊA DANH / KHÔNG GIAN ĐỊA LÝ, không phải từ ngữ thông thường. Hệ thống đã tự động chuyển sang mục Địa danh để cung cấp tư liệu chuẩn xác nhất.`,
+                title: `📍 Vị trí địa lý: ${matchedLoc.title}`,
+                details: `**1. Vị trí địa lý thực tế:**\n${matchedLoc.realLocation}\n\n**2. Bối cảnh lịch sử thực tế:**\n${matchedLoc.historicalContext}\n\n**3. Ý nghĩa không gian trong tác phẩm:**\n${matchedLoc.literaryRole}`,
+                source: matchedLoc.source || workContext?.source || 'Địa chí & Lịch sử Việt Nam — VietHeritage AI',
+                sourceType: 'curated_location_ontology',
+            };
+        }
+        // 3.B. Nhưng từ này thực chất là TÁC GIẢ hoặc NHÂN VẬT
+        if (matchedChar || isAuthorOfWork) {
+            const finalChar = matchedChar || findCuratedCharacter(authorName);
+            const displayWork = workContext?.title || finalChar?.workTitle || workName;
+            const charName = finalChar?.name || (isAuthorOfWork ? authorName : cleanSnippet);
+            return {
+                snippet: cleanSnippet,
+                analysisType: 'character',
+                suggestedType: 'character',
+                isRedirected: true,
+                redirectNotice: `💡 "${cleanSnippet}" là TÁC GIẢ / NHÂN VẬT VĂN HỌC, không phải từ ngữ thông thường. Hệ thống đã tự động chuyển sang mục Nhân vật & Tác giả.`,
+                title: `👤 Nhân vật & Tác giả: ${charName} (${displayWork})`,
+                details: finalChar
+                    ? `**1. Đây là ai? (Xuất thân & Danh tính):**\n${finalChar.identity}\n\n**2. Vai trò trong tác phẩm "${displayWork}":**\n${finalChar.role}\n\n**3. Ý nghĩa biểu tượng & Giá trị văn hóa:**\n${finalChar.symbolicMeaning}`
+                    : `**1. Tác giả sáng tạo:**\n**${authorName}** là tác giả của tác phẩm "${workName}".\n\n**2. Vai trò & Phong cách sáng tác:**\nHóa thân vào cái tôi trữ tình, định hình phong cách nghệ thuật độc đáo và truyền tải thông điệp nhân văn sâu sắc.`,
+                source: finalChar?.source || workContext?.source || 'Kho tàng Di sản Văn học Việt Nam — VietHeritage AI',
+                sourceType: 'curated_character_ontology',
+            };
+        }
+    }
 
     if (analysisType === 'character' || isAuthorOfWork || (matchedChar && analysisType === 'general')) {
         // Ưu tiên 1: Khớp trong Curated Characters Ontology
@@ -1528,7 +1776,6 @@ Trình bày rõ ràng theo đúng 3 mục được đánh số trên.`;
     }
 
     // 2. PHÂN TÍCH LOẠI VỊ TRÍ ĐỊA LÝ & BỐI CẢNH LỊCH SỬ THỰC TẾ
-    const matchedLoc = findCuratedLocation(cleanSnippet);
     if (analysisType === 'location' || (matchedLoc && analysisType === 'general')) {
         if (matchedLoc) {
             return {
@@ -1580,7 +1827,6 @@ Trình bày rõ ràng theo đúng 3 mục trên.`;
     }
 
     // 3. Phân tích loại GIẢI NGHĨA TỪ NGỮ (analysisType === 'definition' hoặc khớp từ ngữ khó)
-    const matchedTerm = findCuratedTerm(cleanSnippet);
     if (analysisType === 'definition' || matchedTerm) {
         if (matchedTerm) {
             return {
@@ -1591,6 +1837,33 @@ Trình bày rõ ràng theo đúng 3 mục trên.`;
                 source: 'Từ điển Tiếng Việt & Kho tàng Ngôn ngữ Di sản — VietHeritage AI',
                 sourceType: 'curated_term_ontology',
             };
+        }
+
+        // ƯU TIÊN 2: NẾU CÓ GEMINI API KEY, GỌI GEMINI AI ĐỂ PHÂN TÍCH TỪ VỰNG CHUẨN XÁC
+        if (process.env.GEMINI_API_KEY) {
+            try {
+                const geminiPrompt = `Hãy giải thích chi tiết, chuẩn mực học thuật về từ ngữ hoặc hình ảnh văn học "${cleanSnippet}" trong tác phẩm "${workName}" (${workContext?.author ? `Tác giả: ${workContext.author}` : ''}):
+1. Giải nghĩa từ vựng (Nghĩa từ điển, cấu tạo từ ghép/từ láy/từ Hán Việt/từ cổ, nghĩa gốc)
+2. Ý nghĩa trong ngữ cảnh tác phẩm "${workName}" (Gắn với cảm xúc trữ tình, bối cảnh bài thơ/truyện)
+3. Giá trị biểu đạt & hiệu quả nghệ thuật (Gợi hình, gợi cảm, nhạc tính, đóng góp vào chủ đề)
+Trình bày rõ ràng theo đúng 3 mục được đánh số trên.`;
+                const aiAnswer = await callGeminiApi({
+                    question: geminiPrompt,
+                    contextText: `${workContext?.content || ''}\n${workContext?.summary || ''}\n${workContext?.quote || ''}`,
+                });
+                if (aiAnswer && aiAnswer.length > 50) {
+                    return {
+                        snippet: cleanSnippet,
+                        analysisType: 'definition',
+                        title: `📖 Giải nghĩa từ ngữ: "${cleanSnippet}" (${workName})`,
+                        details: aiAnswer,
+                        source: 'Trí tuệ nhân tạo VietHeritage AI & Cơ sở tri thức Ngôn ngữ học',
+                        sourceType: 'gemini_ai_term_analysis',
+                    };
+                }
+            } catch (termErr) {
+                console.warn('[analyzeSnippet] Gemini term fallback:', termErr.message);
+            }
         }
 
         const isReduplicated = cleanSnippet.split(/\s+/).length === 2 &&
@@ -1608,6 +1881,31 @@ Trình bày rõ ràng theo đúng 3 mục trên.`;
 
     // 4. Phân tích loại BIỆN PHÁP TU TỪ (analysisType === 'rhetoric')
     if (analysisType === 'rhetoric') {
+        if (process.env.GEMINI_API_KEY) {
+            try {
+                const geminiPrompt = `Hãy phân tích chi tiết biện pháp tu từ và thủ pháp nghệ thuật của cụm từ/hình ảnh "${cleanSnippet}" trong tác phẩm "${workName}" (${workContext?.author ? `Tác giả: ${workContext.author}` : ''}):
+1. Thủ pháp nghệ thuật & biện pháp tu từ được sử dụng (Điệp từ, ẩn dụ, hoán dụ, nhân hóa, tương phản, phối thanh...)
+2. Hiệu quả biểu đạt thẩm mỹ trong văn cảnh tác phẩm "${workName}"
+3. Đóng góp vào phong cách tác giả và tư tưởng chủ đề tác phẩm
+Trình bày rõ ràng theo đúng 3 mục được đánh số trên.`;
+                const aiAnswer = await callGeminiApi({
+                    question: geminiPrompt,
+                    contextText: `${workContext?.content || ''}\n${workContext?.summary || ''}\n${workContext?.quote || ''}`,
+                });
+                if (aiAnswer && aiAnswer.length > 50) {
+                    return {
+                        snippet: cleanSnippet,
+                        analysisType: 'rhetoric',
+                        title: `💡 Biện pháp tu từ: "${cleanSnippet}" (${workName})`,
+                        details: aiAnswer,
+                        source: 'Trí tuệ nhân tạo VietHeritage AI & Thi pháp học Việt Nam',
+                        sourceType: 'gemini_ai_rhetoric_analysis',
+                    };
+                }
+            } catch (rhetoricErr) {
+                console.warn('[analyzeSnippet] Gemini rhetoric fallback:', rhetoricErr.message);
+            }
+        }
         const isReduplicated = cleanSnippet.split(/\s+/).length === 2 &&
             cleanSnippet.split(/\s+/)[0].slice(0, 1).toLowerCase() === cleanSnippet.split(/\s+/)[1].slice(0, 1).toLowerCase();
 

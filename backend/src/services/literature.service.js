@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Work = require('../models/Work');
+require('../models/Location');
 const { buildVietnameseRegex } = require('../utils/vietnamese.utils');
 
 class LiteratureService {
@@ -207,158 +208,212 @@ class LiteratureService {
         const trimmedQuery = query.trim();
         const lowerQuery = trimmedQuery.toLowerCase();
 
-        // 1. Bản đồ khái niệm ngữ nghĩa & chủ đề văn hóa dân gian Việt Nam
-        const CONCEPT_MAP = [
-            {
-                topic: 'Lòng biết ơn',
-                keywords: ['biết ơn', 'nhớ ơn', 'tri ân', 'đền ơn', 'giúp đỡ', 'cội nguồn', 'uống nước', 'ăn quả', 'ơn nghĩa'],
-                description: 'Các câu ca dao, tục ngữ răn dạy lòng biết ơn, tri ân người giúp đỡ và cội nguồn cha ông.',
-            },
-            {
-                topic: 'Tình cảm gia đình',
-                keywords: ['cha mẹ', 'công cha', 'nghĩa mẹ', 'sinh thành', 'dưỡng dục', 'hiếu thảo', 'chữ hiếu', 'đạo con', 'con cái', 'gia đình', 'ông bà'],
-                description: 'Các câu ca dao, tục ngữ ca ngợi công ơn trời biển của cha mẹ và bổn phận hiếu kính của con cái.',
-            },
-            {
-                topic: 'Đoàn kết - Nhân ái',
-                keywords: ['đoàn kết', 'thương nhau', 'bầu bí', 'lá lành', 'lá rách', 'đùm bọc', 'chia sẻ', 'tương thân', 'tương ái', 'đồng bào', 'nhiễu điều', 'giá gương'],
-                description: 'Các câu ca dao, tục ngữ tôn vinh tình đồng bào, sự sẻ chia và tinh thần tương thân tương ái.',
-            },
-            {
-                topic: 'Ý chí - Nghị lực',
-                keywords: ['ý chí', 'nghị lực', 'kiên trì', 'bền bỉ', 'mài sắt', 'nên kim', 'vượt khó', 'quyết tâm', 'thành công', 'gian nan'],
-                description: 'Các câu ca dao, tục ngữ đúc kết về lòng kiên định, sự nhẫn nại vượt khó để thành công.',
-            },
-            {
-                topic: 'Học tập - Tri thức',
-                keywords: ['học tập', 'thầy cô', 'bạn bè', 'tri thức', 'học hỏi', 'cầu tiến', 'sách vở', 'học thầy', 'học bạn'],
-                description: 'Các câu ca dao, tục ngữ về tinh thần cầu tiến, học hỏi từ thầy cô và bè bạn.',
-            },
-            {
-                topic: 'Yêu nước - Chủ quyền - Tuyên ngôn độc lập',
-                keywords: ['tuyên ngôn', 'độc lập', 'chủ quyền', 'yêu nước', 'sông núi', 'sơn hà', 'đất nước', 'đầu tiên', 'sông cầu', 'như nguyệt', 'lý thường kiệt', 'bình ngô', 'thánh gióng', 'giặc', 'xâm lăng', 'nam quốc', 'cứu nước', 'bảo vệ', 'tổ quốc'],
-                description: 'Các tác phẩm kiệt tác khẳng định chủ quyền lãnh thổ thiêng liêng, bản tuyên ngôn độc lập và ý chí quật cường chống ngoại xâm của dân tộc.',
-            },
-            {
-                topic: 'Tình yêu đôi lứa - Thủy chung',
-                keywords: ['tình yêu', 'đôi lứa', 'thủy chung', 'son sắt', 'trầu cau', 'vợ chồng', 'nguyện ước', 'duyên phận', 'thương nhau'],
-                description: 'Các câu ca dao, tích truyện ca ngợi tình yêu trong sáng, sự gắn bó thủy chung son sắt và nghĩa vợ chồng.',
-            },
-            {
-                topic: 'Nhân đạo & Đạo lý làm người',
-                keywords: ['nhân đạo', 'truyện kiều', 'thúy kiều', 'nguyễn du', 'chính nghĩa', 'lẽ phải', 'đạo lý', 'làm người', 'công lý'],
-                description: 'Các tác phẩm mang giá trị nhân đạo sâu sắc, ngợi ca nhân phẩm con người và khát vọng công lý tự do.',
-            },
-            {
-                topic: 'Kinh nghiệm lao động - thời tiết',
-                keywords: ['thời tiết', 'chuồn chuồn', 'mưa nắng', 'mùa màng', 'cày cấy', 'nông dân', 'nhà nông', 'sản xuất', 'kinh nghiệm'],
-                description: 'Các câu ca dao, tục ngữ đúc kết tri thức dự báo thời tiết và kinh nghiệm canh tác nông nghiệp.',
-            },
-        ];
-
-        // 2. Phát hiện ý định loại nội dung (ca dao hay tục ngữ)
-        let preferredCategory = null;
-        if (lowerQuery.includes('tục ngữ') && !lowerQuery.includes('ca dao')) {
-            preferredCategory = 'tuc-ngu';
-        } else if (lowerQuery.includes('ca dao') && !lowerQuery.includes('tục ngữ')) {
-            preferredCategory = 'ca-dao';
-        }
-
-        // 3. Khớp các khái niệm ngữ nghĩa
-        let matchedConcept = null;
-        let maxMatches = 0;
-
-        for (const concept of CONCEPT_MAP) {
-            let matches = 0;
-            for (const kw of concept.keywords) {
-                if (lowerQuery.includes(kw)) {
-                    matches += 1;
-                }
-            }
-            if (matches > maxMatches) {
-                maxMatches = matches;
-                matchedConcept = concept;
-            }
-        }
-
-        // 4. Lấy tất cả tác phẩm đã xuất bản để chấm điểm ngữ nghĩa
+        // 1. Lấy tất cả tác phẩm đã xuất bản
         const allPublished = await Work.find({ status: 'published' }).lean();
 
-        // 5. Tính điểm ngữ nghĩa (Semantic Scoring)
-        const scoredWorks = allPublished.map((item) => {
-            let score = 0;
-            const fullText = `${item.title} ${item.quote || ''} ${item.summary || ''} ${item.literalMeaning || ''} ${item.figurativeMeaning || ''} ${item.lesson || ''} ${item.thematicMeaning || ''} ${item.topic || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+        let filtered = [];
+        let searchMethod = 'heuristic_concept_fallback';
+        let matchedConceptTopic = null;
+        let conceptDescription = null;
 
-            let hasConceptMatch = false;
+        // 2. ƯU TIÊN 1: REAL AI VECTOR EMBEDDING (Google gemini-embedding + Cosine Similarity)
+        try {
+            const { getEmbedding, cosineSimilarity } = require('./embedding.service');
+            const queryVector = await getEmbedding(trimmedQuery, 768);
 
-            // Khớp theo Topic đã nhận diện được (+80 điểm)
-            if (matchedConcept && item.topic === matchedConcept.topic) {
-                score += 80;
-                hasConceptMatch = true;
-            }
+            if (queryVector && Array.isArray(queryVector) && queryVector.length === 768) {
+                const worksWithEmbedding = allPublished.filter(
+                    (w) => Array.isArray(w.embedding) && w.embedding.length === 768
+                );
 
-            // Khớp category ưa thích (ví dụ người dùng nói rõ "tìm tục ngữ...") (+30 điểm)
-            if (preferredCategory && item.category === preferredCategory) {
-                score += 30;
-            }
+                if (worksWithEmbedding.length > 0) {
+                    searchMethod = 'real_ai_vector_embedding';
 
-            // Khớp các từ khóa của concept (+20 điểm mỗi từ)
-            if (matchedConcept) {
-                for (const kw of matchedConcept.keywords) {
-                    if (fullText.includes(kw)) {
-                        score += 20;
-                        hasConceptMatch = true;
+                    // Tính điểm tương đồng Cosine Similarity cho từng tác phẩm
+                    const scoredWorks = worksWithEmbedding.map((item) => {
+                        const sim = cosineSimilarity(queryVector, item.embedding);
+                        // Chuyển Cosine Similarity sang thang điểm phần trăm 0 - 100
+                        const scorePercent = Math.min(99, Math.max(10, Math.round(sim * 100)));
+
+                        return {
+                            ...item,
+                            _semanticScore: scorePercent,
+                            _rawSimilarity: sim,
+                        };
+                    });
+
+                    // Sắp xếp theo độ tương đồng giảm dần
+                    scoredWorks.sort((a, b) => b._semanticScore - a._semanticScore);
+
+                    // Ngưỡng lọc thông minh (Adaptive Semantic Thresholding):
+                    // 1. Sàn tuyệt đối 60%: Độ tương đồng nền (Noise floor) của văn bản tiếng Việt ngẫu nhiên rơi vào khoảng 50-55%.
+                    // 2. Tỷ lệ tương đối 88%: Chỉ giữ lại các tác phẩm đạt ít nhất 88% điểm so với tác phẩm đầu bảng.
+                    // 3. Giới hạn Top-6 tinh hoa: Loại bỏ hoàn toàn các tác phẩm loãng/nhiễu ở phần đuôi.
+                    const maxScore = scoredWorks[0]._semanticScore;
+                    const ABSOLUTE_FLOOR = 60;
+                    const RELATIVE_RATIO = 0.88;
+                    const dynamicThreshold = Math.max(ABSOLUTE_FLOOR, Math.round(maxScore * RELATIVE_RATIO));
+
+                    filtered = scoredWorks
+                        .filter((item) => item._semanticScore >= dynamicThreshold)
+                        .slice(0, 6);
+
+                    if (filtered.length > 0) {
+                        matchedConceptTopic = filtered[0].topic || 'Triết lý & Đạo lý Dân gian';
+                        conceptDescription = `Tìm kiếm bằng Mô hình Vector Embedding (Google Text Embedding 768D & Cosine Similarity) • Phân tích ngữ nghĩa ẩn dụ tự nhiên`;
                     }
                 }
             }
+        } catch (embedErr) {
+            console.warn('[SemanticSearch] Lỗi gọi Embedding Service, tự động fallback sang Heuristic:', embedErr.message);
+        }
 
-            // Khớp trực tiếp các từ đơn có ý nghĩa trong query (bỏ từ dừng)
-            const stopWords = ['tìm', 'các', 'câu', 'nói', 'về', 'cho', 'tôi', 'biết', 'những', 'của', 'là', 'được', 'có', 'phải', 'với', 'trong'];
-            const tokens = lowerQuery.split(/\s+/).filter((t) => t.length > 1 && !stopWords.includes(t));
+        // 3. ƯU TIÊN 2 (FALLBACK): Nếu chưa có vector hoặc gặp sự cố API, chạy Heuristic Concept Matching
+        if (searchMethod !== 'real_ai_vector_embedding' || filtered.length === 0) {
+            const CONCEPT_MAP = [
+                {
+                    topic: 'Lòng biết ơn',
+                    keywords: ['biết ơn', 'nhớ ơn', 'tri ân', 'đền ơn', 'giúp đỡ', 'cội nguồn', 'uống nước', 'ăn quả', 'ơn nghĩa'],
+                    description: 'Các câu ca dao, tục ngữ răn dạy lòng biết ơn, tri ân người giúp đỡ và cội nguồn cha ông.',
+                },
+                {
+                    topic: 'Tình cảm gia đình',
+                    keywords: ['cha mẹ', 'công cha', 'nghĩa mẹ', 'sinh thành', 'dưỡng dục', 'hiếu thảo', 'chữ hiếu', 'đạo con', 'con cái', 'gia đình', 'ông bà'],
+                    description: 'Các câu ca dao, tục ngữ ca ngợi công ơn trời biển của cha mẹ và bổn phận hiếu kính của con cái.',
+                },
+                {
+                    topic: 'Đoàn kết - Nhân ái',
+                    keywords: ['đoàn kết', 'thương nhau', 'bầu bí', 'lá lành', 'lá rách', 'đùm bọc', 'chia sẻ', 'tương thân', 'tương ái', 'đồng bào', 'nhiễu điều', 'giá gương'],
+                    description: 'Các câu ca dao, tục ngữ tôn vinh tình đồng bào, sự sẻ chia và tinh thần tương thân tương ái.',
+                },
+                {
+                    topic: 'Ý chí - Nghị lực',
+                    keywords: ['ý chí', 'nghị lực', 'kiên trì', 'bền bỉ', 'mài sắt', 'nên kim', 'vượt khó', 'quyết tâm', 'thành công', 'gian nan'],
+                    description: 'Các câu ca dao, tục ngữ đúc kết về lòng kiên định, sự nhẫn nại vượt khó để thành công.',
+                },
+                {
+                    topic: 'Học tập - Tri thức',
+                    keywords: ['học tập', 'thầy cô', 'bạn bè', 'tri thức', 'học hỏi', 'cầu tiến', 'sách vở', 'học thầy', 'học bạn'],
+                    description: 'Các câu ca dao, tục ngữ về tinh thần cầu tiến, học hỏi từ thầy cô và bè bạn.',
+                },
+                {
+                    topic: 'Yêu nước - Chủ quyền - Tuyên ngôn độc lập',
+                    keywords: ['tuyên ngôn', 'độc lập', 'chủ quyền', 'yêu nước', 'sông núi', 'sơn hà', 'đất nước', 'đầu tiên', 'sông cầu', 'như nguyệt', 'lý thường kiệt', 'bình ngô', 'thánh gióng', 'giặc', 'xâm lăng', 'nam quốc', 'cứu nước', 'bảo vệ', 'tổ quốc'],
+                    description: 'Các tác phẩm kiệt tác khẳng định chủ quyền lãnh thổ thiêng liêng, bản tuyên ngôn độc lập và ý chí quật cường chống ngoại xâm của dân tộc.',
+                },
+                {
+                    topic: 'Tình yêu đôi lứa - Thủy chung',
+                    keywords: ['tình yêu', 'đôi lứa', 'thủy chung', 'son sắt', 'trầu cau', 'vợ chồng', 'nguyện ước', 'duyên phận', 'thương nhau'],
+                    description: 'Các câu ca dao, tích truyện ca ngợi tình yêu trong sáng, sự gắn bó thủy chung son sắt và nghĩa vợ chồng.',
+                },
+                {
+                    topic: 'Nhân đạo & Đạo lý làm người',
+                    keywords: ['nhân đạo', 'truyện kiều', 'thúy kiều', 'nguyễn du', 'chính nghĩa', 'lẽ phải', 'đạo lý', 'làm người', 'công lý'],
+                    description: 'Các tác phẩm mang giá trị nhân đạo sâu sắc, ngợi ca nhân phẩm con người và khát vọng công lý tự do.',
+                },
+                {
+                    topic: 'Kinh nghiệm lao động - thời tiết',
+                    keywords: ['thời tiết', 'chuồn chuồn', 'mưa nắng', 'mùa màng', 'cày cấy', 'nông dân', 'nhà nông', 'sản xuất', 'kinh nghiệm'],
+                    description: 'Các câu ca dao, tục ngữ đúc kết tri thức dự báo thời tiết và kinh nghiệm canh tác nông nghiệp.',
+                },
+            ];
 
-            for (const token of tokens) {
-                if (fullText.includes(token)) {
-                    score += 15;
+            let preferredCategory = null;
+            if (lowerQuery.includes('tục ngữ') && !lowerQuery.includes('ca dao')) {
+                preferredCategory = 'tuc-ngu';
+            } else if (lowerQuery.includes('ca dao') && !lowerQuery.includes('tục ngữ')) {
+                preferredCategory = 'ca-dao';
+            }
+
+            let matchedConcept = null;
+            let maxMatches = 0;
+
+            for (const concept of CONCEPT_MAP) {
+                let matches = 0;
+                for (const kw of concept.keywords) {
+                    if (lowerQuery.includes(kw)) {
+                        matches += 1;
+                    }
+                }
+                if (matches > maxMatches) {
+                    maxMatches = matches;
+                    matchedConcept = concept;
                 }
             }
 
-            // LOẠI BỎ LẠC ĐỀ: Nếu query đã nhận diện rõ một Concept (ví dụ: Tình cảm gia đình),
-            // nhưng tác phẩm KHÔNG CÙNG TOPIC và KHÔNG CHỨA BẤT KỲ TỪ KHÓA NÀO của Concept
-            // (chỉ vô tình trùng 1-2 từ ngữ thông thường) thì không cho điểm để tránh lạc đề
-            if (matchedConcept && !hasConceptMatch) {
-                score = 0;
-            }
+            const scoredWorks = allPublished.map((item) => {
+                let score = 0;
+                const fullText = `${item.title} ${item.quote || ''} ${item.summary || ''} ${item.literalMeaning || ''} ${item.figurativeMeaning || ''} ${item.lesson || ''} ${item.thematicMeaning || ''} ${item.topic || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+                let hasConceptMatch = false;
 
-            return {
-                ...item,
-                _semanticScore: score,
-            };
-        });
+                if (matchedConcept && item.topic === matchedConcept.topic) {
+                    score += 80;
+                    hasConceptMatch = true;
+                }
 
-        // 6. Lọc thông minh (Thresholding): Loại bỏ các tác phẩm điểm 0 và các tác phẩm điểm quá thấp so với tác phẩm đầu bảng
-        const candidates = scoredWorks.filter((item) => item._semanticScore > 0);
-        const maxScore = candidates.length > 0 ? Math.max(...candidates.map((c) => c._semanticScore)) : 0;
+                if (preferredCategory && item.category === preferredCategory) {
+                    score += 30;
+                }
 
-        // Ngưỡng cắt lọc nhiễu: Điểm tối thiểu 60 và không thấp hơn 45% điểm tác phẩm cao nhất
-        const minThreshold = Math.max(60, Math.floor(maxScore * 0.45));
+                if (matchedConcept) {
+                    for (const kw of matchedConcept.keywords) {
+                        if (fullText.includes(kw)) {
+                            score += 20;
+                            hasConceptMatch = true;
+                        }
+                    }
+                }
 
-        const filtered = candidates
-            .filter((item) => item._semanticScore >= minThreshold)
-            .sort((a, b) => b._semanticScore - a._semanticScore);
+                const stopWords = ['tìm', 'các', 'câu', 'nói', 'về', 'cho', 'tôi', 'biết', 'những', 'của', 'là', 'được', 'có', 'phải', 'với', 'trong'];
+                const tokens = lowerQuery.split(/\s+/).filter((t) => t.length > 1 && !stopWords.includes(t));
+
+                for (const token of tokens) {
+                    if (fullText.includes(token)) {
+                        score += 15;
+                    }
+                }
+
+                if (matchedConcept && !hasConceptMatch) {
+                    score = 0;
+                }
+
+                return {
+                    ...item,
+                    _semanticScore: score,
+                };
+            });
+
+            const candidates = scoredWorks.filter((item) => item._semanticScore > 0);
+            const maxScore = candidates.length > 0 ? Math.max(...candidates.map((c) => c._semanticScore)) : 0;
+            const minThreshold = Math.max(60, Math.floor(maxScore * 0.45));
+
+            filtered = candidates
+                .filter((item) => item._semanticScore >= minThreshold)
+                .sort((a, b) => b._semanticScore - a._semanticScore);
+
+            matchedConceptTopic = matchedConcept ? matchedConcept.topic : null;
+            conceptDescription = matchedConcept ? matchedConcept.description : null;
+        }
 
         const total = filtered.length;
         const skip = (Number(page) - 1) * Number(limit);
         const paginatedWorks = filtered.slice(skip, skip + Number(limit));
 
-        // 7. Tạo phân tích & lời khuyên của AI (AI Insight) cho tác phẩm tiêu biểu nhất
+        // 4. Lọc bỏ mảng vector embedding lớn trước khi trả về client để tiết kiệm băng thông
+        const sanitizedWorks = paginatedWorks.map((work) => {
+            const { embedding, ...safeWork } = work;
+            return safeWork;
+        });
+
+        // 5. Tạo phân tích & lời khuyên của AI (AI Insight) cho tác phẩm tiêu biểu nhất
         let aiInsight = null;
-        if (paginatedWorks.length > 0) {
+        if (sanitizedWorks.length > 0) {
             try {
                 const aiService = require('./ai.service');
                 aiInsight = await aiService.generateSemanticInsight({
                     query: trimmedQuery,
-                    topWork: paginatedWorks[0],
-                    matchedConcept,
+                    topWork: sanitizedWorks[0],
+                    matchedConcept: { topic: matchedConceptTopic, description: conceptDescription },
                 });
             } catch (aiErr) {
                 console.warn('[SemanticSearch] Lỗi tạo AI Insight:', aiErr.message);
@@ -366,9 +421,10 @@ class LiteratureService {
         }
 
         return {
-            works: paginatedWorks,
-            semanticConcept: matchedConcept ? matchedConcept.topic : null,
-            conceptDescription: matchedConcept ? matchedConcept.description : null,
+            works: sanitizedWorks,
+            semanticConcept: matchedConceptTopic,
+            conceptDescription,
+            searchMethod,
             aiInsight,
             pagination: {
                 total,

@@ -26,12 +26,15 @@ import {
     History,
     Check,
     X,
-    ExternalLink
+    ExternalLink,
+    Layers,
+    ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import quizService from '../services/quiz.service';
 import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
+import WorkDetailModal from '../components/common/WorkDetailModal';
 import './HeritageQuiz.css';
 
 const CATEGORIES = [
@@ -1109,24 +1112,30 @@ const HeritageQuiz = () => {
             </div>
 
             {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích đa tầng & Dẫn nguồn học thuật) */}
+            {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích 4 Tầng & Dẫn nguồn học thuật) */}
             {activeAiModal && (
                 <div
-                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
                     role="dialog"
                 >
-                    <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-amber-500/40 relative max-h-[85vh] overflow-y-auto">
+                    <div className="bg-gradient-to-b from-slate-900 via-stone-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 space-y-4 shadow-2xl border border-amber-500/40 relative max-h-[88vh] overflow-y-auto custom-scrollbar">
                         {/* Header */}
-                        <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                        <div className="flex items-start justify-between border-b border-slate-800 pb-3.5">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
                                     <Sparkles className="w-5 h-5 text-slate-950" />
                                 </div>
                                 <div>
-                                    <h3 className="font-extrabold text-white text-base font-heritage">
-                                        VietHeritage AI — Phân Tích Đa Tầng
-                                    </h3>
-                                    <p className="text-[11px] text-amber-300">
-                                        Nguồn học thuật & Bối cảnh lịch sử dân gian
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-extrabold text-white text-base font-heritage">
+                                            VietHeritage AI — Giải Nghĩa 4 Tầng
+                                        </h3>
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                            4 Tầng
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-amber-300/90 font-medium">
+                                        Chuẩn hóa đa chiều: Ngôn từ • Biểu tượng • Đạo lý • Địa văn hóa
                                     </p>
                                 </div>
                             </div>
@@ -1139,24 +1148,35 @@ const HeritageQuiz = () => {
                         </div>
 
                         {/* Question Reference */}
-                        <div className="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60 text-xs space-y-1">
-                            <span className="font-bold text-amber-400 text-[11px]">Câu hỏi phân tích:</span>
-                            <p className="text-slate-200 font-medium">{activeAiModal.question}</p>
-                        </div>
-
-                        {/* Explanation Content */}
-                        <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam">
-                            {activeAiModal.data?.deepExplanation}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
-                            <span className="text-[11px] text-slate-400">
-                                Dữ liệu kiểm chứng bởi VietHeritage Knowledge Base
+                        <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/70 text-xs space-y-1 shadow-inner">
+                            <span className="font-bold text-amber-400 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                                <HelpCircle className="w-3.5 h-3.5" />
+                                Câu hỏi phân tích:
                             </span>
+                            <p className="text-slate-100 font-medium text-sm leading-snug">{activeAiModal.question}</p>
+                            {activeAiModal.data?.correctAnswer && (
+                                <p className="text-emerald-400 text-xs font-semibold pt-1">
+                                    ✓ Đáp án chuẩn xác: <strong>"{activeAiModal.data.correctAnswer}"</strong>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Explanation Content (4 Tiers) */}
+                        <div className="space-y-3 pt-1">
+                            <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam bg-slate-950/50 p-4 rounded-2xl border border-slate-800 shadow-inner">
+                                {activeAiModal.data?.deepExplanation}
+                            </div>
+                        </div>
+
+                        {/* Academic Citation Footer */}
+                        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2 text-slate-400 text-[11px]">
+                                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                <span>Nguồn kiểm chứng: <strong className="text-amber-300">{activeAiModal.data?.academicSource || 'Viện Văn học Việt Nam'}</strong></span>
+                            </div>
                             <button
                                 onClick={() => setActiveAiModal(null)}
-                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-sm"
                             >
                                 Đã hiểu
                             </button>
@@ -1214,60 +1234,12 @@ const HeritageQuiz = () => {
                 </div>
             )}
 
-            {/* Quick Work Detail Modal if user clicked read more */}
-            {selectedWorkModal && (
-                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto border border-amber-900/20">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                                    {selectedWorkModal.categoryName}
-                                </span>
-                                <h3 className="text-2xl font-bold font-heritage text-stone-900 mt-2">
-                                    {selectedWorkModal.title}
-                                </h3>
-                                <p className="text-xs text-stone-500">
-                                    {selectedWorkModal.region} • {selectedWorkModal.period}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setSelectedWorkModal(null)}
-                                className="p-2 text-stone-400 hover:text-stone-700 rounded-lg"
-                            >
-                                <XCircle className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {selectedWorkModal.quote && (
-                            <div className="border-l-4 border-amber-600 bg-amber-50/70 p-3.5 rounded-r-xl">
-                                <PoemDisplay text={selectedWorkModal.quote} size="sm" showQuotes={true} />
-                            </div>
-                        )}
-
-                        <div className="space-y-2 text-xs leading-relaxed text-stone-700">
-                            <h4 className="font-bold text-stone-900">Tóm tắt tác phẩm:</h4>
-                            <p>{selectedWorkModal.summary}</p>
-                        </div>
-
-                        {selectedWorkModal.thematicMeaning && (
-                            <div className="space-y-2 text-xs leading-relaxed text-stone-700">
-                                <h4 className="font-bold text-stone-900">Ý nghĩa chủ đề & Biểu tượng:</h4>
-                                <p>{selectedWorkModal.thematicMeaning}</p>
-                            </div>
-                        )}
-
-                        <div className="pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-                            <span>Nguồn kiểm chứng: <strong>{selectedWorkModal.source || 'Văn học Dân gian Việt Nam'}</strong></span>
-                            <button
-                                onClick={() => setSelectedWorkModal(null)}
-                                className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-semibold"
-                            >
-                                Đóng
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* MODAL: CHI TIẾT TÁC PHẨM LIÊN QUAN CHUẨN HÓA 4 TẦNG NGHĨA */}
+            <WorkDetailModal
+                work={selectedWorkModal}
+                isOpen={!!selectedWorkModal}
+                onClose={() => setSelectedWorkModal(null)}
+            />
         </div>
     );
 };

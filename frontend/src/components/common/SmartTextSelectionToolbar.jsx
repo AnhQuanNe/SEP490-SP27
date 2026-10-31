@@ -39,36 +39,55 @@ function detectEntityType(text) {
     if (!text) return 'definition';
     const clean = removeVietnameseTonesQuick(text);
 
-    // 1. Nhận diện Nhân vật & Tác giả
+    // 0. Ưu tiên các từ ngữ / thuật ngữ văn học đặc sắc đã có trong từ điển
+    const literaryTermKeywords = [
+        'choi voi', 'sung ngui troi', 'nuoc man dong chua', 'dau sung trang treo', 'mat chu dien',
+        'la truc', 'ao thu', 'lanh leo', 'thuyen cau', 'be teo teo', 'song biec', 'la vang',
+        'tang may', 'lo lung', 'ngoc', 'tram', 'khanh', 'chau', 'hoan', 'khuc ca', 'tieng dan',
+        'nieu com', 'bua riu', 'ao giap', 'ngua sat', 'tre dang nga', 'ken re', 'sinh le',
+        'tiet nhien', 'thien thu', 'nghich lo', 'dieu phat', 'doan truong', 'dem hoi',
+        'quoc quoc', 'gia gia', 'ung dung', 'buong lai', 'khieu vu', 'khoang rung',
+        'suong lap', 'doan quan moi', 'hoa ve', 'heo hut', 'con buoc', 'mua xa khoi'
+    ];
+    if (literaryTermKeywords.some((term) => clean === term || new RegExp(`\\b${term}\\b`, 'i').test(clean))) {
+        return 'definition';
+    }
+
+    // 1. Nhận diện Nhân vật & Tác giả (Dùng regex nguyên từ \b để tránh khớp nhầm chuỗi con)
     const charKeywords = [
         'my nuong', 'mi nuong', 'nang my nuong', 'nang mi nuong',
         'son tinh', 'thuy tinh', 'tan vien', 'vua hung', 'hung vuong',
         'thach sanh', 'ly thong', 'quynh nga', 'cong chua', 'chan tinh', 'dai bang',
-        'thanh giong', 'giong', 'phu dong', 'me giong',
+        'thanh giong', 'phu dong', 'me giong',
         'thuy kieu', 'nang kieu', 'kim trong', 'tu hai', 'thuy van', 'thuc sinh', 'hoan thu', 'ma giam sinh', 'so khanh', 'dam tien',
         'ly thuong kiet', 'le loi', 'nguyen trai', 'nguoi linh', 'quang dung', 'chinh huu', 'pham tien duat',
         'cao tan', 'cao lang', 'luu thi', 'han mac tu', 'hoang cuc', 'kim cuc', 'khach duong xa',
         'ba huyen thanh quan', 'nguyen khuyen', 'nguyen du', 'bac ho', 'ho chi minh', 'bao dinh giang',
         'nguoi nong dan', 'me gia', 'nguoi me', 'truong hong', 'truong hat', 'lieu thang'
     ];
-    if (charKeywords.some((kw) => clean.includes(kw) || kw.includes(clean))) {
+    if (charKeywords.some((kw) => clean === kw || new RegExp(`\\b${kw}\\b`, 'i').test(clean))) {
         return 'character';
     }
-    if (/^(chang|nang|ong|ba|vua|cong chua|tuong|thi si|nha tho|tac gia)\s+/i.test(text.trim())) {
+    if (/^(chang|nang|ong|ba|vua|cong chua|tuong|thi si|nha tho|tac gia)\s+/i.test(clean)) {
         return 'character';
     }
 
     // 2. Nhận diện Địa danh / Vị trí địa lý
-    const locKeywords = [
+    // Chỉ khớp các địa danh cụ thể hoặc có tiền tố chỉ không gian (sông, núi, hồ, đèo...)
+    const specificLocations = [
         'tan vien', 'ba vi', 'bien dong', 'song ma', 'nhu nguyet', 'song cau',
         'sai khao', 'muong lat', 'pha luong', 'muong hich', 'mai chau', 'lam son',
         'thon vi da', 'vi da', 'song huong', 'huong giang', 'song trang', 'ben song trang',
         'viet bac', 'yen do', 'binh luc', 'ao thu', 'soc son', 'phong chau', 'den hung',
         'tien duong', 'song tien duong', 'deo ngang', 'hoanh son',
-        'ho tay', 'tran vu', 'tho xuong', 'yen thai', 'thap muoi', 'xu nghe', 'song lam', 'hong linh',
-        'nui', 'song', 'bien', 'bản', 'lang', 'thung lung', 'deo', 'dinh', 'ho'
+        'ho tay', 'tran vu', 'tho xuong', 'yen thai', 'thap muoi', 'xu nghe', 'song lam', 'hong linh'
     ];
-    if (locKeywords.some((kw) => clean.includes(kw) || kw.includes(clean))) {
+    if (specificLocations.some((loc) => clean === loc || new RegExp(`\\b${loc}\\b`, 'i').test(clean))) {
+        return 'location';
+    }
+
+    // Nhận diện tiền tố địa danh khi đi kèm danh từ riêng phía sau (ví dụ: "sông Mã", "núi Ba Vì", "hồ Tây")
+    if (/^(nui|song|bien|ban|lang|thung lung|deo|dinh|ho|canh dong|dong song|cang)\s+[a-z]+/i.test(clean)) {
         return 'location';
     }
 
@@ -142,7 +161,9 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
             }
         };
 
-        const handleMouseUp = () => {
+        const handleMouseUp = (e) => {
+            if (toolbarRef.current && toolbarRef.current.contains(e.target)) return;
+            if (popoverRef.current && popoverRef.current.contains(e.target)) return;
             setTimeout(handleSelection, 50);
         };
 
@@ -184,11 +205,19 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const closeAll = () => {
+    const closeAll = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setToolbarPosition(null);
         setIsPopoverOpen(false);
         setAnalysisResult(null);
+        setSelectedText('');
         setPopoverType('character');
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         setIsSpeaking(false);
     };
@@ -208,6 +237,9 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                 analysisType: type,
             });
 
+            if (res && res.suggestedType && res.suggestedType !== type) {
+                setPopoverType(res.suggestedType);
+            }
             setAnalysisResult(res);
         } catch (err) {
             console.error('Lỗi phân tích đoạn trích:', err);
@@ -228,15 +260,19 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
     };
 
     // Xử lý khi bấm "🤖 Hỏi AI"
-    const handleAskAi = () => {
+    const handleAskAi = (typeOverride) => {
         let question = '';
-        const detected = detectEntityType(selectedText);
-        if (detected === 'character') {
+        // Nếu truyền trực tiếp hoặc popover đang mở thì tôn trọng tab người dùng đang chọn
+        const targetType = typeOverride || (isPopoverOpen ? popoverType : detectEntityType(selectedText));
+
+        if (targetType === 'character') {
             question = `Hãy phân tích chi tiết về nhân vật "${selectedText}" trong tác phẩm "${currentWork?.title || 'Di sản văn học'}": Đây là ai (xuất thân, đặc điểm), vai trò của nhân vật trong tác phẩm và ý nghĩa biểu tượng văn hóa là gì?`;
-        } else if (detected === 'location') {
+        } else if (targetType === 'location') {
             question = `Hãy giải thích chi tiết về vị trí địa lý "${selectedText}" trong tác phẩm "${currentWork?.title || 'Di sản văn học'}": Nơi này ở đâu trong thực tế, gắn liền với bối cảnh lịch sử nào và có ý nghĩa không gian nghệ thuật gì trong tác phẩm?`;
+        } else if (targetType === 'rhetoric') {
+            question = `Hãy phân tích biện pháp tu từ và giá trị biểu đạt nghệ thuật của cụm từ "${selectedText}" trong tác phẩm "${currentWork?.title || 'Di sản văn học'}": Tác giả sử dụng thủ pháp gì và mang lại hiệu quả thẩm mỹ ra sao?`;
         } else {
-            question = `Hãy giải thích ý nghĩa của từ ngữ / câu: "${selectedText}" trong tác phẩm "${currentWork?.title || 'Di sản văn học'}": Nghĩa của từ này là gì, được dùng trong ngữ cảnh nào và có giá trị biểu đạt gì?`;
+            question = `Hãy giải thích ý nghĩa của từ ngữ / hình ảnh "${selectedText}" trong tác phẩm "${currentWork?.title || 'Di sản văn học'}": Nghĩa của từ này là gì, được dùng trong ngữ cảnh nào và có giá trị biểu đạt nghệ thuật gì?`;
         }
         closeAll();
         openAiChat(currentWork, question);
@@ -350,7 +386,7 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                     {/* Nút 4: 🤖 Hỏi AI */}
                     <button
                         type="button"
-                        onClick={handleAskAi}
+                        onClick={() => handleAskAi(detectedType)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white transition-all active:scale-95 shadow-md shadow-amber-900/40 whitespace-nowrap"
                         title="Gửi câu hỏi chuyên sâu về cụm từ này vào VietHeritage AI"
                     >
@@ -362,6 +398,10 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                     <button
                         type="button"
                         onClick={closeAll}
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
                         className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-0.5"
                         title="Đóng thanh công cụ"
                     >
@@ -442,6 +482,10 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                                 <button
                                     type="button"
                                     onClick={closeAll}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    }}
                                     className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
                                 >
                                     <X className="w-4 h-4" />
@@ -503,7 +547,7 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
 
                             <button
                                 type="button"
-                                onClick={handleAskAi}
+                                onClick={() => handleAskAi(popoverType)}
                                 className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px] transition-colors whitespace-nowrap pl-2 flex-shrink-0"
                             >
                                 <Bot className="w-3 h-3" /> Hỏi sâu AI <ArrowRight className="w-2.5 h-2.5" />
@@ -521,6 +565,14 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                                 </div>
                             ) : analysisResult ? (
                                 <div className="space-y-4 animate-in fade-in duration-150">
+                                    {/* Thông báo điều hướng thông minh khi chọn nhầm tab */}
+                                    {analysisResult.redirectNotice && (
+                                        <div className="px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                                            <span className="leading-relaxed">{analysisResult.redirectNotice}</span>
+                                        </div>
+                                    )}
+
                                     {/* Tiêu đề mục */}
                                     <h4 className="font-bold text-amber-300 text-sm sm:text-base font-heritage">
                                         {analysisResult.title}
@@ -550,7 +602,7 @@ const SmartTextSelectionToolbar = ({ containerRef, currentWork, onSelectSnippet 
                             </span>
                             <button
                                 type="button"
-                                onClick={handleAskAi}
+                                onClick={() => handleAskAi(popoverType)}
                                 className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white flex items-center gap-1.5 transition-all shadow-md active:scale-95"
                             >
                                 <Bot className="w-3.5 h-3.5 text-amber-200" />

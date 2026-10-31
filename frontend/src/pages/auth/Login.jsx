@@ -18,7 +18,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const from = location.state?.from?.pathname || '/';
+    const from = location.state?.from?.pathname || (typeof location.state?.from === 'string' ? location.state.from : '/');
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,8 +31,13 @@ const Login = () => {
         setLoading(true);
 
         try {
-            await login(formData);
-            navigate(from, { replace: true });
+            const data = await login(formData);
+            // Nếu là Admin thì tự động đưa thẳng vào Cổng Quản Trị
+            if (data?.user?.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             console.error('Lỗi login:', err);
             if (err.data?.needVerification) {
@@ -49,8 +54,12 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await loginWithGoogle(idToken);
-            navigate(from, { replace: true });
+            const data = await loginWithGoogle(idToken);
+            if (data?.user?.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             setError(err.message || 'Đăng nhập Google không thành công');
         } finally {

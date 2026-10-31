@@ -259,6 +259,20 @@ const approveSubmission = async (req, res) => {
         if (adminNote) submission.adminNote = adminNote;
         await submission.save();
 
+        // Tự động sinh Real AI Embedding trong background cho tác phẩm vừa duyệt
+        try {
+            const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+            const embedText = buildWorkEmbeddingText(newWork);
+            getEmbedding(embedText, 768).then((vector) => {
+                if (vector && vector.length === 768) {
+                    Work.updateOne({ _id: newWork._id }, { $set: { embedding: vector } }).exec();
+                    console.log(`[Admin] Đã tự động tạo vector embedding cho tác phẩm mới duyệt: "${newWork.title}"`);
+                }
+            }).catch((e) => console.warn('[Admin] Lỗi async embedding submission:', e.message));
+        } catch (embedHookErr) {
+            console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+        }
+
         res.status(200).json({
             success: true,
             message: `Phê duyệt bài đóng góp thành công! Đã xuất bản tác phẩm "${newWork.title}" vào kho tàng.`,
@@ -404,6 +418,7 @@ const createWork = async (req, res) => {
             period: period || 'Văn học Dân gian',
             region: region || 'Toàn quốc',
             author: author || 'Dân gian',
+            coverImage: req.body.coverImage?.trim() || '',
             topic: topic || 'Văn hóa & Đạo lý',
             summary: summary.trim(),
             quote: quote?.trim() || title.trim(),
@@ -417,6 +432,20 @@ const createWork = async (req, res) => {
             status: status || 'published',
             isFeatured: !!isFeatured,
         });
+
+        // Tự động sinh Real AI Embedding trong background cho tác phẩm mới tạo
+        try {
+            const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+            const embedText = buildWorkEmbeddingText(work);
+            getEmbedding(embedText, 768).then((vector) => {
+                if (vector && vector.length === 768) {
+                    Work.updateOne({ _id: work._id }, { $set: { embedding: vector } }).exec();
+                    console.log(`[Admin] Đã tự động tạo vector embedding cho tác phẩm vừa thêm: "${work.title}"`);
+                }
+            }).catch((e) => console.warn('[Admin] Lỗi async embedding createWork:', e.message));
+        } catch (embedHookErr) {
+            console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+        }
 
         res.status(201).json({
             success: true,
@@ -452,6 +481,22 @@ const updateWork = async (req, res) => {
                 success: false,
                 message: 'Không tìm thấy tác phẩm để cập nhật',
             });
+        }
+
+        // Tự động cập nhật lại vector embedding nếu có thay đổi nội dung ngữ nghĩa
+        if (updateData.title || updateData.summary || updateData.figurativeMeaning || updateData.thematicMeaning || updateData.quote || updateData.tags) {
+            try {
+                const { getEmbedding, buildWorkEmbeddingText } = require('../services/embedding.service');
+                const embedText = buildWorkEmbeddingText(updatedWork);
+                getEmbedding(embedText, 768).then((vector) => {
+                    if (vector && vector.length === 768) {
+                        Work.updateOne({ _id: updatedWork._id }, { $set: { embedding: vector } }).exec();
+                        console.log(`[Admin] Đã cập nhật vector embedding cho tác phẩm: "${updatedWork.title}"`);
+                    }
+                }).catch((e) => console.warn('[Admin] Lỗi async re-embedding updateWork:', e.message));
+            } catch (embedHookErr) {
+                console.warn('[Admin] Lỗi khởi tạo embedding hook:', embedHookErr.message);
+            }
         }
 
         res.status(200).json({
@@ -496,7 +541,18 @@ const deleteWork = async (req, res) => {
 
 const getSettings = async (req, res) => {
     try {
-        const settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        let settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        if (settings.length === 0) {
+            const defaultSettings = [
+                { key: 'allowUserSubmissions', value: true, description: 'Cho phép người dùng đóng góp ca dao, tục ngữ mới', category: 'content' },
+                { key: 'aiExplanationEnabled', value: true, description: 'Kích hoạt tính năng giải nghĩa đa tầng bằng AI', category: 'ai' },
+                { key: 'semanticSearchEnabled', value: true, description: 'Bật tìm kiếm ngữ nghĩa thông minh', category: 'search' },
+                { key: 'systemNotice', value: 'Chào mừng bạn đến với VietHeritage AI - Kho tàng văn hóa dân gian Việt Nam!', description: 'Thông báo trên banner toàn trang', category: 'general' },
+                { key: 'maintenanceMode', value: false, description: 'Chế độ bảo trì hệ thống', category: 'system' },
+            ];
+            await SystemSetting.insertMany(defaultSettings);
+            settings = await SystemSetting.find().populate('updatedBy', 'name email').lean();
+        }
         res.status(200).json({
             success: true,
             data: settings,
@@ -538,6 +594,120 @@ const updateSetting = async (req, res) => {
     }
 };
 
+// ==========================================
+// UC20: DASHBOARD KPI OVERVIEW & STATS
+// ==========================================
+
+const getDashboardStats = async (req, res) => {
+    try {
+        // Tạo chuỗi 7 ngày gần nhất để tính toán xu hướng tăng trưởng
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const displayLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+            last7Days.push({ date: dateStr, label: displayLabel });
+        }
+
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const [
+            totalUsers,
+            activeUsers,
+            lockedUsers,
+            adminUsers,
+            totalSubmissions,
+            pendingSubmissions,
+            approvedSubmissions,
+            rejectedSubmissions,
+            totalWorks,
+            worksGrouped,
+            recentSubmissions,
+            userGrowthRaw,
+        ] = await Promise.all([
+            User.countDocuments(),
+            User.countDocuments({ status: 'active' }),
+            User.countDocuments({ status: 'locked' }),
+            User.countDocuments({ role: 'admin' }),
+            ContentSubmission.countDocuments(),
+            ContentSubmission.countDocuments({ status: 'pending' }),
+            ContentSubmission.countDocuments({ status: 'approved' }),
+            ContentSubmission.countDocuments({ status: 'rejected' }),
+            Work.countDocuments(),
+            Work.aggregate([
+                { $group: { _id: '$category', count: { $sum: 1 } } }
+            ]),
+            ContentSubmission.find()
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .populate('contributorId', 'name email avatar')
+                .lean(),
+            User.aggregate([
+                { $match: { createdAt: { $gte: sevenDaysAgo } } },
+                {
+                    $group: {
+                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+        ]);
+
+        const growthMap = userGrowthRaw.reduce((acc, curr) => {
+            acc[curr._id] = curr.count;
+            return acc;
+        }, {});
+
+        const userGrowthTrend = last7Days.map(day => ({
+            date: day.date,
+            label: day.label,
+            count: growthMap[day.date] || 0
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                users: {
+                    total: totalUsers,
+                    active: activeUsers,
+                    locked: lockedUsers,
+                    admins: adminUsers,
+                },
+                submissions: {
+                    total: totalSubmissions,
+                    pending: pendingSubmissions,
+                    approved: approvedSubmissions,
+                    rejected: rejectedSubmissions,
+                },
+                works: {
+                    total: totalWorks,
+                    byCategory: worksGrouped.reduce((acc, curr) => {
+                        acc[curr._id || 'other'] = curr.count;
+                        return acc;
+                    }, {}),
+                },
+                trends: {
+                    userGrowth: userGrowthTrend,
+                },
+                recentSubmissions,
+                system: {
+                    nodeVersion: process.version,
+                    uptimeSeconds: Math.floor(process.uptime()),
+                    status: 'operational',
+                },
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi tải thống kê tổng quan',
+        });
+    }
+};
+
 module.exports = {
     getUsers,
     updateUserStatus,
@@ -551,4 +721,5 @@ module.exports = {
     deleteWork,
     getSettings,
     updateSetting,
+    getDashboardStats,
 };

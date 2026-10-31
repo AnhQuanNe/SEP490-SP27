@@ -4,11 +4,13 @@ import Explore from '../pages/Explore';
 import FolkLiterature from '../pages/FolkLiterature';
 import KnowledgeGraph from '../pages/KnowledgeGraph';
 import HeritageQuiz from '../pages/HeritageQuiz';
+import InteractiveStory from '../pages/InteractiveStory';
 import LiteratureMap from '../pages/LiteratureMap';
 import AiTutor from '../pages/AiTutor';
 import PoetryStudio from '../pages/PoetryStudio';
 import Leaderboard from '../pages/Leaderboard';
 import HeritageArena from '../pages/HeritageArena';
+import VirtualExhibition from '../pages/VirtualExhibition';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import VerifyEmail from '../pages/auth/VerifyEmail';
@@ -28,10 +30,13 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/kham-pha" element={<Explore />} />
+            <Route path="/di-ban-co-tich" element={<InteractiveStory />} />
             <Route path="/van-hoc-dan-gian" element={<FolkLiterature />} />
             <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
             <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/trien-lam-3d" element={<VirtualExhibition />} />
+            <Route path="/virtual-exhibition" element={<VirtualExhibition />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />
             <Route path="/gia-su-ai" element={<AiTutor />} />
             <Route path="/ai-tutor" element={<AiTutor />} />
