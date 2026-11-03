@@ -20,10 +20,19 @@ import {
     Check, 
     X,
     Trophy,
-    Heart
+    Heart,
+    Compass
 } from 'lucide-react';
 import { poetryService } from '../services/poetry.service';
 import { useAuth } from '../context/AuthContext';
+
+
+const QUICK_LUC_SAMPLES = [
+    'Công cha như núi Thái Sơn',
+    'Thuyền về bến cũ đò xưa',
+    'Trăng thanh soi bóng bên thềm',
+    'Đường xa vạn dặm sơn khê',
+];
 
 const SAMPLE_POEMS = [
     {
@@ -62,6 +71,7 @@ const PoetryStudio = () => {
     const [coWriteModalOpen, setCoWriteModalOpen] = useState(false);
     const [inputLucLine, setInputLucLine] = useState('');
     const [coWriteCandidates, setCoWriteCandidates] = useState([]);
+    const [coWriteResult, setCoWriteResult] = useState(null);
     const [isCoWriting, setIsCoWriting] = useState(false);
     const [coWriteError, setCoWriteError] = useState(null);
 
@@ -202,6 +212,9 @@ const PoetryStudio = () => {
         try {
             setIsCoWriting(true);
             setCoWriteError(null);
+            setCoWriteResult(null);
+            setCoWriteCandidates([]);
+        setCoWriteResult(null);
             const contextText = [
                 title.trim() ? `Tựa đề bài thơ: ${title.trim()}` : null,
                 content.trim() ? `Các câu thơ trước đó:\n${content.trim()}` : null,
@@ -211,7 +224,9 @@ const PoetryStudio = () => {
                 lucLine: inputLucLine,
                 context: contextText,
             });
-            const candidates = res?.candidates || res?.data?.candidates || [];
+            const resultData = res?.data || res;
+            setCoWriteResult(resultData);
+            const candidates = resultData?.candidates || [];
             setCoWriteCandidates(candidates);
             if (candidates.length === 0) {
                 setCoWriteError('Không tìm thấy phương án câu Bát phù hợp.');
@@ -312,8 +327,7 @@ const PoetryStudio = () => {
                         {/* CỘT TRÁI: KHU VỰC A - TRÌNH SOẠN THẢO THƠ (7 CỘT) */}
                         <div className="lg:col-span-7 space-y-5">
                             <div className="bg-[#fffdf9] rounded-3xl p-5 sm:p-7 border border-amber-900/15 shadow-sm space-y-4 relative">
-                                <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-
+                                
                                 {/* Tựa đề & Bút danh */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
@@ -595,8 +609,7 @@ const PoetryStudio = () => {
                         <div className="lg:col-span-5 space-y-5">
                             {aiCriticResult ? (
                                 <div className="bg-[#fffdf9] rounded-3xl p-5 sm:p-7 border border-amber-900/15 shadow-sm space-y-6 relative animate-in fade-in">
-                                    <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-
+                                    
                                     {/* Huy hiệu tổng điểm */}
                                     <div className="text-center space-y-3 pb-5 border-b border-amber-200/60">
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/70 px-2.5 py-1 rounded-full border border-amber-300">
@@ -873,92 +886,222 @@ const PoetryStudio = () => {
 
             {/* MODAL: ĐỐI THƠ CÙNG AI */}
             {coWriteModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl relative border border-amber-900/20">
-                        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                            <h3 className="font-heritage font-bold text-lg text-stone-900 flex items-center gap-2">
-                                <Bot className="w-5 h-5 text-amber-800" />
-                                <span>Ứng Khẩu Đối Thơ Cùng AI</span>
-                            </h3>
+                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-stone-950/70 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 space-y-4 shadow-2xl relative border border-amber-900/20 max-h-[90vh] flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-shrink-0">
+                            <div className="space-y-0.5">
+                                <h3 className="font-heritage font-bold text-lg text-stone-900 flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5 text-amber-600" />
+                                    <span>Gemini AI — Đối Thơ & Thấu Cảm Ngữ Cảnh</span>
+                                </h3>
+                                <p className="text-[11px] text-stone-500">
+                                    AI phân tích tứ thơ, giải mã không gian ngữ cảnh và ứng khẩu câu đối hòa điệu âm luật
+                                </p>
+                            </div>
                             <button
                                 onClick={() => setCoWriteModalOpen(false)}
-                                className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg"
+                                className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-xs font-bold text-stone-700 mb-1">
-                                    Nhập câu Lục của bạn (đúng 6 tiếng):
-                                </label>
-                                <input
-                                    type="text"
-                                    value={inputLucLine}
-                                    onChange={(e) => setInputLucLine(e.target.value)}
-                                    placeholder="Ví dụ: Công cha như núi Thái Sơn..."
-                                    className="w-full px-3.5 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 font-serif"
-                                />
-                                <div className="mt-1 flex items-center justify-between text-[11px] text-stone-500">
-                                    <span>Số tiếng hiện tại: <strong>{inputLucLine.trim().split(/\s+/).filter(Boolean).length} / 6</strong></span>
+                        {/* Scrollable body */}
+                        <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+                            {/* Input area */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-bold text-stone-700">
+                                        Nhập câu Lục của bạn (đúng 6 tiếng):
+                                    </label>
+                                    <span className="text-[11px] font-semibold text-stone-500">
+                                        Số tiếng: <strong className={inputLucLine.trim().split(/\s+/).filter(Boolean).length === 6 ? 'text-emerald-700' : 'text-amber-700'}>
+                                            {inputLucLine.trim().split(/\s+/).filter(Boolean).length} / 6
+                                        </strong>
+                                    </span>
                                 </div>
+
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={inputLucLine}
+                                        onChange={(e) => setInputLucLine(e.target.value)}
+                                        placeholder="Ví dụ: Công cha như núi Thái Sơn..."
+                                        className="w-full px-4 py-3 text-sm sm:text-base bg-amber-50/40 border border-amber-200/90 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 font-serif text-stone-900 shadow-inner"
+                                    />
+                                </div>
+
+                                {/* Quick suggestion pills if empty */}
+                                {!inputLucLine && (
+                                    <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
+                                        <span className="text-stone-400 font-medium">Gợi ý mẫu:</span>
+                                        {QUICK_LUC_SAMPLES.map((sample, sIdx) => (
+                                            <button
+                                                key={sIdx}
+                                                type="button"
+                                                onClick={() => setInputLucLine(sample)}
+                                                className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-amber-100 text-stone-700 hover:text-amber-900 transition font-serif border border-stone-200"
+                                            >
+                                                {sample}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {coWriteError && (
-                                <p className="text-xs text-rose-700 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                                    {coWriteError}
-                                </p>
+                                <div className="text-xs text-rose-800 bg-rose-50 p-3 rounded-2xl border border-rose-200 flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                                    <span>{coWriteError}</span>
+                                </div>
                             )}
 
                             <button
                                 type="button"
                                 onClick={handleCoWrite}
                                 disabled={isCoWriting || inputLucLine.trim().split(/\s+/).filter(Boolean).length !== 6}
-                                className="w-full py-2.5 bg-gradient-to-r from-red-800 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {isCoWriting ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-                                        <span>AI đang tức cảnh sinh tình...</span>
+                                        <span>Gemini AI đang thấu cảm tứ thơ & tức cảnh sinh tình...</span>
                                     </>
                                 ) : (
                                     <>
                                         <Sparkles className="w-4 h-4 text-amber-300" />
-                                        <span>AI Ứng Khẩu Câu Bát</span>
+                                        <span>Gemini AI Phân Tích & Đối Câu Bát</span>
                                     </>
                                 )}
                             </button>
 
-                            {/* Danh sách các câu Bát được sinh ra */}
+                            {/* KHỐI PHÂN TÍCH CÂU THƠ & NGỮ CẢNH TỪ GEMINI AI */}
+                            {coWriteResult && (coWriteResult.analysis || coWriteResult.context) && (
+                                <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3 animate-in fade-in">
+                                    <div className="flex items-center justify-between border-b border-amber-200/60 pb-2.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-base">📜</span>
+                                            <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                                                Thấu Cảm Tứ Thơ & Ngữ Cảnh Nghệ Thuật
+                                            </h4>
+                                        </div>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 border border-amber-300/80">
+                                            {coWriteResult.isGemini ? '✨ Google Gemini AI' : '📜 Thi Pháp Cổ Truyền'}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                        {/* Phân tích tứ thơ */}
+                                        {coWriteResult.analysis && (
+                                            <div className="p-3 bg-white/90 rounded-xl border border-amber-100 shadow-2xs space-y-2">
+                                                <div className="flex items-center gap-1.5 font-bold text-stone-900">
+                                                    <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                                                    <span>Phân Tích Tứ Thơ</span>
+                                                </div>
+                                                <p className="text-slate-700 leading-relaxed text-[11.5px]">
+                                                    {coWriteResult.analysis.verseMeaning}
+                                                </p>
+                                                <div className="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[10.5px]">
+                                                    <span className="text-stone-500">Cảm xúc:</span>
+                                                    <span className="font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200/60">
+                                                        {coWriteResult.analysis.emotionalTone || 'Thiết tha'}
+                                                    </span>
+                                                </div>
+                                                {coWriteResult.analysis.toneAnalysis && (
+                                                    <p className="text-[10.5px] text-amber-900/80 italic">
+                                                        {coWriteResult.analysis.toneAnalysis}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Nhận diện ngữ cảnh */}
+                                        {coWriteResult.context && (
+                                            <div className="p-3 bg-white/90 rounded-xl border border-amber-100 shadow-2xs space-y-2">
+                                                <div className="flex items-center gap-1.5 font-bold text-stone-900">
+                                                    <Compass className="w-3.5 h-3.5 text-emerald-700" />
+                                                    <span>Ngữ Cảnh Nhận Diện</span>
+                                                </div>
+                                                <div className="space-y-1 text-[11.5px]">
+                                                    <div>
+                                                        <span className="text-stone-500 font-medium">Bối cảnh: </span>
+                                                        <span className="text-stone-800 font-semibold">{coWriteResult.context.scene}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-stone-500 font-medium">Chủ đề: </span>
+                                                        <span className="text-stone-800 font-semibold">{coWriteResult.context.theme}</span>
+                                                    </div>
+                                                </div>
+                                                {coWriteResult.context.artisticDirection && (
+                                                    <div className="pt-1.5 border-t border-stone-100">
+                                                        <span className="text-[10px] text-stone-500 block font-medium">Định hướng câu Bát:</span>
+                                                        <p className="text-[11px] text-emerald-900 leading-relaxed font-medium">
+                                                            {coWriteResult.context.artisticDirection}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* DANH SÁCH CÁC CÂU BÁT ĐỐI LẠI PHÙ HỢP */}
                             {coWriteCandidates.length > 0 && (
-                                <div className="space-y-2.5 pt-2 border-t border-stone-100">
-                                    <p className="text-xs font-bold text-stone-700">Các phương án câu Bát đã qua kiểm tra âm luật:</p>
-                                    <div className="space-y-2">
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                                            <Feather className="w-3.5 h-3.5 text-amber-800" />
+                                            <span>Các phương án câu Bát đối lại phù hợp ngữ cảnh:</span>
+                                        </p>
+                                        <span className="text-[11px] text-stone-500">
+                                            {coWriteCandidates.length} gợi ý
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-2.5">
                                         {coWriteCandidates.map((cand, cIdx) => (
                                             <div
                                                 key={cIdx}
-                                                className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200 flex items-center justify-between gap-3"
+                                                className="p-3.5 sm:p-4 bg-white hover:bg-amber-50/50 rounded-2xl border border-stone-200 hover:border-amber-400 transition-all shadow-xs hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                                             >
-                                                <div className="space-y-1">
-                                                    <p className="text-xs sm:text-sm font-serif font-bold text-stone-900">
+                                                <div className="space-y-1.5 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300/70">
+                                                            {cand.mood || 'Trữ tình'}
+                                                        </span>
+                                                        {cand.isRhymeValid && (
+                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/70 flex items-center gap-1">
+                                                                <Check className="w-3 h-3 text-emerald-600" />
+                                                                Hiệp vần chuẩn
+                                                            </span>
+                                                        )}
+                                                        {cand.harmonyScore && (
+                                                            <span className="text-[10px] text-stone-500 font-medium">
+                                                                Độ hòa hợp: <strong className="text-amber-800">{cand.harmonyScore}%</strong>
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <p className="text-base sm:text-lg font-serif font-bold text-stone-900 group-hover:text-amber-950 transition">
                                                         {cand.batLine}
                                                     </p>
-                                                    <div className="flex items-center gap-2 text-[10px] text-stone-500">
-                                                        <span className="bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-semibold">
-                                                            {cand.mood || 'Dân dã'}
-                                                        </span>
-                                                        <span>{cand.isRhymeValid ? '✓ Hiệp vần chuẩn' : 'Chưa vần'}</span>
-                                                        <span>• Điểm âm luật: {cand.toneScore}/40</span>
-                                                    </div>
+
+                                                    {cand.explanation && (
+                                                        <p className="text-[11px] text-stone-600 leading-relaxed">
+                                                            {cand.explanation}
+                                                        </p>
+                                                    )}
                                                 </div>
 
                                                 <button
                                                     type="button"
                                                     onClick={() => handleInsertCouplet(cand.batLine)}
-                                                    className="px-3 py-1.5 bg-amber-900 hover:bg-amber-950 text-white rounded-xl text-xs font-bold transition flex-shrink-0"
+                                                    className="px-3.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold transition flex-shrink-0 flex items-center justify-center gap-1.5"
                                                 >
-                                                    Chọn câu này
+                                                    <span>Chọn câu này</span>
+                                                    <ArrowRight className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
                                         ))}

@@ -417,9 +417,9 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                     <SmartTextSelectionToolbar containerRef={modalContentRef} currentWork={current} />
 
                     {/* Banner hướng dẫn tương tác Smart Text Selection */}
-                    <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-indigo-500/10 border border-amber-500/20 text-slate-700 text-xs shadow-sm">
+                    <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 text-xs">
                         <span className="flex items-center gap-2">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 animate-pulse" />
+                            <Sparkles className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
                             <span>
                                 <strong>Tính năng Thông Minh:</strong> Bôi đen bất kỳ từ hoặc câu thơ nào để tra cứu <strong>👤 Nhân vật</strong>, <strong>📍 Địa danh</strong>, <strong>📖 Giải nghĩa từ</strong> hoặc <strong>🤖 Hỏi AI</strong> tức thì!
                             </span>

@@ -29,7 +29,7 @@ const CATEGORY_FILTERS = [
 const REGION_FILTERS = [
     { id: 'all', label: 'Toàn quốc' },
     { id: 'Bắc', label: 'Miền Bắc' },
-    { id: 'Trung', label: 'Miền Trung' },
+    { id: 'Trung', label: 'Miền Trung & Biển đảo' },
     { id: 'Nam', label: 'Miền Nam' },
 ];
 
