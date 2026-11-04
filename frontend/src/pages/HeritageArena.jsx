@@ -303,8 +303,7 @@ const HeritageArena = () => {
                 {/* GIAI ĐOẠN 1: MÀN HÌNH CHỜ (IDLE & SEARCHING) */}
                 {(gameState === 'IDLE' || gameState === 'SEARCHING') && (
                     <div className="bg-[#fffdf9] rounded-3xl p-8 sm:p-12 border border-amber-900/15 shadow-sm text-center space-y-6 relative overflow-hidden">
-                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-
+                        
                         <div className={`w-20 h-20 rounded-full text-amber-100 mx-auto flex items-center justify-center shadow-lg transition-all ${
                             gameState === 'SEARCHING'
                                 ? 'bg-gradient-to-tr from-red-700 to-amber-700 ring-8 ring-amber-200 animate-pulse'
@@ -385,8 +384,7 @@ const HeritageArena = () => {
                 {/* GIAI ĐOẠN 2: ĐANG THI ĐẤU (PLAYING) */}
                 {gameState === 'PLAYING' && matchData && (
                     <div className="bg-[#fffdf9] rounded-3xl p-6 sm:p-10 border border-amber-900/15 shadow-md space-y-6 relative animate-in fade-in">
-                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-
+                        
                         {/* CỤM ĐỐI ĐẦU 2 NGƯỜI CHƠI (VS HEADER) */}
                         <div className="grid grid-cols-3 items-center pb-4 border-b border-amber-200/60 text-center">
                             {/* Người chơi tôi */}
@@ -481,8 +479,7 @@ const HeritageArena = () => {
                 {/* GIAI ĐOẠN 3: KẾT THÚC TRẬN ĐẤU (FINISHED) */}
                 {gameState === 'FINISHED' && matchData && (
                     <div className="bg-[#fffdf9] rounded-3xl p-8 sm:p-12 border border-amber-900/15 shadow-xl text-center space-y-6 relative animate-in zoom-in-95">
-                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-
+                        
                         {/* Banner kết quả Thắng / Thua / Hòa */}
                         {matchData.isTie ? (
                             <div className="space-y-3">
@@ -602,16 +599,7 @@ const HeritageArena = () => {
             {/* ============================================================ */}
             {showAuthModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-md rounded-3xl bg-[#fffdf9] border-2 border-amber-600/40 p-6 sm:p-8 shadow-2xl shadow-stone-900/40 overflow-hidden text-center text-stone-800">
-                        {/* 4 họa tiết góc truyền thống ❖ */}
-                        <span className="absolute top-2.5 left-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute top-2.5 right-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute bottom-2.5 left-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute bottom-2.5 right-2.5 text-amber-600 text-sm font-bold select-none">❖</span>
-
-                        {/* Dải vân màu cung đình trên đỉnh modal */}
-                        <div className="h-1.5 w-full bg-gradient-to-r from-red-800 via-amber-500 to-red-800 absolute top-0 left-0" />
-
+                    <div className="relative w-full max-w-md rounded-2xl bg-white border border-stone-200 p-6 sm:p-8 shadow-xl text-center text-stone-800">
                         {/* Nút đóng X */}
                         <button
                             onClick={() => setShowAuthModal(false)}

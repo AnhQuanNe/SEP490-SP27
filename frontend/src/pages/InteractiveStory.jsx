@@ -465,11 +465,7 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                             className={`relative rounded-3xl bg-[#fffdf9] text-stone-900 p-6 sm:p-10 border-2 shadow-2xl transition-all duration-500 ${currentMood.cardGlow}`}
                         >
                             {/* Họa tiết góc triện cổ 4 góc */}
-                            <div className="absolute top-3 left-3 text-amber-700/40 text-lg select-none">❖</div>
-                            <div className="absolute top-3 right-3 text-amber-700/40 text-lg select-none">❖</div>
-                            <div className="absolute bottom-3 left-3 text-amber-700/40 text-lg select-none">❖</div>
-                            <div className="absolute bottom-3 right-3 text-amber-700/40 text-lg select-none">❖</div>
-
+                                                                                                                
                             {/* Tiêu đề Hồi & Trạng thái Mood */}
                             <div className="flex items-center justify-between pb-4 border-b border-amber-900/20 mb-6">
                                 <div className="flex items-center gap-2">
@@ -675,11 +671,7 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
                     <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-stone-900 via-[#181412] to-stone-950 border-2 border-amber-500/50 p-6 sm:p-8 shadow-2xl shadow-black/80 overflow-hidden text-center">
                         {/* 4 hoa văn cung đình truyền thống ở góc */}
-                        <span className="absolute top-2.5 left-2.5 text-amber-500/50 text-xs select-none">❖</span>
-                        <span className="absolute top-2.5 right-2.5 text-amber-500/50 text-xs select-none">❖</span>
-                        <span className="absolute bottom-2.5 left-2.5 text-amber-500/50 text-xs select-none">❖</span>
-                        <span className="absolute bottom-2.5 right-2.5 text-amber-500/50 text-xs select-none">❖</span>
-
+                                                                                                
                         {/* Dải vân hoàng kim trên đầu modal */}
                         <div className="h-1 w-full bg-gradient-to-r from-transparent via-amber-500 to-transparent absolute top-0 left-0" />
 

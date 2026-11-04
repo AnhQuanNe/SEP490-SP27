@@ -90,8 +90,7 @@ const Leaderboard = () => {
                 {/* THẺ THÔNG TIN CÁ NHÂN CỦA SĨ TỬ (Nếu đã đăng nhập) */}
                 {myStats && (
                     <div className="bg-[#fffdf9] rounded-3xl p-5 sm:p-7 border border-amber-900/15 shadow-sm relative">
-                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-                        
+                                                
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                             <div className="flex items-center gap-4 text-center sm:text-left">
                                 <div className="w-16 h-16 rounded-2xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center text-3xl shadow-sm">

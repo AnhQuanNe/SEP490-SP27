@@ -412,20 +412,20 @@ const HeritageQuiz = () => {
 
                 {/* 4. Tab Header Notice nếu đang ở Daily Challenge hoặc Personalized */}
                 {!quizResult && !loading && activeTab === 'daily' && (
-                    <div className="bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-amber-500/15 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-950">
+                    <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between text-xs text-stone-800">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+                            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center font-bold flex-shrink-0">
                                 <Calendar className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="font-extrabold text-sm text-slate-900 font-heritage flex items-center gap-2">
+                                <p className="font-bold text-sm text-stone-900 font-heritage flex items-center gap-2">
                                     <span>Thử Thách Ngày — Bộ Đề Hôm Nay</span>
                                     {progressData?.dailyChallenge?.completedToday ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200">
                                             ✓ Đã hoàn thành
                                         </span>
                                     ) : (
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold border border-amber-300 animate-pulse">
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] bg-amber-100 text-amber-900 font-semibold border border-amber-200">
                                             Đang mở
                                         </span>
                                     )}
@@ -439,7 +439,7 @@ const HeritageQuiz = () => {
                         </div>
                         <button
                             onClick={() => startQuiz('daily', 'daily', 5)}
-                            className="text-[11px] font-bold text-amber-800 hover:underline flex items-center gap-1"
+                            className="text-xs font-semibold text-stone-700 hover:text-stone-900 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-stone-100 transition"
                         >
                             <RotateCcw className="w-3 h-3" />
                             <span>Làm lại</span>
@@ -448,16 +448,16 @@ const HeritageQuiz = () => {
                 )}
 
                 {!quizResult && !loading && activeTab === 'personalized' && (
-                    <div className="bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-indigo-500/15 border border-indigo-500/30 rounded-2xl p-4 text-xs text-indigo-950">
+                    <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 text-xs text-stone-800">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-600/20">
+                                <div className="w-9 h-9 rounded-xl bg-stone-200 text-stone-800 flex items-center justify-center font-bold flex-shrink-0">
                                     <Target className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="font-extrabold text-sm text-slate-900 font-heritage flex items-center gap-1.5">
+                                    <p className="font-bold text-sm text-stone-900 font-heritage">
                                         <span>Bộ Đề Cá Nhân Hóa Theo Năng Lực</span>
-                                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                        
                                     </p>
                                     <p className="text-[11px] text-slate-600">
                                         {isAuthenticated
@@ -469,7 +469,7 @@ const HeritageQuiz = () => {
                             {isAuthenticated && (
                                 <button
                                     onClick={() => startQuiz('personalized', 'personalized', 5)}
-                                    className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1"
+                                    className="text-xs font-semibold text-stone-700 hover:text-stone-900 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-stone-100 transition"
                                 >
                                     <RotateCcw className="w-3 h-3" />
                                     <span>Tạo đề mới</span>
@@ -477,11 +477,11 @@ const HeritageQuiz = () => {
                             )}
                         </div>
                         {!isAuthenticated && (
-                            <div className="mt-3 pt-3 border-t border-indigo-200/60 flex items-center justify-between">
-                                <span className="text-[11px] text-indigo-900 font-medium">Đăng nhập để hệ thống cá nhân hóa đề thi riêng cho bạn!</span>
+                            <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
+                                <span className="text-[11px] text-stone-600">Đăng nhập để hệ thống cá nhân hóa đề thi riêng cho bạn!</span>
                                 <Link
                                     to="/login"
-                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[11px] transition shadow-xs"
+                                    className="px-3 py-1 bg-stone-900 hover:bg-stone-800 text-white rounded-lg font-semibold text-[11px] transition"
                                 >
                                     Đăng nhập ngay
                                 </Link>
@@ -492,8 +492,8 @@ const HeritageQuiz = () => {
 
                 {/* Loading state */}
                 {loading && (
-                    <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm space-y-4">
-                        <Loader2 className="w-8 h-8 text-amber-600 animate-spin mx-auto" />
+                    <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-xs space-y-3">
+                        <Loader2 className="w-7 h-7 text-stone-600 animate-spin mx-auto" />
                         <p className="text-sm font-semibold text-slate-700">Đang khởi tạo đề thi Di sản...</p>
                     </div>
                 )}
@@ -503,28 +503,28 @@ const HeritageQuiz = () => {
                     <div className="space-y-6 animate-in fade-in duration-200">
                         {!isAuthenticated ? (
                             /* Guest Notice */
-                            <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-5 border border-amber-500/30 shadow-xl">
-                                <div className="w-16 h-16 rounded-2xl bg-amber-500 text-slate-950 mx-auto flex items-center justify-center font-bold shadow-lg shadow-amber-500/30">
-                                    <Trophy className="w-8 h-8" />
+                            <div className="bg-white rounded-2xl p-8 sm:p-10 text-center space-y-4 border border-stone-200 shadow-xs">
+                                <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-900 mx-auto flex items-center justify-center font-bold border border-amber-200">
+                                    <Trophy className="w-6 h-6 text-amber-800" />
                                 </div>
                                 <div className="max-w-md mx-auto space-y-2">
-                                    <h3 className="text-2xl font-black text-amber-300 font-heritage">
+                                    <h3 className="text-xl font-bold text-stone-900 font-heritage">
                                         Khám Phá Tiến Độ & Tủ Huy Hiệu
                                     </h3>
-                                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-vietnam">
+                                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-vietnam">
                                         Đăng nhập tài khoản để tự động lưu điểm số mỗi lần chơi, theo dõi biểu đồ tỷ lệ trả lời đúng theo từng chủ đề và sưu tầm bộ huy hiệu danh giá!
                                     </p>
                                 </div>
                                 <div className="flex items-center justify-center gap-3 pt-2">
                                     <Link
                                         to="/register"
-                                        className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/25 transition"
+                                        className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-xs sm:text-sm transition"
                                     >
                                         Đăng ký miễn phí
                                     </Link>
                                     <Link
                                         to="/login"
-                                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs sm:text-sm font-medium border border-slate-700 transition"
+                                        className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs sm:text-sm font-semibold transition"
                                     >
                                         Đăng nhập
                                     </Link>
@@ -635,19 +635,19 @@ const HeritageQuiz = () => {
                                                     key={b.id}
                                                     className={`p-4 rounded-2xl border transition-all flex items-start gap-3 ${
                                                         unlocked
-                                                            ? 'bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 border-amber-300 shadow-xs'
-                                                            : 'bg-slate-50/70 border-slate-200 opacity-60'
+                                                            ? 'bg-amber-50/50 border-amber-200/80'
+                                                            : 'bg-stone-50/80 border-stone-200 opacity-60'
                                                     }`}
                                                 >
                                                     <div
                                                         className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                                                             unlocked
-                                                                ? 'bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 shadow-sm shadow-amber-500/30'
+                                                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
                                                                 : 'bg-slate-200 text-slate-400'
                                                         }`}
                                                     >
                                                         {unlocked ? (
-                                                            <Award className="w-5 h-5 text-slate-950" />
+                                                            <Award className="w-4 h-4 text-amber-800" />
                                                         ) : (
                                                             <Lock className="w-4 h-4 text-slate-400" />
                                                         )}
@@ -745,7 +745,7 @@ const HeritageQuiz = () => {
                             {/* Full-width Progress Bar */}
                             <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/80 p-0.5">
                                 <div
-                                    className="h-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 rounded-full transition-all duration-300 shadow-sm"
+                                    className="h-full bg-stone-800 rounded-full transition-all duration-300"
                                     style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
                                 />
                             </div>
@@ -760,7 +760,7 @@ const HeritageQuiz = () => {
                                             key={q.id || idx}
                                             className={`flex-1 min-w-[28px] h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                                                 isCurrent
-                                                    ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-400 scale-105'
+                                                    ? 'bg-stone-900 text-white'
                                                     : isDone
                                                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                                     : 'bg-slate-100 text-slate-400 border border-slate-200'
@@ -789,7 +789,7 @@ const HeritageQuiz = () => {
                                         key={optIdx}
                                         onClick={() => handleSelectOption(optIdx)}
                                         disabled={hasAnsweredCurrent}
-                                        className={`w-full p-4 rounded-2xl border text-left text-xs sm:text-sm font-medium transition-all flex items-start gap-3.5 ${
+                                        className={`w-full p-4 rounded-2xl border text-left text-sm sm:text-base font-normal transition-all flex items-start gap-3.5.5 ${
                                             isSelected
                                                 ? 'border-amber-700 bg-amber-50/90 text-amber-950 ring-2 ring-amber-600/30 shadow-sm'
                                                 : 'border-stone-200 bg-white hover:border-amber-300 text-stone-800 hover:bg-stone-50/70'
@@ -798,7 +798,7 @@ const HeritageQuiz = () => {
                                         <div
                                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 transition ${
                                                 isSelected
-                                                    ? 'bg-amber-900 text-amber-100'
+                                                    ? 'bg-stone-900 text-white'
                                                     : 'bg-stone-100 text-stone-600'
                                             }`}
                                         >
@@ -812,7 +812,7 @@ const HeritageQuiz = () => {
 
                         {/* AI Explanation Fast Preview when answered */}
                         {hasAnsweredCurrent && (
-                            <div className="mt-2 p-3.5 bg-gradient-to-r from-amber-50/90 to-indigo-50/70 rounded-2xl border border-amber-300/60 flex items-center justify-between text-xs animate-in fade-in duration-200">
+                            <div className="mt-2 p-3 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
                                     <span className="font-medium text-slate-800">
@@ -822,14 +822,14 @@ const HeritageQuiz = () => {
                                 <button
                                     onClick={() => handleRequestAiExplanation(currentQuestion)}
                                     disabled={aiExplainingId === currentQuestion.id}
-                                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+                                    className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-1.5 transition"
                                 >
                                     {aiExplainingId === currentQuestion.id ? (
                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                     ) : (
                                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                     )}
-                                    <span>Hỏi AI giải thích ✨</span>
+                                    <span>Hỏi AI giải thích</span>
                                 </button>
                             </div>
                         )}
@@ -859,11 +859,11 @@ const HeritageQuiz = () => {
                                     <button
                                         onClick={handleNextQuestion}
                                         disabled={submitting}
-                                        className="px-6 py-2.5 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-xl text-xs font-bold transition shadow-md shadow-red-950/20 flex items-center gap-1.5"
+                                        className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
                                     >
                                         {submitting ? (
                                             <>
-                                                <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                                                <Loader2 className="w-4 h-4 animate-spin text-stone-700" />
                                                 <span>Đang chấm điểm...</span>
                                             </>
                                         ) : currentIndex === questions.length - 1 ? (
@@ -887,11 +887,10 @@ const HeritageQuiz = () => {
                 {/* 7. RESULTS SCREEN */}
                 {quizResult && activeTab !== 'progress' && (
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8 animate-in zoom-in-95 duration-200 relative">
-                        <span className="absolute top-2 right-2 text-xs text-amber-600/70 font-bold select-none">❖</span>
-                        {/* Hero Score Badge */}
+                                                {/* Hero Score Badge */}
                         <div className="text-center space-y-4 max-w-md mx-auto">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-500 mx-auto flex items-center justify-center text-red-950 shadow-xl shadow-amber-600/25 ring-8 ring-amber-100">
-                                <Crown className="w-12 h-12 text-red-950" />
+                            <div className="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-200 mx-auto flex items-center justify-center text-amber-900">
+                                <Crown className="w-8 h-8 text-amber-800" />
                             </div>
                             <div className="space-y-1">
                                 <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
@@ -1091,14 +1090,14 @@ const HeritageQuiz = () => {
                                                     <button
                                                         onClick={() => handleRequestAiExplanation(item)}
                                                         disabled={aiExplainingId === item.questionId}
-                                                        className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-[11px] rounded-lg flex items-center gap-1.5 shadow-xs transition"
+                                                        className="px-3 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium text-[11px] rounded-lg flex items-center gap-1.5 border border-stone-200 transition"
                                                     >
                                                         {aiExplainingId === item.questionId ? (
                                                             <Loader2 className="w-3 h-3 animate-spin" />
                                                         ) : (
-                                                            <Sparkles className="w-3 h-3 text-slate-950" />
+                                                            <Sparkles className="w-3 h-3 text-stone-600" />
                                                         )}
-                                                        <span>AI Giảng giải Đa tầng & Dẫn nguồn ✨</span>
+                                                        <span>AI Giảng giải Đa tầng</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -1115,47 +1114,45 @@ const HeritageQuiz = () => {
             {/* MODAL: AI QUESTION DEEP EXPLANATION (Giải thích 4 Tầng & Dẫn nguồn học thuật) */}
             {activeAiModal && (
                 <div
-                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-stone-950/40 backdrop-blur-xs animate-in fade-in duration-150"
                     role="dialog"
                 >
-                    <div className="bg-gradient-to-b from-slate-900 via-stone-900 to-indigo-950 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 space-y-4 shadow-2xl border border-amber-500/40 relative max-h-[88vh] overflow-y-auto custom-scrollbar">
+                    <div className="bg-white text-stone-900 rounded-2xl max-w-2xl w-full p-5 sm:p-6 space-y-4 shadow-xl border border-stone-200 relative max-h-[88vh] overflow-y-auto">
                         {/* Header */}
-                        <div className="flex items-start justify-between border-b border-slate-800 pb-3.5">
+                        <div className="flex items-start justify-between border-b border-stone-100 pb-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
-                                    <Sparkles className="w-5 h-5 text-slate-950" />
+                                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center font-bold flex-shrink-0">
+                                    <BookOpen className="w-4 h-4 text-amber-800" />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-extrabold text-white text-base font-heritage">
+                                        <h3 className="font-bold text-stone-900 text-base font-heritage">
                                             VietHeritage AI — Giải Nghĩa 4 Tầng
                                         </h3>
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                            4 Tầng
-                                        </span>
+                                        
                                     </div>
-                                    <p className="text-[11px] text-amber-300/90 font-medium">
+                                    <p className="text-[11px] text-stone-500">
                                         Chuẩn hóa đa chiều: Ngôn từ • Biểu tượng • Đạo lý • Địa văn hóa
                                     </p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setActiveAiModal(null)}
-                                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                                className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* Question Reference */}
-                        <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/70 text-xs space-y-1 shadow-inner">
-                            <span className="font-bold text-amber-400 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 text-xs space-y-1">
+                            <span className="font-semibold text-stone-600 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                                 <HelpCircle className="w-3.5 h-3.5" />
                                 Câu hỏi phân tích:
                             </span>
-                            <p className="text-slate-100 font-medium text-sm leading-snug">{activeAiModal.question}</p>
+                            <p className="text-stone-900 font-medium text-sm leading-snug">{activeAiModal.question}</p>
                             {activeAiModal.data?.correctAnswer && (
-                                <p className="text-emerald-400 text-xs font-semibold pt-1">
+                                <p className="text-emerald-700 text-xs font-semibold pt-0.5">
                                     ✓ Đáp án chuẩn xác: <strong>"{activeAiModal.data.correctAnswer}"</strong>
                                 </p>
                             )}
@@ -1163,20 +1160,20 @@ const HeritageQuiz = () => {
 
                         {/* Explanation Content (4 Tiers) */}
                         <div className="space-y-3 pt-1">
-                            <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2 whitespace-pre-line font-vietnam bg-slate-950/50 p-4 rounded-2xl border border-slate-800 shadow-inner">
+                            <div className="text-xs sm:text-sm text-stone-800 leading-relaxed space-y-2 whitespace-pre-line font-vietnam bg-amber-50/30 p-4 rounded-xl border border-amber-200/60">
                                 {activeAiModal.data?.deepExplanation}
                             </div>
                         </div>
 
                         {/* Academic Citation Footer */}
-                        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2 text-slate-400 text-[11px]">
-                                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2 text-stone-500 text-[11px]">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                 <span>Nguồn kiểm chứng: <strong className="text-amber-300">{activeAiModal.data?.academicSource || 'Viện Văn học Việt Nam'}</strong></span>
                             </div>
                             <button
                                 onClick={() => setActiveAiModal(null)}
-                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-sm"
+                                className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-xs transition"
                             >
                                 Đã hiểu
                             </button>
@@ -1191,18 +1188,18 @@ const HeritageQuiz = () => {
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
                     role="dialog"
                 >
-                    <div className="bg-gradient-to-b from-slate-900 to-amber-950 text-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 shadow-2xl border border-amber-500/50 animate-in zoom-in-95 duration-200">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 via-amber-500 to-amber-600 mx-auto flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/30 ring-8 ring-amber-500/20 animate-bounce">
-                            <Trophy className="w-10 h-10 text-slate-950" />
+                    <div className="bg-white text-stone-900 rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-xl border border-stone-200 animate-in zoom-in-95 duration-200">
+                        <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-900 border border-amber-200 mx-auto flex items-center justify-center">
+                            <Trophy className="w-7 h-7 text-amber-800" />
                         </div>
                         <div className="space-y-1">
-                            <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">
+                            <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
                                 Chúc Mừng Bạn!
                             </span>
-                            <h3 className="text-2xl font-black text-white font-heritage">
+                            <h3 className="text-xl font-bold text-stone-900 font-heritage">
                                 Đã Mở Khóa Huy Hiệu Mới!
                             </h3>
-                            <p className="text-xs text-slate-300">
+                            <p className="text-xs text-stone-500">
                                 Thành tích xuất sắc của bạn đã được ghi danh vào bảng vàng Di sản.
                             </p>
                         </div>
@@ -1211,14 +1208,14 @@ const HeritageQuiz = () => {
                             {newlyUnlockedModal.map((b) => (
                                 <div
                                     key={b.id}
-                                    className="bg-amber-500/15 border border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 text-left"
+                                    className="bg-amber-50/50 border border-amber-200/80 rounded-xl p-3 flex items-center gap-3 text-left"
                                 >
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center font-bold flex-shrink-0">
                                         <Award className="w-5 h-5 text-slate-950" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white text-xs">{b.title}</p>
-                                        <p className="text-[11px] text-amber-200/80">{b.description}</p>
+                                        <p className="font-bold text-stone-900 text-xs">{b.title}</p>
+                                        <p className="text-[11px] text-stone-600">{b.description}</p>
                                     </div>
                                 </div>
                             ))}
@@ -1226,7 +1223,7 @@ const HeritageQuiz = () => {
 
                         <button
                             onClick={() => setNewlyUnlockedModal(null)}
-                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition"
+                            className="w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-xs sm:text-sm transition"
                         >
                             Tuyệt vời! Tiếp tục
                         </button>

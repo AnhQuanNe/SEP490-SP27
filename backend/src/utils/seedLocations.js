@@ -144,6 +144,34 @@ const sampleLocations = [
         sources: 'Kho tàng Truyện cổ tích Việt Nam — GS. Nguyễn Đổng Chi.',
         status: 'published',
     },
+    {
+        name: 'Quần đảo Hoàng Sa (TP. Đà Nẵng)',
+        slug: 'quan-dao-hoang-sa',
+        region: 'Trung',
+        coordinates: {
+            lat: 16.5375,
+            lng: 112.0100,
+        },
+        description: 'Quần đảo thiêng liêng trực thuộc thành phố Đà Nẵng, Việt Nam. Vùng biển đảo gắn liền với lịch sử quai đê lấn biển, Lễ khao lề thế lính Hoàng Sa và các trang sử hào hùng khẳng định chủ quyền toàn vẹn lãnh thổ bất khả xâm phạm từ thời các chúa Nguyễn.',
+        historicalContext: 'Từ thế kỷ XVII, Chúa Nguyễn đã thiết lập "Hải đội Hoàng Sa" và "Đội Bắc Hải" kiêm quản Hoàng Sa và Trường Sa nhằm tuần tra, thu lượm hải vật, đo đạc hải trình và bảo vệ bờ cõi cương vực nước Việt.',
+        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        sources: 'Phủ Biên Tạp Lục (Lê Quý Đôn), Đại Nam Thực Lục & Châu bản triều Nguyễn.',
+        status: 'published',
+    },
+    {
+        name: 'Quần đảo Trường Sa (Tỉnh Khánh Hòa)',
+        slug: 'quan-dao-truong-sa',
+        region: 'Trung',
+        coordinates: {
+            lat: 10.2500,
+            lng: 114.2000,
+        },
+        description: 'Huyện đảo tiền tiêu thiêng liêng trực thuộc tỉnh Khánh Hòa, Việt Nam. Biểu tượng bất diệt cho ý chí kiên trung, tinh thần quật cường bám biển giữ đảo của bao thế hệ người con đất Việt nơi đầu sóng ngọn gió.',
+        historicalContext: 'Không gian văn hóa biển đảo gắn liền với văn học dân gian miền Trung, những câu ca dao kiên cường vượt phong ba bão táp và tình cảm sắt son của đồng bào cả nước hướng về hải đảo tiền tiêu.',
+        image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
+        sources: 'Đại Nam Nhất Thống Chí, Hồ sơ Di sản Văn hóa Biển đảo Việt Nam.',
+        status: 'published',
+    },
 ];
 
 async function seedLocations() {
@@ -178,6 +206,11 @@ async function seedLocations() {
                         locSlug: 'ha-noi-thang-long',
                         relationType: 'circulation',
                         notes: 'Lưu truyền sâu rộng tại các sinh hoạt cộng đồng và trường học kinh kỳ',
+                    },
+                    {
+                        locSlug: 'quan-dao-hoang-sa',
+                        relationType: 'associated',
+                        notes: 'Gắn liền với Lễ Khao lề thế lính Hoàng Sa, tri ân những nghĩa sĩ đã ngã xuống bảo vệ chủ quyền biển đảo',
                     },
                 ],
             },
@@ -234,6 +267,11 @@ async function seedLocations() {
                         relationType: 'circulation',
                         notes: 'Thể hiện tinh thần hòa ái, tương trợ của lưu dân miền sông nước',
                     },
+                    {
+                        locSlug: 'quan-dao-truong-sa',
+                        relationType: 'associated',
+                        notes: 'Tình cảm đại đoàn kết keo sơn của hậu phương đất liền luôn một lòng hướng về quân dân huyện đảo Trường Sa',
+                    },
                 ],
             },
             {
@@ -248,6 +286,11 @@ async function seedLocations() {
                         locSlug: 'ca-mau-u-minh',
                         relationType: 'circulation',
                         notes: 'Ý chí kiên gan bền chí của những thế hệ khai phá rừng U Minh',
+                    },
+                    {
+                        locSlug: 'quan-dao-hoang-sa',
+                        relationType: 'associated',
+                        notes: 'Biểu tượng cho ý chí kiên định, bền gan bám biển và khẳng định chủ quyền của các thế hệ người Việt',
                     },
                 ],
             },
