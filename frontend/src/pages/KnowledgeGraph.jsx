@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import ForceGraph from 'force-graph';
+import { forceCollide, forceRadial, forceCenter } from 'd3-force-3d';
 import literatureService from '../services/literature.service';
 import { DEFAULT_ERAS } from '../data/knowledgeGraphData';
 import { playTraditionalChime } from '../utils/graphAudio';
 import GraphHeaderToolbar from '../components/knowledge-graph/GraphHeaderToolbar';
 import GraphNodeDetailSidebar from '../components/knowledge-graph/GraphNodeDetailSidebar';
 import GraphPathModal from '../components/knowledge-graph/GraphPathModal';
+import GraphPathResultHUD from '../components/knowledge-graph/GraphPathResultHUD';
 import GraphOntologyModal from '../components/knowledge-graph/GraphOntologyModal';
 import GraphTourModal from '../components/knowledge-graph/GraphTourModal';
 import GraphTourPlayerHUD from '../components/knowledge-graph/GraphTourPlayerHUD';
 import GraphTimeMachineHUD from '../components/knowledge-graph/GraphTimeMachineHUD';
+import GraphMajorHubsBar from '../components/knowledge-graph/GraphMajorHubsBar';
 import { Loader2, AlertCircle } from 'lucide-react';
 import './KnowledgeGraph.css';
 
@@ -58,6 +61,20 @@ const KnowledgeGraph = () => {
     const [pathTarget, setPathTarget] = useState('');
     const [pathResult, setPathResult] = useState(null);
     const [isFindingPath, setIsFindingPath] = useState(false);
+
+    // Đảm bảo khi mở Modal tìm đường thì 2 điểm khởi nguồn và đích luôn hợp lệ và khác nhau
+    useEffect(() => {
+        if (isPathModalOpen && graphData?.nodes?.length > 1) {
+            const currentSource = pathSource || graphData.nodes[0].id;
+            if (!pathSource) {
+                setPathSource(currentSource);
+            }
+            if (!pathTarget || pathTarget === currentSource) {
+                const alt = graphData.nodes.find((n) => n.id !== currentSource);
+                if (alt) setPathTarget(alt.id);
+            }
+        }
+    }, [isPathModalOpen, graphData, pathSource, pathTarget]);
 
     // AI Guided Cultural Tour state (Chuyến Du Hành Văn Hóa Tự Động)
     const [isTourModalOpen, setIsTourModalOpen] = useState(false);
@@ -313,6 +330,83 @@ const KnowledgeGraph = () => {
                     highlightedElementsRef.current.links.has(`${targetId}-${sourceId}`);
                 return isHighlighted ? 2.5 : 0.8;
             })
+            .linkCanvasObjectMode(() => 'after')
+            .linkCanvasObject((link, ctx, globalScale) => {
+                const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                const isHighlighted =
+                    highlightedElementsRef.current.links.has(`${sourceId}-${targetId}`) ||
+                    highlightedElementsRef.current.links.has(`${targetId}-${sourceId}`);
+
+                if (!isHighlighted) return;
+
+                const currentActive = activeNodeRef.current;
+                const currentHovered = hoveredNodeRef.current;
+                const isPathActive = pathResult?.path?.length > 0;
+
+                // Kiểm tra xem link có đang được rê chuột trực tiếp vào không
+                const isDirectHover = currentHovered && (sourceId === currentHovered.id || targetId === currentHovered.id);
+
+                // Quy tắc chống đè chữ: Nếu một nốt có nhiều nhánh liên kết, chỉ hiện nhãn khi rê chuột vào nốt đó hoặc khi đang xem đường đi
+                if (!isPathActive && currentActive && !isDirectHover && highlightedElementsRef.current.links.size > 6) {
+                    return;
+                }
+
+                const rawLabel = link.label || link.relation || '';
+                if (!rawLabel) return;
+
+                // Chuyển đổi nhãn snake_case/kỹ thuật thành từ ngữ tiếng Việt tự nhiên và thanh lịch
+                const cleanLabelMap = {
+                    'BIỂU_TRƯNG_CHO': 'biểu trưng',
+                    'THUỘC_CHỦ_ĐỀ': 'thuộc chủ đề',
+                    'MANG_HÌNH_TƯỢNG': 'hình tượng',
+                    'GẮN_LIỀN_ĐỊA_DANH': 'xuất xứ',
+                    'ĐỒNG_ĐIỆU_TƯ_TƯỞNG': 'đồng điệu',
+                    'SYMBOLISES': 'biểu trưng',
+                    'TRANSMITS': 'chuyển tải',
+                    'EMBODIES': 'khắc họa',
+                    'ORIGINATES_FROM': 'gắn liền',
+                };
+                const displayLabel = cleanLabelMap[rawLabel] || rawLabel.toLowerCase().replace(/_/g, ' ');
+
+                const s = link.source;
+                const t = link.target;
+                if (typeof s !== 'object' || typeof t !== 'object' || typeof s.x !== 'number' || typeof t.x !== 'number') return;
+
+                // Tính toán vị trí dãn về phía nốt vệ tinh bên ngoài (62% quãng đường) để tránh chụm chữ ở tâm
+                const isSourceCenter = currentActive && s.id === currentActive.id;
+                const tFactor = isSourceCenter ? 0.62 : 0.38;
+                const labelX = s.x + (t.x - s.x) * tFactor;
+                const labelY = s.y + (t.y - s.y) * tFactor;
+
+                const fontSize = Math.max(8.5, Math.min(10.5, 10 / Math.sqrt(globalScale)));
+                ctx.save();
+                ctx.font = `500 ${fontSize}px sans-serif`;
+                const textWidth = ctx.measureText(displayLabel).width;
+
+                // Nền bo góc nhỏ gọn, tinh tế
+                const padX = 5;
+                const padY = 2.5;
+                ctx.fillStyle = isDirectHover ? 'rgba(15, 23, 42, 0.95)' : 'rgba(24, 24, 27, 0.82)';
+                ctx.strokeStyle = isDirectHover ? '#fbbf24' : 'rgba(251, 191, 36, 0.4)';
+                ctx.lineWidth = isDirectHover ? 1.2 : 0.8;
+
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') {
+                    ctx.roundRect(labelX - textWidth / 2 - padX, labelY - fontSize / 2 - padY, textWidth + padX * 2, fontSize + padY * 2, 4);
+                } else {
+                    ctx.rect(labelX - textWidth / 2 - padX, labelY - fontSize / 2 - padY, textWidth + padX * 2, fontSize + padY * 2);
+                }
+                ctx.fill();
+                ctx.stroke();
+
+                // Chữ nhãn mềm mại
+                ctx.fillStyle = isDirectHover ? '#fef08a' : '#fcd34d';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(displayLabel, labelX, labelY);
+                ctx.restore();
+            })
             .nodeCanvasObject((node, ctx, globalScale) => {
                 const currentActiveNode = activeNodeRef.current;
                 const currentHoveredNode = hoveredNodeRef.current;
@@ -320,29 +414,63 @@ const KnowledgeGraph = () => {
                 const isHovered = currentHoveredNode?.id === node.id;
                 const isTourCurrentNode = activeTourRef.current?.stops[tourStepIndexRef.current]?.nodeId === node.id;
                 const isNewInCurrentEra = isTimeMachineActiveRef.current && selectedEraIdRef.current > 0 && (node.bornEra || 1) === selectedEraIdRef.current;
+                const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
                 
                 const hasFocus = currentActiveNode || currentHoveredNode || activeTourRef.current || pathResult?.path?.length;
                 const isHighlighted = !hasFocus || highlightedElementsRef.current.nodes.has(node.id);
 
-                const baseVal = node.val || 10;
-                const r = Math.sqrt(Math.max(0, baseVal)) * (node.type === 'philosophy' ? 2.4 : node.type === 'archetype' ? 2.1 : 1.7);
+                // Tính toán bán kính phân tầng rõ rệt: Major Hub lớn vượt trội, Work lá non nhỏ gọn tinh tế
+                const baseVal = node.val || 12;
+                const r = Math.sqrt(Math.max(0, baseVal)) * (
+                    isMajorHub 
+                        ? 3.8 
+                        : node.type === 'philosophy' 
+                        ? 2.8 
+                        : node.type === 'archetype' 
+                        ? 2.4 
+                        : node.type === 'region' 
+                        ? 2.3 
+                        : 1.5
+                );
 
                 ctx.save();
 
-                // 1. Vẽ vòng hào quang
-                if (isHighlighted && (isSelected || isHovered || isTourCurrentNode || isNewInCurrentEra || (!hasFocus && (node.type === 'archetype' || node.type === 'philosophy')))) {
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, r + (isTourCurrentNode ? 9 : isSelected ? 7 : isNewInCurrentEra ? 6 : isHovered ? 5 : 3), 0, 2 * Math.PI, false);
-                    ctx.fillStyle = isTourCurrentNode
-                        ? 'rgba(251, 191, 36, 0.45)'
-                        : isNewInCurrentEra
-                        ? 'rgba(245, 158, 11, 0.4)'
-                        : isSelected
-                        ? 'rgba(251, 191, 36, 0.35)'
-                        : `${node.color || '#10b981'}30`;
-                    ctx.shadowColor = isTourCurrentNode ? '#fbbf24' : isNewInCurrentEra ? '#f59e0b' : (node.color || '#10b981');
-                    ctx.shadowBlur = isTourCurrentNode ? 24 : isNewInCurrentEra ? 18 : isSelected ? 20 : isHovered ? 14 : 8;
-                    ctx.fill();
+                // 1. Vẽ vòng hào quang năng lượng (Aura Glow & Pulsing Supernova)
+                if (isHighlighted) {
+                    if (isMajorHub && !hasFocus) {
+                        // Hiệu ứng nhịp đập vũ trụ (Cosmic Pulsing Aura) cho 5 Trụ cột cốt lõi
+                        const pulse = (Math.sin(Date.now() / 450) + 1) / 2;
+                        
+                        // Vành hào quang khuếch tán ngoài cùng
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, r + 12 + pulse * 6, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = `${node.color || '#ec4899'}22`;
+                        ctx.shadowColor = node.color || '#ec4899';
+                        ctx.shadowBlur = 28 + pulse * 10;
+                        ctx.fill();
+
+                        // Vành đai tia sáng vàng kim bao quanh Trụ cột
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, r + 5 + pulse * 3, 0, 2 * Math.PI, false);
+                        ctx.lineWidth = 1.4;
+                        ctx.strokeStyle = `rgba(251, 191, 36, ${0.5 + pulse * 0.4})`;
+                        ctx.setLineDash([4, 3]);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else if (isSelected || isHovered || isTourCurrentNode || isNewInCurrentEra || (hasFocus && highlightedElementsRef.current.nodes.has(node.id))) {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, r + (isTourCurrentNode ? 9 : isSelected ? 8 : isNewInCurrentEra ? 6 : isHovered ? 5 : 3), 0, 2 * Math.PI, false);
+                        ctx.fillStyle = isTourCurrentNode
+                            ? 'rgba(251, 191, 36, 0.45)'
+                            : isNewInCurrentEra
+                            ? 'rgba(245, 158, 11, 0.4)'
+                            : isSelected
+                            ? 'rgba(251, 191, 36, 0.4)'
+                            : `${node.color || '#10b981'}35`;
+                        ctx.shadowColor = isTourCurrentNode ? '#fbbf24' : isNewInCurrentEra ? '#f59e0b' : (node.color || '#10b981');
+                        ctx.shadowBlur = isTourCurrentNode ? 24 : isNewInCurrentEra ? 18 : isSelected ? 22 : isHovered ? 14 : 8;
+                        ctx.fill();
+                    }
                 }
 
                 // 2. Vẽ hình tròn nốt chính
@@ -352,15 +480,26 @@ const KnowledgeGraph = () => {
                 ctx.shadowBlur = 0;
                 ctx.fill();
 
-                ctx.lineWidth = isTourCurrentNode ? 3.5 : isSelected ? 2.5 : isHovered ? 2 : 1;
+                // Viền ngoài nốt
+                ctx.lineWidth = isTourCurrentNode ? 3.5 : isSelected ? 2.8 : isMajorHub ? 2.6 : isHovered ? 2 : 1;
                 ctx.strokeStyle = isTourCurrentNode
                     ? '#fbbf24'
                     : isSelected
                     ? '#ffffff'
+                    : isMajorHub
+                    ? '#fef08a'
                     : isHighlighted
                     ? 'rgba(255, 255, 255, 0.65)'
                     : 'rgba(255, 255, 255, 0.08)';
                 ctx.stroke();
+
+                // Lõi sáng trắng tinh tú ở tâm Trụ cột cốt lõi
+                if (isMajorHub && isHighlighted) {
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, Math.max(2.5, r * 0.22), 0, 2 * Math.PI, false);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                }
 
                 if (isNewInCurrentEra) {
                     const pulse = (Math.sin(Date.now() / 220) + 1) / 2;
@@ -373,52 +512,83 @@ const KnowledgeGraph = () => {
                     ctx.setLineDash([]);
                 }
 
-                // 3. Quy tắc hiển thị nhãn chữ
+                // 3. Quy tắc hiển thị nhãn chữ (Phân cấp thị giác thông minh & Chống ngợp)
                 let shouldShowLabel = false;
                 const isFocused = isSelected || isHovered || isTourCurrentNode;
 
                 if (isFocused || isNewInCurrentEra) {
+                    // Luôn hiện nhãn cho nốt đang chọn, rê chuột, hoặc nốt trong tour
                     shouldShowLabel = true;
-                } else if (hasFocus && highlightedElementsRef.current.nodes.has(node.id)) {
-                    shouldShowLabel = true;
-                } else if (!hasFocus) {
-                    if (node.type === 'philosophy' || node.type === 'archetype') {
+                } else if (hasFocus) {
+                    // Khi đang focus vào một nốt: hiện nhãn của nốt đó và các nốt kết nối trực tiếp
+                    if (highlightedElementsRef.current.nodes.has(node.id)) {
                         shouldShowLabel = true;
-                    } else if (globalScale >= 2.0) {
+                    }
+                } else {
+                    // CHẾ ĐỘ MẶC ĐỊNH KHI MỚI VÀO (TOÀN CẢNH):
+                    // 1. Chỉ các Trụ cột cốt lõi (Major Hubs) mới được hiển thị nhãn rõ ràng
+                    if (isMajorHub) {
+                        shouldShowLabel = true;
+                    } 
+                    // 2. Khi người dùng zoom vào vừa phải (globalScale >= 1.6):
+                    // Hé lộ nhãn Cổ mẫu & Triết lý phụ
+                    else if (globalScale >= 1.6 && (node.type === 'archetype' || node.type === 'philosophy' || node.type === 'region')) {
+                        shouldShowLabel = true;
+                    } 
+                    // 3. Khi người dùng zoom sâu (globalScale >= 2.4):
+                    // Hé lộ toàn bộ tên tác phẩm lá non
+                    else if (globalScale >= 2.4) {
                         shouldShowLabel = true;
                     }
                 }
 
                 if (shouldShowLabel && isHighlighted) {
                     let label = node.name || '';
-                    if (!isFocused && label.length > 20 && node.type !== 'philosophy') {
-                        label = label.slice(0, 18) + '...';
-                    } else if (!isFocused && label.length > 26) {
-                        label = label.slice(0, 24) + '...';
+                    if (isMajorHub && !label.startsWith('👑 ')) {
+                        label = `👑 ${label}`;
+                    }
+                    
+                    // Nếu nốt đang được chọn, rê chuột, hoặc là nốt liên kết trực tiếp trong tầm ngắm: hiển thị trọn vẹn tên
+                    const isDirectNeighbor = hasFocus && highlightedElementsRef.current.nodes.has(node.id);
+                    const isProminentlyViewed = isFocused || isDirectNeighbor || isMajorHub;
+
+                    if (!isProminentlyViewed && label.length > 24) {
+                        label = label.slice(0, 22) + '...';
+                    } else if (label.length > 38) {
+                        label = label.slice(0, 36) + '...';
                     }
 
-                    const fontSize = Math.max(9, Math.min(13, 12 / Math.sqrt(globalScale)));
-                    ctx.font = `${(node.type === 'archetype' || node.type === 'philosophy' || isFocused) ? '600' : '400'} ${fontSize}px sans-serif`;
+                    const baseFontSize = isMajorHub ? 13 : (node.type === 'archetype' || node.type === 'philosophy') ? 11 : 10;
+                    const fontSize = Math.max(9, Math.min(isMajorHub ? 15 : 13, baseFontSize / Math.sqrt(globalScale)));
+                    ctx.font = `${isMajorHub ? 'bold' : (node.type === 'archetype' || node.type === 'philosophy' || isFocused) ? '600' : '400'} ${fontSize}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    const textY = node.y + r + fontSize + 4;
+                    const textY = node.y + r + fontSize + (isMajorHub ? 6 : 4);
                     const textWidth = ctx.measureText(label).width;
 
                     ctx.beginPath();
-                    const padX = 6;
-                    const padY = 2.5;
+                    const padX = isMajorHub ? 8 : 6;
+                    const padY = isMajorHub ? 3.5 : 2.5;
                     const bX = node.x - textWidth / 2 - padX;
                     const bY = textY - fontSize / 2 - padY;
                     const bW = textWidth + padX * 2;
                     const bH = fontSize + padY * 2;
                     
-                    ctx.fillStyle = isFocused ? 'rgba(15, 23, 42, 0.95)' : 'rgba(6, 9, 14, 0.8)';
-                    ctx.strokeStyle = isFocused ? (node.color || '#fbbf24') : 'rgba(255, 255, 255, 0.12)';
-                    ctx.lineWidth = 1;
+                    ctx.fillStyle = isFocused 
+                        ? 'rgba(15, 23, 42, 0.96)' 
+                        : isMajorHub 
+                        ? 'rgba(10, 15, 26, 0.92)' 
+                        : 'rgba(6, 9, 14, 0.8)';
+                    ctx.strokeStyle = isFocused 
+                        ? (node.color || '#fbbf24') 
+                        : isMajorHub 
+                        ? 'rgba(251, 191, 36, 0.85)' 
+                        : 'rgba(255, 255, 255, 0.12)';
+                    ctx.lineWidth = isMajorHub ? 1.4 : 1;
 
                     if (ctx.roundRect) {
-                        ctx.roundRect(bX, bY, bW, bH, 4);
+                        ctx.roundRect(bX, bY, bW, bH, isMajorHub ? 6 : 4);
                     } else {
                         ctx.rect(bX, bY, bW, bH);
                     }
@@ -429,6 +599,8 @@ const KnowledgeGraph = () => {
                         ? '#fbbf24' 
                         : isSelected 
                         ? '#fbbf24' 
+                        : isMajorHub
+                        ? '#fef08a'
                         : isHovered 
                         ? '#ffffff'
                         : node.type === 'philosophy'
@@ -443,7 +615,11 @@ const KnowledgeGraph = () => {
                 ctx.restore();
             })
             .nodePointerAreaPaint((node, color, ctx) => {
-                const r = Math.sqrt(Math.max(0, node.val || 10)) * 2.2 + 4;
+                const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
+                const baseVal = node.val || 12;
+                const r = Math.sqrt(Math.max(0, baseVal)) * (
+                    isMajorHub ? 3.8 : node.type === 'philosophy' ? 2.8 : node.type === 'archetype' ? 2.4 : node.type === 'region' ? 2.3 : 1.5
+                ) + 6;
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
@@ -461,8 +637,7 @@ const KnowledgeGraph = () => {
                 }
 
                 setActiveNode(node);
-                setPathResult(null);
-
+                // Giữ lại pathResult để người dùng có thể vừa xem đường đi vừa xem chi tiết nốt trên đường đi
                 graph.centerAt(node.x, node.y, 800);
                 graph.zoom(2.2, 800);
             })
@@ -477,36 +652,64 @@ const KnowledgeGraph = () => {
                 setPathResult(null);
             });
 
+        graph.minZoom(0.55).maxZoom(4.2);
+
         if (graph.d3Force('charge')) {
             graph.d3Force('charge')
                 .strength((node) => {
-                    if (node.type === 'philosophy') return -480;
-                    if (node.type === 'archetype') return -400;
-                    if (node.type === 'region') return -340;
-                    return -220;
+                    const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
+                    if (isMajorHub) return -720;
+                    if (node.type === 'philosophy') return -460;
+                    if (node.type === 'archetype') return -360;
+                    if (node.type === 'region') return -320;
+                    return -180;
                 })
                 .distanceMin(30)
-                .distanceMax(1200);
+                .distanceMax(950);
         }
         if (graph.d3Force('link')) {
             graph.d3Force('link')
                 .distance((link) => {
-                    const s = typeof link.source === 'object' ? link.source.type : '';
-                    const t = typeof link.target === 'object' ? link.target.type : '';
-                    if ((s === 'archetype' && t === 'philosophy') || (s === 'philosophy' && t === 'archetype')) {
-                        return 135;
-                    }
-                    if (s === 'region' || t === 'region') {
-                        return 120;
-                    }
-                    return 85;
+                    const l = link.label || '';
+                    if (l.includes('chủ đề')) return 165;
+                    if (l.includes('địa danh') || l.includes('xuất xứ')) return 145;
+                    if (l.includes('hình tượng')) return 130;
+                    if (l.includes('biểu trưng')) return 140;
+                    return 110;
                 });
+        }
+        // Thêm lực chống đè nốt (Collision force) giúp các nốt dãn ra, không bị rối mắt
+        try {
+            graph.d3Force('collide', forceCollide().radius((node) => {
+                const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
+                const baseVal = node.val || 12;
+                return Math.sqrt(Math.max(0, baseVal)) * (isMajorHub ? 4.2 : 3.0) + (isMajorHub ? 32 : 18);
+            }).iterations(2));
+        } catch (e) {
+            console.warn('Không thể khởi tạo collide force:', e);
+        }
+
+        // Lực hút định hướng về tâm (Radial & Center): Giữ các nốt luôn quây quần thành một dải ngân hà thống nhất, không trôi dạt ra góc xa
+        try {
+            graph.d3Force('radial', forceRadial(0, 0, 0).strength((node) => {
+                return (node.degree && node.degree > 3) ? 0.03 : 0.08;
+            }));
+            graph.d3Force('center', forceCenter(0, 0));
+        } catch (e) {
+            console.warn('Không thể khởi tạo radial/center force:', e);
         }
 
         graphInstance.current = graph;
 
         const timer = setTimeout(() => {
-            graph.zoomToFit(600, 40);
+            graph.zoomToFit(700, 70);
+            // Đảm bảo mức zoom ban đầu luôn bung tỏa đầy đặn màn hình, không bị teo nhỏ
+            setTimeout(() => {
+                const currentZ = graph.zoom();
+                if (currentZ < 0.95) {
+                    graph.zoom(1.18, 600);
+                }
+            }, 750);
         }, 500);
 
         const handleResize = () => {
@@ -707,29 +910,54 @@ const KnowledgeGraph = () => {
         if (!graphInstance.current) return;
         setActiveNode(null);
         setPathResult(null);
-        graphInstance.current.zoomToFit(600, 40);
+        graphInstance.current.centerAt(0, 0, 700);
+        graphInstance.current.zoom(1.18, 700);
     };
 
-    // Tìm đường đi văn hóa ngắn nhất (BFS)
+    // Tìm đường đi văn hóa ngắn nhất (BFS) kèm AI Luận Giải (Gemini)
     const handleFindShortestPath = async () => {
         if (!pathSource || !pathTarget || pathSource === pathTarget) return;
+
         try {
             setIsFindingPath(true);
-            const res = await literatureService.getKnowledgeGraphShortestPath(pathSource, pathTarget);
-            setPathResult(res);
-            setIsPathModalOpen(false);
+            setActiveNode(null); // Đóng sidebar chi tiết nốt đơn lẻ để nhường không gian cho con đường
 
-            if (graphInstance.current && res.path?.length > 0) {
-                if (isSoundEnabled) playTraditionalChime();
-                const runtimeNodes = graphInstance.current.graphData()?.nodes || [];
-                const firstNode = runtimeNodes.find((n) => n.id === res.path[0].id);
-                if (firstNode && typeof firstNode.x === 'number') {
-                    graphInstance.current.centerAt(firstNode.x, firstNode.y, 900);
-                    graphInstance.current.zoom(1.9, 900);
+            let res;
+            try {
+                res = await literatureService.explainPathWithAI(pathSource, pathTarget);
+            } catch (aiErr) {
+                console.warn('Lỗi AI explainPath, chuyển sang BFS trực tiếp:', aiErr);
+                res = await literatureService.getKnowledgeGraphShortestPath(pathSource, pathTarget);
+            }
+
+            const finalData = res?.data || res;
+
+            if (finalData && finalData.found && finalData.path?.length > 1) {
+                setPathResult(finalData);
+                setIsPathModalOpen(false);
+
+                if (graphInstance.current) {
+                    if (isSoundEnabled) playTraditionalChime();
+                    // Tìm tọa độ trung tâm của toàn bộ con đường để camera bao quát hoàn hảo
+                    const runtimeNodes = graphInstance.current.graphData()?.nodes || [];
+                    const pathNodeIds = new Set(finalData.path.map((p) => p.id));
+                    const matchedNodes = runtimeNodes.filter((n) => pathNodeIds.has(n.id) && typeof n.x === 'number');
+
+                    if (matchedNodes.length > 0) {
+                        const avgX = matchedNodes.reduce((sum, n) => sum + n.x, 0) / matchedNodes.length;
+                        const avgY = matchedNodes.reduce((sum, n) => sum + n.y, 0) / matchedNodes.length;
+                        // Nâng camera lên nửa trên màn hình (cộng offset Y +115) để toàn bộ con đường hiển thị thoáng đãng phía trên hộp HUD
+                        graphInstance.current.centerAt(avgX, avgY + 115, 900);
+                        graphInstance.current.zoom(1.3, 900);
+                    }
                 }
+            } else {
+                console.warn('Không tìm thấy đường đi giữa 2 thực thể đã chọn');
+                setIsPathModalOpen(false);
             }
         } catch (err) {
             console.error('Lỗi tìm đường đi văn hóa:', err);
+            setIsPathModalOpen(false);
         } finally {
             setIsFindingPath(false);
         }
@@ -1014,6 +1242,16 @@ const KnowledgeGraph = () => {
                 graphData={graphData}
             />
 
+            {/* 1.5. THANH ĐỊNH HƯỚNG TRỤ CỘT CỐT LÕI (DÀNH CHO NGƯỜI DÙNG MỚI) */}
+            <GraphMajorHubsBar
+                majorHubs={graphData?.majorHubs}
+                activeNode={activeNode}
+                onSelectHub={handleSelectSearchNode}
+                isTimeMachineActive={isTimeMachineActive}
+                isTourActive={Boolean(activeTour)}
+                isPathResultActive={Boolean(pathResult?.path?.length)}
+            />
+
             {/* 2. KHUNG VẼ CANVAS ĐỒ THỊ FORCEGRAPH */}
             <div ref={containerRef} className="kg-canvas-wrapper" />
 
@@ -1043,6 +1281,10 @@ const KnowledgeGraph = () => {
                 onSelectSearchNode={handleSelectSearchNode}
                 onSelectPathSource={(sourceId) => {
                     setPathSource(sourceId);
+                    if (pathTarget === sourceId && graphData?.nodes?.length > 1) {
+                        const altNode = graphData.nodes.find((n) => n.id !== sourceId);
+                        if (altNode) setPathTarget(altNode.id);
+                    }
                     setIsPathModalOpen(true);
                 }}
             />
@@ -1058,6 +1300,27 @@ const KnowledgeGraph = () => {
                 isFindingPath={isFindingPath}
                 onFindShortestPath={handleFindShortestPath}
                 graphData={graphData}
+            />
+
+            {/* 4.5. HUD HIỂN THỊ ĐƯỜNG ĐI VĂN HÓA KÈM AI LUẬN GIẢI */}
+            <GraphPathResultHUD
+                pathResult={pathResult}
+                onClose={() => setPathResult(null)}
+                onSelectNode={(node) => {
+                    setActiveNode(node);
+                    if (graphInstance.current) {
+                        if (isSoundEnabled) playTraditionalChime();
+                        const runtimeNodes = graphInstance.current.graphData()?.nodes || [];
+                        const runtimeTarget = runtimeNodes.find((n) => n.id === node.id);
+                        if (runtimeTarget && typeof runtimeTarget.x === 'number') {
+                            // Camera bay thẳng đến nốt đó trên đường đi
+                            graphInstance.current.centerAt(runtimeTarget.x, runtimeTarget.y, 800);
+                            graphInstance.current.zoom(2.2, 800);
+                        }
+                    }
+                }}
+                isSoundEnabled={isSoundEnabled}
+                isSidebarOpen={Boolean(activeNode)}
             />
 
             {/* 5. MODAL GIẢI THÍCH 4 TẦNG TRI THỨC */}

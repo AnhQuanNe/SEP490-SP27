@@ -6,7 +6,11 @@
     position: relative;
     width: 100%;
     min-height: calc(100vh - 64px);
-    background: radial-gradient(circle at 50% 30%, #171c26 0%, #0d1117 60%, #06090e 100%);
+    background: 
+        radial-gradient(ellipse at 15% 15%, rgba(168, 85, 247, 0.14) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 55%),
+        radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 40%, #161c28 0%, #0d1118 55%, #05080c 100%);
     overflow: hidden;
     color: #f1f5f9;
 }
@@ -201,7 +205,7 @@
     -webkit-backdrop-filter: blur(20px);
     border-left: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: -15px 0 35px rgba(0, 0, 0, 0.7);
-    z-index: 30;
+    z-index: 40;
     display: flex;
     flex-direction: column;
     animation: kgSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -281,8 +285,12 @@
 }
 
 @keyframes kgFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: kgFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .kg-tour-modal-box {

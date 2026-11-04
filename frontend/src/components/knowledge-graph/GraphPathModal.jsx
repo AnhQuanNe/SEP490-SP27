@@ -12,7 +12,7 @@ const GraphPathModal = ({
     setPathTarget,
     isFindingPath,
     onFindShortestPath,
-    graphData
+    graphData,
 }) => {
     if (!isOpen) return null;
 

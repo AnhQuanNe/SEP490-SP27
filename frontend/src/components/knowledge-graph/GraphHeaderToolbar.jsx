@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
     Sparkles, 
     Search, 
@@ -10,12 +11,16 @@ import {
     BookOpen, 
     ZoomIn, 
     ZoomOut, 
-    RotateCcw 
+    RotateCcw,
+    ChevronUp,
+    ChevronDown,
+    SlidersHorizontal,
+    Maximize2
 } from 'lucide-react';
 
 /**
  * GraphHeaderToolbar - Thanh công cụ điều khiển đỉnh đồ thị tri thức
- * Chứa tìm kiếm, bộ lọc 4 tầng tri thức, và các nút điều hướng chức năng cao cấp.
+ * Tối ưu hóa không gian hiển thị (Floating Glass Deck), hỗ trợ Zen Mode (Thu gọn/Mở rộng).
  */
 const GraphHeaderToolbar = ({
     searchQuery,
@@ -39,98 +44,127 @@ const GraphHeaderToolbar = ({
     onResetView,
     graphData
 }) => {
+    // Chế độ Zen Mode: Thu gọn toàn bộ thanh công cụ để mở rộng không gian vô cực
+    const [isZenMode, setIsZenMode] = useState(false);
+
+    if (isZenMode) {
+        return (
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto animate-fade-in">
+                <button
+                    onClick={() => setIsZenMode(false)}
+                    className="kg-interactive-panel px-3.5 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center gap-2 border border-amber-500/30 shadow-xl shadow-amber-950/30 hover:bg-white/10 transition-all cursor-pointer"
+                    title="Mở thanh công cụ điều khiển"
+                >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Mở Bảng Điều Khiển</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="kg-topbar">
-            {/* Cột trái: Tiêu đề + Ô tìm kiếm + Bộ lọc thể loại */}
-            <div className="flex flex-col gap-2.5 max-w-xl w-full pointer-events-auto">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-stone-950 font-bold shadow-lg shadow-amber-500/20">
-                        <Sparkles className="w-4 h-4 text-stone-950" />
-                    </div>
-                    <div>
-                        <h1 className="text-base sm:text-lg font-bold text-white tracking-wide font-heritage flex items-center gap-2">
-                            <span>Vũ Trụ Tri Thức Văn Hóa Dân Gian</span>
+            {/* Cột trái: Tiêu đề + Ô tìm kiếm + Bộ lọc thể loại tinh gọn theo hàng ngang */}
+            <div className="flex flex-col gap-2 max-w-2xl w-full pointer-events-auto">
+                {/* Hàng 1: Tiêu đề + Nút thu gọn Zen Mode */}
+                <div className="flex items-center justify-between gap-3 bg-stone-950/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 w-fit">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-stone-950 font-bold shadow-md shadow-amber-500/20 flex-shrink-0">
+                            <Sparkles className="w-3.5 h-3.5 text-stone-950" />
+                        </div>
+                        <h1 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                            <span>Vũ Trụ Tri Thức Dân Gian</span>
                             {isTimeMachineActive && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold animate-pulse">
+                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold animate-pulse">
                                     CỖ MÁY THỜI GIAN
                                 </span>
                             )}
                         </h1>
-                        <p className="text-xs text-stone-400 font-light hidden sm:block">
-                            Khám phá mạng lưới liên kết ngữ nghĩa giữa Triết lý, Cổ mẫu, Địa linh và Tác phẩm
-                        </p>
                     </div>
+
+                    <button
+                        onClick={() => setIsZenMode(true)}
+                        className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors ml-2 cursor-pointer flex items-center gap-1 text-[11px]"
+                        title="Thu gọn thanh công cụ để mở rộng tối đa không gian đồ thị"
+                    >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Thu gọn</span>
+                    </button>
                 </div>
 
-                {/* Ô tìm kiếm thực thể */}
-                <div className="relative">
-                    <div className="kg-interactive-panel rounded-xl flex items-center px-3.5 py-2 gap-2.5 border border-white/10">
-                        <Search className="w-4 h-4 text-stone-400 flex-shrink-0" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Tìm kiếm tác phẩm, cổ mẫu, triết lý (ví dụ: Thánh Gióng, Con Cò, Đạo Hiếu...)"
-                            className="bg-transparent border-none outline-none text-xs text-white placeholder-stone-500 w-full"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="text-stone-400 hover:text-white"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
+                {/* Hàng 2: Ô tìm kiếm kết hợp dải bộ lọc 5 tầng trên cùng 1 luồng ngang */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Ô tìm kiếm nhỏ gọn */}
+                    <div className="relative w-56 sm:w-64">
+                        <div className="kg-interactive-panel rounded-xl flex items-center px-3 py-1.5 gap-2 border border-white/10">
+                            <Search className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Tìm tác phẩm, biểu tượng..."
+                                className="bg-transparent border-none outline-none text-xs text-white placeholder-stone-500 w-full"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="text-stone-400 hover:text-white"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Dropdown kết quả tìm kiếm */}
+                        {searchResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1.5 kg-interactive-panel rounded-xl border border-white/15 overflow-hidden shadow-2xl max-h-60 overflow-y-auto kg-custom-scroll z-50">
+                                {searchResults.map((node) => (
+                                    <button
+                                        key={node.id}
+                                        onClick={() => onSelectSearchNode(node)}
+                                        className="w-full text-left px-3.5 py-2.5 hover:bg-white/10 flex items-center justify-between border-b border-white/5 last:border-b-0 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div
+                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                style={{ backgroundColor: node.color || '#10b981' }}
+                                            />
+                                            <span className="text-xs font-medium text-stone-200 truncate">
+                                                {node.name}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] uppercase font-semibold text-stone-400 px-1.5 py-0.5 rounded bg-white/5 flex-shrink-0 ml-2">
+                                            {node.type}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
 
-                    {/* Dropdown kết quả tìm kiếm */}
-                    {searchResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 kg-interactive-panel rounded-xl border border-white/15 overflow-hidden shadow-2xl max-h-60 overflow-y-auto kg-custom-scroll z-50">
-                            {searchResults.map((node) => (
-                                <button
-                                    key={node.id}
-                                    onClick={() => onSelectSearchNode(node)}
-                                    className="w-full text-left px-3.5 py-2.5 hover:bg-white/10 flex items-center justify-between border-b border-white/5 last:border-b-0 transition-colors"
-                                >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div
-                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                            style={{ backgroundColor: node.color || '#10b981' }}
-                                        />
-                                        <span className="text-xs font-medium text-stone-200 truncate">
-                                            {node.name}
-                                        </span>
-                                    </div>
-                                    <span className="text-[10px] uppercase font-semibold text-stone-400 px-1.5 py-0.5 rounded bg-white/5 flex-shrink-0 ml-2">
-                                        {node.type}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Bộ lọc theo 4 tầng bản thể học (Ontology Layers) */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    {[
-                        { id: 'all', label: 'Tất Cả', color: '#94a3b8' },
-                        { id: 'philosophy', label: '🟣 Triết Lý', color: '#a855f7' },
-                        { id: 'archetype', label: '🟠 Cổ Mẫu', color: '#f59e0b' },
-                        { id: 'region', label: '🔵 Địa Linh', color: '#3b82f6' },
-                        { id: 'work', label: '🟢 Tác Phẩm', color: '#10b981' },
-                    ].map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                                selectedCategory === cat.id
-                                    ? 'bg-white/20 text-white shadow-sm border border-white/30 font-bold'
-                                    : 'bg-stone-900/60 hover:bg-white/10 text-stone-400 border border-white/5'
-                            }`}
-                        >
-                            {cat.label}
-                        </button>
-                    ))}
+                    {/* Bộ lọc 5 tầng tri thức dạng Pill nhỏ gọn */}
+                    <div className="flex items-center gap-1 bg-stone-950/60 backdrop-blur-md p-1 rounded-xl border border-white/10">
+                        {[
+                            { id: 'all', label: 'Tất Cả' },
+                            { id: 'philosophy', label: '🟣 Triết Lý' },
+                            { id: 'archetype', label: '🟠 Cổ Mẫu' },
+                            { id: 'region', label: '🔵 Địa Linh' },
+                            { id: 'work', label: '🟢 Tác Phẩm' },
+                        ].map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap ${
+                                    selectedCategory === cat.id
+                                        ? 'bg-white/20 text-white shadow-sm border border-white/30 font-bold'
+                                        : 'hover:bg-white/10 text-stone-400'
+                                }`}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -177,7 +211,7 @@ const GraphHeaderToolbar = ({
                     }`}
                     title="Khám phá sự tiến hóa của mạng lưới tri thức qua 5 kỷ nguyên lịch sử"
                 >
-                    <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '10s' }} />
+                    <Clock className="w-4 h-4 text-amber-400" />
                     <span className="hidden sm:inline">Cỗ Máy Thời Gian</span>
                 </button>
 
@@ -210,7 +244,7 @@ const GraphHeaderToolbar = ({
                     <button
                         onClick={onResetView}
                         className="p-1.5 text-stone-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-                        title="Khôi phục góc nhìn vũ trụ"
+                        title="Căn giữa toàn màn hình"
                     >
                         <RotateCcw className="w-3.5 h-3.5" />
                     </button>
