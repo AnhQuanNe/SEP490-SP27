@@ -3,19 +3,20 @@ const { analyzeLucBatPoem, checkWordRhyme, getToneType, extractRime } = require(
 
 // Tích hợp gọi Gemini AI
 const GEMINI_MODELS = [
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.0-flash-lite',
     'gemini-2.5-flash',
 ];
 
 async function callGeminiPoetryApi({ prompt, systemInstruction }) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    if (!apiKey || !apiKey.trim() || apiKey.includes('your_gemini_api_key')) return null;
 
     const payload = {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
+        system_instruction: { parts: [{ text: systemInstruction }] },
         generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048,
@@ -27,7 +28,7 @@ async function callGeminiPoetryApi({ prompt, systemInstruction }) {
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000);
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -46,8 +47,12 @@ async function callGeminiPoetryApi({ prompt, systemInstruction }) {
                     if (cleaned.startsWith('```')) {
                         cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
                     }
-                    return JSON.parse(cleaned);
+                    const parsed = JSON.parse(cleaned);
+                    return { ...parsed, isGemini: true, modelUsed: model };
                 }
+            } else {
+                const errText = await response.text();
+                console.warn(`[Poetry AI] Model ${model} HTTP ${response.status}: ${errText.slice(0, 100)}`);
             }
         } catch (err) {
             console.warn(`[Poetry AI] Lỗi model ${model}:`, err.message);
@@ -227,123 +232,209 @@ Hãy chấm điểm công tâm, nhân văn, sâu sắc và chỉ ra các điểm
  */
 async function coWriteBatLine({ lucLine, context = '' }) {
     if (!lucLine || !lucLine.trim()) {
-        throw new Error('Vui lòng nhập câu Lục (6 tiếng) để AI ứng khẩu câu Bát');
+        throw new Error('Vui lòng nhập câu thơ (câu Lục) để AI phân tích và ứng khẩu câu đối');
     }
 
     const cleanLuc = lucLine.trim();
     const words = cleanLuc.split(/\s+/).filter(Boolean);
 
     if (words.length !== 6) {
-        throw new Error(`Câu Lục phải có đúng 6 tiếng (hiện bạn nhập ${words.length} tiếng).`);
+        throw new Error(`Để đối thơ Lục Bát chuẩn xác, câu Lục cần có đúng 6 tiếng (hiện tại bạn nhập ${words.length} tiếng: "${cleanLuc}").`);
     }
 
-    // Phân tích câu Lục bằng rule engine
+    // 1. Phân tích ngữ âm và niêm luật câu Lục bằng Rule Engine
     const lineObj = {
         lineIndex: 0,
         rawText: cleanLuc,
         syllableCount: words.length,
         syllables: words.map((w, idx) => ({
             position: idx + 1,
-            clean: w.replace(/^[.,/#!$%^&*;:{}=\-_`~()"'“”‘’]+|[.,/#!$%^&*;:{}=\-_`~()"'“”‘’]+$/g, ''),
+            clean: w.replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’]+$/g, ''),
             ...getToneType(w),
         })),
     };
 
-    const analyzedLuc = lineObj;
     const word6Luc = lineObj.syllables[5].clean;
     const tone6Luc = lineObj.syllables[5].toneType;
-
+    const tone6Name = lineObj.syllables[5].toneName || (tone6Luc === 'B' ? 'Bằng' : 'Trắc');
     const rime6 = extractRime(word6Luc);
 
     const contextClause = context && context.trim()
         ? `\n[NGỮ CẢNH BÀI THƠ / TÁC PHẨM ĐANG SÁNG TÁC]:\n${context.trim()}\n`
         : '';
 
+    // 2. Xây dựng Prompt cho Google Gemini AI: Yêu cầu phân tích câu thơ, xác định ngữ cảnh và sáng tác câu đối
     const prompt = `Người dùng vừa sáng tác câu thơ Lục (6 tiếng):
 "${cleanLuc}"
-- Tiếng thứ 6 gieo vần là: "${word6Luc}" (thanh ${tone6Luc === 'B' ? 'Bằng' : 'Trắc'}, vần "${rime6}").
+- Tiếng thứ 6 gieo vần là: "${word6Luc}" (thanh ${tone6Name}, hiệp vần "${rime6}").
 ${contextClause}
-NHIỆM VỤ THI PHÁP: Hãy ứng khẩu sáng tác 3 phương án câu Bát (đúng 8 tiếng) tiếp nối hoàn hảo câu Lục trên.
+NHIỆM VỤ NGHỆ THUẬT:
+Bạn là một Đại thi hào và Bậc thầy Thi pháp học Lục Bát & Văn học Dân gian Việt Nam (tinh thông niêm luật Truyện Kiều và thấm đượm hồn ca dao dân tộc). Hãy thực hiện 3 phần việc quan trọng:
 
-CÁC TIÊU CHÍ NGHỆ THUẬT & ÂM LUẬT BẮT BUỘC:
-1. Thấu cảm tứ thơ & Ngữ cảnh:
-   - Cảm thụ sâu sắc hình ảnh, không gian, thời gian và mạch cảm xúc trong câu Lục (và ngữ cảnh tác phẩm nếu có).
-   - Câu Bát đối lại phải liên kết hữu cơ, tự nhiên như hơi thở, lời thơ mượt mà giàu chất nhạc và cảm xúc, tuyệt đối không ghép từ gượng gạo chỉ để đủ vần.
-2. Đúng 8 tiếng (không thừa không thiếu một từ).
-3. Hiệp vần chuẩn mực (Yêu vận):
-   - Tiếng thứ 6 của câu Bát BẮT BUỘC phải hiệp vần với tiếng "${word6Luc}" (cùng mang thanh Bằng và cùng vần "${rime6}" hoặc vần thông hợp lệ).
-4. Niêm luật Bằng - Trắc nghiêm ngặt:
-   - Tiếng 2: Thanh BẰNG (ngang hoặc huyền)
-   - Tiếng 4: Thanh TRẮC (sắc, hỏi, ngã, nặng)
-   - Tiếng 6: Thanh BẰNG (hiệp vần với "${word6Luc}")
-   - Tiếng 8: Thanh BẰNG
-   - QUY TẮC TRẦM - BỔNG CỦA THI SĨ: Nếu tiếng thứ 6 là thanh Ngang (không dấu) thì tiếng thứ 8 nên mang thanh Huyền (hoặc ngược lại) để câu thơ có độ bổng trầm hài hòa, ngân nga êm dịu, không bị cụt âm.
-5. Sáng tác 3 phương án với 3 sắc thái biểu cảm phong phú:
-   - Phương án 1 (Trữ tình - Êm đềm): Tả cảnh ngụ tình, lời thơ dịu dàng, tiếp nối trực tiếp hình tượng câu Lục.
-   - Phương án 2 (Triết lý - Nhân văn): Mở rộng chiều sâu chiêm nghiệm, đạo lý gia đình, tình nghĩa thủy chung hoặc nhân sinh.
-   - Phương án 3 (Dân dã - Khoáng đạt): Đậm chất ca dao, mộc mạc, tha thiết, giàu chất họa chất nhạc đồng quê.
+1. PHÂN TÍCH CÂU THƠ (analysis):
+- verseMeaning: Phân tích sâu sắc tứ thơ, hình tượng nghệ thuật, thông điệp mà tác giả gửi gắm trong câu thơ 6 tiếng này.
+- poeticForm: "Thơ Lục Bát — Câu Lục (6 tiếng)".
+- toneAnalysis: Phân tích niêm luật Bằng - Trắc (các vị trí 2-4-6) và tiếng gieo vần chủ chốt "${word6Luc}" (thanh ${tone6Name}, vần "${rime6}").
+- emotionalTone: Sắc thái cảm xúc chủ đạo (ví dụ: tha thiết, hoài niệm, triết lý, man mác, ấm áp, hào sảng...).
 
-ĐỊNH DẠNG KẾT QUẢ: Trả về JSON thuần túy (không markdown bao bọc):
+2. XÁC ĐỊNH NGỮ CẢNH (context):
+- scene: Bối cảnh không gian và thời gian nghệ thuật (ví dụ: dòng sông bến nước quê hương, đêm trăng tĩnh lặng, cảnh sum vầy gia đình, chiều tà bâng khuâng...).
+- theme: Chủ đề bao quát (ví dụ: Công ơn cha mẹ / Tình yêu quê hương xứ sở / Tình nghĩa thủy chung / Chiêm nghiệm nhân sinh...).
+- artisticDirection: Định hướng nghệ thuật để câu Bát tiếp theo liên kết tự nhiên, nâng tầm câu Lục thành cặp câu thơ lục bát toàn bích.
+
+3. SÁNG TÁC 3 PHƯƠNG ÁN CÂU BÁT ĐỐI LẠI (candidates):
+Yêu cầu âm luật và thi pháp bắt buộc cho câu Bát (8 tiếng):
+- BẮT BUỘC ĐÚNG 8 TIẾNG (không thừa không thiếu một từ).
+- HIỆP VẦN (Yêu vận): Tiếng thứ 6 của câu Bát BẮT BUỘC phải hiệp vần với tiếng "${word6Luc}" (cùng vần "${rime6}" hoặc vần thông hợp lệ, mang thanh BẰNG).
+- NIÊM LUẬT BẰNG - TRẮC: Tiếng 2 (Bằng) - Tiếng 4 (Trắc) - Tiếng 6 (Bằng, hiệp vần) - Tiếng 8 (Bằng).
+- QUY TẮC TRẦM - BỔNG: Nếu tiếng 6 là thanh Ngang (không dấu) thì tiếng 8 nên là thanh Huyền (hoặc ngược lại) để câu thơ có độ bổng trầm ngân nga hài hòa.
+- 3 phương án biểu cảm phong phú:
+  + Phương án 1 (Trữ tình): Tả cảnh ngụ tình dịu dàng, tiếp nối hình tượng câu Lục.
+  + Phương án 2 (Triết lý): Mở rộng chiều sâu đạo lý, nhân văn, tình nghĩa.
+  + Phương án 3 (Dân dã / Khoáng đạt): Đậm đà phong vị ca dao dân ca, mộc mạc, tha thiết.
+- Mỗi phương án phân tích rõ:
+  + batLine: Câu thơ 8 tiếng.
+  + mood: "Trữ tình" | "Triết lý" | "Dân dã" | "Khoáng đạt".
+  + rhymeWord: Tiếng thứ 6 trong câu Bát gieo vần với "${word6Luc}".
+  + explanation: Phân tích cụ thể cách câu này tiếp nối ý tứ, hòa quyện với ngữ cảnh của câu Lục và hiệu quả biểu cảm.
+  + harmonyScore: Điểm độ hòa hợp (90 - 99).
+
+ĐỊNH DẠNG JSON BẮT BUỘC (trả về JSON thuần túy, không có markdown):
 {
+  "analysis": {
+    "verseMeaning": "...",
+    "poeticForm": "Thơ Lục Bát — Câu Lục (6 tiếng)",
+    "toneAnalysis": "...",
+    "emotionalTone": "..."
+  },
+  "context": {
+    "scene": "...",
+    "theme": "...",
+    "artisticDirection": "..."
+  },
   "candidates": [
     {
-      "batLine": "Câu thơ 8 tiếng phương án 1",
-      "explanation": "Phân tích vẻ đẹp hình ảnh, tứ thơ và cách hiệp vần với '${word6Luc}'",
-      "mood": "Trữ tình"
+      "batLine": "...",
+      "mood": "Trữ tình",
+      "rhymeWord": "...",
+      "explanation": "...",
+      "harmonyScore": 96
     },
     {
-      "batLine": "Câu thơ 8 tiếng phương án 2",
-      "explanation": "Phân tích vẻ đẹp hình ảnh, tứ thơ và cách hiệp vần với '${word6Luc}'",
-      "mood": "Triết lý"
+      "batLine": "...",
+      "mood": "Triết lý",
+      "rhymeWord": "...",
+      "explanation": "...",
+      "harmonyScore": 95
     },
     {
-      "batLine": "Câu thơ 8 tiếng phương án 3",
-      "explanation": "Phân tích vẻ đẹp hình ảnh, tứ thơ và cách hiệp vần với '${word6Luc}'",
-      "mood": "Dân dã"
+      "batLine": "...",
+      "mood": "Dân dã",
+      "rhymeWord": "...",
+      "explanation": "...",
+      "harmonyScore": 94
     }
   ]
 }`;
 
-    const systemInstruction = `Bạn là một Đại thi hào và bậc thầy thi pháp Lục Bát Việt Nam (tinh thông âm luật, nhạc tính uyển chuyển như Truyện Kiều và thấm đẫm tâm hồn ca dao dân tộc).
-Mục tiêu tối thượng của bạn là sáng tác câu thơ tự nhiên, có hồn, giàu hình tượng, lay động lòng người và chuẩn mực âm luật tuyệt đối. Luôn trả lời JSON thuần túy.`;
+    const systemInstruction = `Bạn là một Đại thi hào và Bậc thầy Thi pháp học Lục Bát & Văn học Dân gian Việt Nam của hệ thống VietHeritage AI.
+Nhiệm vụ của bạn là thấu cảm tinh tế tứ thơ của người dùng, phân tích tường tận ngữ cảnh văn hóa, và ứng khẩu các câu thơ đối lại tuyệt mỹ về cả ý tứ, hình tượng lẫn niêm luật Bằng - Trắc và hiệp vần. Luôn luôn trả lời bằng định dạng JSON thuần túy.`;
 
     let aiResult = await callGeminiPoetryApi({ prompt, systemInstruction });
 
-    // Fallback thông minh nếu không có kết nối Gemini hoặc API hết hạn
+    // 3. Fallback thông minh: Phân tích ngữ cảnh nội sinh và sinh câu đối chuẩn luật nếu chưa cấu hình API key
     if (!aiResult || !Array.isArray(aiResult.candidates) || aiResult.candidates.length === 0) {
+        const lowerLuc = cleanLuc.toLowerCase();
+        let detectedTheme = 'Chiêm nghiệm nhân sinh & Đạo lý sống tốt đẹp';
+        let detectedScene = 'Không gian thi ca thanh nhã, khoáng đạt giữa đất trời';
+        let detectedEmotion = 'Trầm lắng, suy tư, hướng thiện';
+        let detectedMeaning = `Câu thơ mở ra một tứ thơ tao nhã với hình tượng giản dị mà gợi cảm, thể hiện cảm xúc chân thành của tác giả.`;
+
+        if (/cha|mẹ|ơn|công|thái sơn|nguồn|sinh|dưỡng|nuôi/.test(lowerLuc)) {
+            detectedTheme = 'Đạo hiếu & Công ơn sinh thành dưỡng dục của cha mẹ';
+            detectedScene = 'Không gian gia đình ấm cúng, núi cao biển rộng thiêng liêng';
+            detectedEmotion = 'Dạt dào lòng hiếu thảo, kính trọng và biết ơn sâu sắc';
+            detectedMeaning = `Câu thơ ngợi ca công ơn trời biển của đấng sinh thành, dùng hình ảnh non cao biển rộng để khắc họa tấm lòng hiếu nghĩa muôn đời.`;
+        } else if (/trăng|đò|sông|nước|bến|thuyền|cầu|mây|gió|chiều|thu/.test(lowerLuc)) {
+            detectedTheme = 'Tình duyên lứa đôi & Phong cảnh non nước quê hương hữu tình';
+            detectedScene = 'Bến sông quê chiều tà, bóng trăng thanh bình soi bóng dòng nước êm trôi';
+            detectedEmotion = 'Bâng khuâng, man mác hoài niệm, trữ tình êm ả';
+            detectedMeaning = `Khắc họa bức tranh non nước bến đò hữu tình đượm chút nhớ thương bâng khuâng, gửi gắm tâm sự tinh tế qua cảnh vật thiên nhiên.`;
+        } else if (/quê|làng|đồng|lúa|cò|tre|nắng|mưa|đất|mái đình/.test(lowerLuc)) {
+            detectedTheme = 'Tình yêu quê hương xứ sở & Vẻ đẹp làng quê Việt Nam';
+            detectedScene = 'Cánh đồng lúa chín vàng bát ngát, lũy tre xanh nghiêng bóng, khói lam chiều';
+            detectedEmotion = 'Ấm áp, thân thương, đậm đà hồn quê xứ sở';
+            detectedMeaning = `Gợi nhắc vẻ đẹp bình dị, thuần hậu của làng quê Việt Nam với những hình tượng thân quen gắn bó máu thịt từ thuở ấu thơ.`;
+        } else if (/bạn|nghĩa|tình|thủy chung|sắc son|lòng|tấm lòng/.test(lowerLuc)) {
+            detectedTheme = 'Tình nghĩa thủy chung, sắt son gắn bó';
+            detectedScene = 'Không gian gắn kết nghĩa tình thâm sâu qua năm tháng thử thách';
+            detectedEmotion = 'Chân thành, kiên định, bền chặt';
+            detectedMeaning = `Khẳng định giá trị cao quý của tình nghĩa và lòng thủy chung trong đối nhân xử thế giữa người với người.`;
+        }
+
+        const fallbackAnalysis = {
+            verseMeaning: detectedMeaning,
+            poeticForm: 'Thơ Lục Bát — Câu Lục (6 tiếng)',
+            toneAnalysis: `Tiếng thứ 2 mang thanh ${lineObj.syllables[1]?.toneType === 'B' ? 'Bằng' : 'Trắc'}, tiếng thứ 4 mang thanh ${lineObj.syllables[3]?.toneType === 'T' ? 'Trắc' : 'Bằng'}, tiếng thứ 6 "${word6Luc}" mang thanh ${tone6Name} (hiệp vần "${rime6}").`,
+            emotionalTone: detectedEmotion,
+        };
+
+        const fallbackContext = {
+            scene: detectedScene,
+            theme: detectedTheme,
+            artisticDirection: `Tiếp nối câu Lục bằng câu Bát hài hòa về hình tượng, tiếng thứ 6 gieo vần "${rime6}" cùng thanh Bằng với "${word6Luc}", tiếng thứ 8 giữ thanh Bằng tạo âm hưởng ngân nga.`,
+        };
+
         const RHYME_TEMPLATES = {
             'a': [
-                { batLine: 'Đêm thanh soi bóng đường xa mịt mùng', explanation: `Hiệp vần "xa" với "${word6Luc}" (cùng vần a, thanh Bằng).`, mood: 'Trữ tình' },
-                { batLine: 'Gió đưa thoang thoảng hương hoa ngọt ngào', explanation: `Hiệp vần "hoa" với "${word6Luc}" (cùng vần a, thanh Bằng).`, mood: 'Thanh cảnh' },
-                { batLine: 'Nắng mai sưởi ấm lòng ta bao ngày', explanation: `Hiệp vần "ta" với "${word6Luc}" (cùng vần a, thanh Bằng).`, mood: 'Triết lý' },
+                { batLine: 'Đêm thanh soi bóng đường xa mịt mùng', explanation: `Hiệp vần "xa" với "${word6Luc}" (cùng vần a, thanh Bằng), tiếp nối không gian êm đềm.`, mood: 'Trữ tình', rhymeWord: 'xa', harmonyScore: 95 },
+                { batLine: 'Gió đưa thoang thoảng hương hoa ngọt ngào', explanation: `Hiệp vần "hoa" với "${word6Luc}" (cùng vần a, thanh Bằng), gợi cảm giác bình yên thư thái.`, mood: 'Dân dã', rhymeWord: 'hoa', harmonyScore: 94 },
+                { batLine: 'Nắng mai sưởi ấm lòng ta bao ngày', explanation: `Hiệp vần "ta" với "${word6Luc}" (cùng vần a, thanh Bằng), đúc kết ý niệm nhân sinh ấm áp.`, mood: 'Triết lý', rhymeWord: 'ta', harmonyScore: 93 },
             ],
             'on': [
-                { batLine: 'Nghìn thu ghi khắc sắc son một lòng', explanation: `Hiệp vần "son" với "${word6Luc}" (cùng vần on, thanh Bằng).`, mood: 'Thủy chung' },
-                { batLine: 'Trời cao chứng giám lòng con thảo hiền', explanation: `Hiệp vần "con" với "${word6Luc}" (cùng vần on, thanh Bằng).`, mood: 'Hiếu nghĩa' },
+                { batLine: 'Nghìn thu ghi khắc sắc son một lòng', explanation: `Hiệp vần "son" với "${word6Luc}" (cùng vần on, thanh Bằng), khẳng định tấm lòng trước sau như một.`, mood: 'Triết lý', rhymeWord: 'son', harmonyScore: 96 },
+                { batLine: 'Trời cao chứng giám lòng con thảo hiền', explanation: `Hiệp vần "con" với "${word6Luc}" (cùng vần on, thanh Bằng), trọn vẹn chữ hiếu thiêng liêng.`, mood: 'Trữ tình', rhymeWord: 'con', harmonyScore: 95 },
+                { batLine: 'Dù cho vất vả mỏi mòn chẳng phai', explanation: `Hiệp vần "mòn" với "${word6Luc}" (cùng vần on, thanh Bằng), thể hiện đức kiên trì bền bỉ.`, mood: 'Dân dã', rhymeWord: 'mòn', harmonyScore: 92 },
             ],
             'ong': [
-                { batLine: 'Nghìn thu soi tỏ tấm lòng thảo thơm', explanation: `Hiệp vần "lòng" với "${word6Luc}" (cùng vần ong, thanh Bằng).`, mood: 'Triết lý' },
-                { batLine: 'Thuyền xuôi bến vắng trên dòng sông sâu', explanation: `Hiệp vần "dòng" với "${word6Luc}" (cùng vần ong, thanh Bằng).`, mood: 'Trữ tình' },
+                { batLine: 'Nghìn thu soi tỏ tấm lòng thảo thơm', explanation: `Hiệp vần "lòng" với "${word6Luc}" (cùng vần ong, thanh Bằng), biểu đạt đạo lý nhân nghĩa.`, mood: 'Triết lý', rhymeWord: 'lòng', harmonyScore: 96 },
+                { batLine: 'Thuyền xuôi bến vắng trên dòng sông sâu', explanation: `Hiệp vần "dòng" với "${word6Luc}" (cùng vần ong, thanh Bằng), mở rộng không gian sông nước hữu tình.`, mood: 'Trữ tình', rhymeWord: 'dòng', harmonyScore: 94 },
+                { batLine: 'Nguyện đem tâm huyết đắp bồi non sông', explanation: `Hiệp vần "sông" với "${word6Luc}" (cùng vần ong, thanh Bằng), gửi gắm khát vọng dựng xây quê hương.`, mood: 'Dân dã', rhymeWord: 'sông', harmonyScore: 93 },
             ],
             'ang': [
-                { batLine: 'Trăng khuya soi bóng dịu dàng khắp nơi', explanation: `Hiệp vần "dàng" với "${word6Luc}" (cùng vần ang, thanh Bằng).`, mood: 'Trữ tình' },
-                { batLine: 'Đường xa vạn dặm thênh thang lối về', explanation: `Hiệp vần "thang" với "${word6Luc}" (cùng vần ang, thanh Bằng).`, mood: 'Khoáng đạt' },
+                { batLine: 'Trăng khuya soi bóng dịu dàng khắp nơi', explanation: `Hiệp vần "dàng" với "${word6Luc}" (cùng vần ang, thanh Bằng), gợi ánh trăng hiền hòa bao dung.`, mood: 'Trữ tình', rhymeWord: 'dàng', harmonyScore: 96 },
+                { batLine: 'Đường xa vạn dặm thênh thang lối về', explanation: `Hiệp vần "thang" với "${word6Luc}" (cùng vần ang, thanh Bằng), tạo âm hưởng khoáng đạt, rộng mở.`, mood: 'Khoáng đạt', rhymeWord: 'thang', harmonyScore: 95 },
+                { batLine: 'Một đời giữ dạ thẳng ngay đàng hoàng', explanation: `Hiệp vần "hoàng" với "${word6Luc}" (cùng vần ang, thanh Bằng), tôn vinh phẩm giá thanh cao.`, mood: 'Triết lý', rhymeWord: 'hoàng', harmonyScore: 93 },
             ],
             'oi': [
-                { batLine: 'Dẫu cho cách trở muôn nơi vẫn chờ', explanation: `Hiệp vần "nơi" với "${word6Luc}" (cùng vần ơi/oi thông vần, thanh Bằng).`, mood: 'Thủy chung' },
-                { batLine: 'Thời gian thấm thoát đưa thoi qua dần', explanation: `Hiệp vần "thoi" với "${word6Luc}" (cùng vần oi, thanh Bằng).`, mood: 'Hoài niệm' },
+                { batLine: 'Dẫu cho cách trở muôn nơi vẫn chờ', explanation: `Hiệp vần "nơi" với "${word6Luc}" (vần thông ơi/oi, thanh Bằng), đượm sắc thái thủy chung son sắt.`, mood: 'Trữ tình', rhymeWord: 'nơi', harmonyScore: 95 },
+                { batLine: 'Thời gian thấm thoát đưa thoi qua dần', explanation: `Hiệp vần "thoi" với "${word6Luc}" (cùng vần oi, thanh Bằng), gợi cảm thức về thời gian và đời người.`, mood: 'Triết lý', rhymeWord: 'thoi', harmonyScore: 94 },
+                { batLine: 'Nghe trong tiếng gió gọi mời xa xôi', explanation: `Hiệp vần "mời" với "${word6Luc}" (vần thông ơi/oi, thanh Bằng), gợi tiếng gọi bình dị của quê hương.`, mood: 'Dân dã', rhymeWord: 'mời', harmonyScore: 92 },
             ],
             'ay': [
-                { batLine: 'Bao năm tích đức dựng xây cơ đồ', explanation: `Hiệp vần "xây" với "${word6Luc}" (cùng vần ay, thanh Bằng).`, mood: 'Khuyên răn' },
-                { batLine: 'Gió đông se lạnh từng ngày nhớ thương', explanation: `Hiệp vần "ngày" với "${word6Luc}" (cùng vần ay, thanh Bằng).`, mood: 'Trữ tình' },
+                { batLine: 'Bao năm tích đức dựng xây cơ đồ', explanation: `Hiệp vần "xây" với "${word6Luc}" (cùng vần ay, thanh Bằng), khuyên nhủ con người chăm lo tu dưỡng.`, mood: 'Triết lý', rhymeWord: 'xây', harmonyScore: 95 },
+                { batLine: 'Gió đông se lạnh từng ngày nhớ thương', explanation: `Hiệp vần "ngày" với "${word6Luc}" (cùng vần ay, thanh Bằng), chan chứa niềm thương nhớ dịu êm.`, mood: 'Trữ tình', rhymeWord: 'ngày', harmonyScore: 94 },
+                { batLine: 'Cùng nhau chung sức từ đây sum vầy', explanation: `Hiệp vần "đây" với "${word6Luc}" (cùng vần ay, thanh Bằng), ấm áp không khí đoàn viên hội ngộ.`, mood: 'Dân dã', rhymeWord: 'đây', harmonyScore: 93 },
             ],
             'au': [
-                { batLine: 'Dù cho dâu bể trước sau vẹn toàn', explanation: `Hiệp vần "sau" với "${word6Luc}" (cùng vần au, thanh Bằng).`, mood: 'Đạo nghĩa' },
-                { batLine: 'Lời xưa răn dạy khắc sâu tấc lòng', explanation: `Hiệp vần "sâu" với "${word6Luc}" (cùng vần âu/au thông vần, thanh Bằng).`, mood: 'Chiêm nghiệm' },
+                { batLine: 'Dù cho dâu bể trước sau vẹn toàn', explanation: `Hiệp vần "sau" với "${word6Luc}" (cùng vần au, thanh Bằng), trọn vẹn nghĩa tình trước sau như một.`, mood: 'Triết lý', rhymeWord: 'sau', harmonyScore: 96 },
+                { batLine: 'Lời xưa răn dạy khắc sâu tấc lòng', explanation: `Hiệp vần "sâu" với "${word6Luc}" (vần thông âu/au, thanh Bằng), ghi nhớ bài học tiền nhân.`, mood: 'Trữ tình', rhymeWord: 'sâu', harmonyScore: 95 },
+                { batLine: 'Đường đời dẫu có khổ đau vẫn cười', explanation: `Hiệp vần "đau" với "${word6Luc}" (cùng vần au, thanh Bằng), tinh thần lạc quan yêu đời vượt khó.`, mood: 'Dân dã', rhymeWord: 'đau', harmonyScore: 92 },
             ],
             'en': [
-                { batLine: 'Giữ lòng trong sạch vững bền trước sau', explanation: `Hiệp vần "bền" với "${word6Luc}" (cùng vần ên/en thông vần, thanh Bằng).`, mood: 'Khí tiết' },
-                { batLine: 'Bóng ai thấp thoáng bên thềm ngóng trông', explanation: `Hiệp vần "thềm" với "${word6Luc}" (cùng vần êm/en thông vần, thanh Bằng).`, mood: 'Trữ tình' },
+                { batLine: 'Giữ lòng trong sạch vững bền trước sau', explanation: `Hiệp vần "bền" với "${word6Luc}" (vần thông ên/en, thanh Bằng), ngợi ca cốt cách thanh cao.`, mood: 'Triết lý', rhymeWord: 'bền', harmonyScore: 95 },
+                { batLine: 'Bóng ai thấp thoáng bên thềm ngóng trông', explanation: `Hiệp vần "thềm" với "${word6Luc}" (vần thông êm/en, thanh Bằng), hình bóng dịu dàng chờ mong.`, mood: 'Trữ tình', rhymeWord: 'thềm', harmonyScore: 94 },
+                { batLine: 'Qua bao mưa nắng thêm bền tình xưa', explanation: `Hiệp vần "bền" với "${word6Luc}" (vần thông ên/en, thanh Bằng), tình nghĩa bền chặt theo thời gian.`, mood: 'Dân dã', rhymeWord: 'bền', harmonyScore: 93 },
+            ],
+            'inh': [
+                { batLine: 'Sáng soi non nước quang vinh ngàn đời', explanation: `Hiệp vần "vinh" với "${word6Luc}" (cùng vần inh, thanh Bằng), ngợi ca non sông tươi đẹp.`, mood: 'Khoáng đạt', rhymeWord: 'vinh', harmonyScore: 96 },
+                { batLine: 'Khắc ghi câu hẹn nghĩa tình sắt son', explanation: `Hiệp vần "tình" với "${word6Luc}" (cùng vần inh, thanh Bằng), đượm sắc thái thủy chung.`, mood: 'Trữ tình', rhymeWord: 'tình', harmonyScore: 95 },
+                { batLine: 'Tự hào truyền thống văn minh tiên rồng', explanation: `Hiệp vần "minh" với "${word6Luc}" (cùng vần inh, thanh Bằng), ngợi ca nguồn cội dân tộc.`, mood: 'Triết lý', rhymeWord: 'minh', harmonyScore: 94 },
+            ],
+            'anh': [
+                { batLine: 'Dưới trời mây trắng trong lành sớm mai', explanation: `Hiệp vần "lành" với "${word6Luc}" (cùng vần anh, thanh Bằng), gợi cảm giác tinh khôi, trong trẻo.`, mood: 'Trữ tình', rhymeWord: 'lành', harmonyScore: 96 },
+                { batLine: 'Sử vàng lưu dấu hùng anh rạng ngời', explanation: `Hiệp vần "anh" với "${word6Luc}" (cùng vần anh, thanh Bằng), ghi nhớ công đức tiền nhân.`, mood: 'Triết lý', rhymeWord: 'anh', harmonyScore: 95 },
+                { batLine: 'Nước non một dải tươi xanh bốn mùa', explanation: `Hiệp vần "xanh" với "${word6Luc}" (cùng vần anh, thanh Bằng), vẻ đẹp non sông đất nước.`, mood: 'Dân dã', rhymeWord: 'xanh', harmonyScore: 93 },
             ],
         };
 
@@ -358,23 +449,37 @@ Mục tiêu tối thượng của bạn là sáng tác câu thơ tự nhiên, c�
         }
 
         aiResult = {
+            analysis: fallbackAnalysis,
+            context: fallbackContext,
             candidates: fallbackList || [
                 {
-                    batLine: `Trời cao soi tỏ tấm lòng thảo thơm`,
-                    explanation: `Tiếp nối ý tứ câu lục với nét đẹp truyền thống.`,
+                    batLine: 'Nghìn thu ghi tạc tấm lòng thảo thơm',
+                    explanation: `Tiếp nối mạch cảm xúc câu Lục với nét đẹp đạo lý truyền thống của dân tộc.`,
                     mood: 'Triết lý',
+                    rhymeWord: 'lòng',
+                    harmonyScore: 95,
                 },
                 {
-                    batLine: `Đường xa vạn dặm sắc son một lòng`,
-                    explanation: `Ý thơ mở rộng về tình nghĩa keo sơn.`,
+                    batLine: 'Đường xa vạn dặm sắt son một lòng',
+                    explanation: `Mở rộng tứ thơ về tình nghĩa thủy chung gắn kết keo sơn.`,
                     mood: 'Trữ tình',
+                    rhymeWord: 'lòng',
+                    harmonyScore: 94,
+                },
+                {
+                    batLine: 'Gió đưa thoang thoảng hương thơm ngọt ngào',
+                    explanation: `Tả cảnh ngụ tình dịu dàng, đem lại cảm giác êm đềm sâu lắng.`,
+                    mood: 'Dân dã',
+                    rhymeWord: 'thơm',
+                    harmonyScore: 92,
                 },
             ],
+            isGemini: false,
         };
     }
 
-    // Chạy qua Rule Engine để kiểm tra tính hợp lệ của từng câu Bát
-    const verifiedCandidates = aiResult.candidates.map((cand) => {
+    // 4. Chạy qua Rule Engine để kiểm tra âm luật chuẩn xác từng câu Bát
+    const verifiedCandidates = (aiResult.candidates || []).map((cand) => {
         const fullPoemTest = `${cleanLuc}\n${cand.batLine}`;
         const analysis = analyzeLucBatPoem(fullPoemTest);
         const batLineAnalysis = analysis.lines[1];
@@ -383,7 +488,9 @@ Mục tiêu tối thượng của bạn là sáng tác câu thơ tự nhiên, c�
         return {
             batLine: cand.batLine,
             explanation: cand.explanation,
-            mood: cand.mood,
+            mood: cand.mood || 'Trữ tình',
+            rhymeWord: cand.rhymeWord || '',
+            harmonyScore: cand.harmonyScore || 95,
             syllableCount: batLineAnalysis?.syllableCount || 0,
             isValidStructure: batLineAnalysis?.isValidStructure || false,
             toneScore: analysis.summary.toneScore,
@@ -402,7 +509,13 @@ Mục tiêu tối thượng của bạn là sáng tác câu thơ tự nhiên, c�
     return {
         inputLucLine: cleanLuc,
         rhymeTargetWord: word6Luc,
+        analysis: aiResult.analysis,
+        context: aiResult.context,
         candidates: verifiedCandidates,
+        isGemini: !!aiResult.isGemini,
+        source: aiResult.isGemini
+            ? `Google Gemini (${aiResult.modelUsed || 'AI Studio'})`
+            : 'Thi pháp học Di sản (Chưa cấu hình GEMINI_API_KEY)',
     };
 }
 

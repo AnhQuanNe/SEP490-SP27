@@ -5,6 +5,7 @@ import literatureService from '../services/literature.service';
 import PoemDisplay from '../components/common/PoemDisplay';
 import WorkDetailModal from '../components/common/WorkDetailModal';
 import {
+    BookOpen,
     Sparkles,
     Search,
     Compass,
@@ -125,15 +126,14 @@ const Home = () => {
                     <DragonPhoenixHeritage variant="hero" />
                 </div>
 
-                <div className="home-hero-glow-1"></div>
-                <div className="home-hero-glow-2"></div>
+                
 
                 <div className="home-hero-container">
                     {/* Top Pill Announcement */}
                     <div className="flex justify-center mb-6">
                         <div className="home-pill-announcement">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
-                            <span>❖ RỒNG BAY THĂNG LONG • PHƯỢNG MÚA HOÀNG THÀNH ❖</span>
+                            <BookOpen className="w-3.5 h-3.5 text-amber-800" />
+                            <span>Di Sản & Văn Học Dân Gian Việt Nam</span>
                         </div>
                     </div>
 
@@ -159,11 +159,7 @@ const Home = () => {
                             }}
                             className="home-search-form"
                         >
-                            <span className="home-corner-decor -top-1.5 -left-1.5">❖</span>
-                            <span className="home-corner-decor -top-1.5 -right-1.5">❖</span>
-                            <span className="home-corner-decor -bottom-1.5 -left-1.5">❖</span>
-                            <span className="home-corner-decor -bottom-1.5 -right-1.5">❖</span>
-
+                                                                                                                
                             {/* Category Filter Tabs */}
                             <div className="home-category-tabs">
                                 {categories.map((cat) => {
@@ -226,14 +222,14 @@ const Home = () => {
 
                         {/* Active Search Notification */}
                         {searchResults !== null && (
-                            <div className="mt-3 px-4 py-2 bg-amber-500/20 border border-amber-500/40 rounded-xl text-xs text-amber-200 flex items-center justify-between backdrop-blur-sm animate-in fade-in">
+                            <div className="mt-3 px-4 py-2 bg-stone-100 border border-stone-200 rounded-xl text-xs text-stone-800 flex items-center justify-between animate-in fade-in">
                                 <span>
                                     ✨ Đã tìm thấy <strong>{displayWorks.length}</strong> tác phẩm {searchQuery ? `cho từ khóa "${searchQuery}"` : 'theo bộ lọc'}.
                                 </span>
                                 <button
                                     type="button"
                                     onClick={handleResetFilter}
-                                    className="text-amber-300 hover:text-white underline font-semibold ml-2"
+                                    className="text-stone-900 hover:underline font-semibold ml-2"
                                 >
                                     Xem tất cả tác phẩm
                                 </button>
@@ -250,7 +246,7 @@ const Home = () => {
                                 <button
                                     key={tag}
                                     onClick={() => handleTagClick(tag)}
-                                    className="px-2.5 py-1 rounded-md bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
+                                    className="px-2.5 py-1 rounded-md bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {tag}
                                 </button>
@@ -333,8 +329,7 @@ const Home = () => {
                 <div className="home-pillars-grid">
                     {/* Pillar 1 */}
                     <Link to="/kham-pha" className="home-pillar-box group block">
-                        <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="home-pillar-icon bg-amber-100/80 text-red-900 border border-amber-300/60 shadow-xs">
+                                                <div className="home-pillar-icon bg-amber-100/80 text-red-900 border border-amber-300/60 shadow-xs">
                             <Scroll className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -353,8 +348,7 @@ const Home = () => {
                         to="/gia-su-ai"
                         className="home-pillar-box group block text-left"
                     >
-                        <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="home-pillar-icon bg-red-100/70 text-red-900 border border-red-300/50 shadow-xs">
+                                                <div className="home-pillar-icon bg-red-100/70 text-red-900 border border-red-300/50 shadow-xs">
                             <GraduationCap className="w-6 h-6 text-red-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -370,8 +364,7 @@ const Home = () => {
 
                     {/* Pillar 3 */}
                     <Link to="/kham-pha" className="home-pillar-box group block">
-                        <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="home-pillar-icon bg-emerald-100/70 text-emerald-900 border border-emerald-300/50 shadow-xs">
+                                                <div className="home-pillar-icon bg-emerald-100/70 text-emerald-900 border border-emerald-300/50 shadow-xs">
                             <Compass className="w-6 h-6 text-emerald-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -390,8 +383,7 @@ const Home = () => {
                         to="/studio-tho"
                         className="home-pillar-box group block text-left"
                     >
-                        <span className="absolute top-2 right-2 text-[10px] text-amber-600 font-bold">❖</span>
-                        <div className="home-pillar-icon bg-amber-100/70 text-amber-900 border border-amber-300/60 shadow-xs">
+                                                <div className="home-pillar-icon bg-amber-100/70 text-amber-900 border border-amber-300/60 shadow-xs">
                             <Feather className="w-6 h-6 text-amber-800" />
                         </div>
                         <h3 className="text-base font-bold text-red-950 mb-2 font-heritage">
@@ -409,14 +401,14 @@ const Home = () => {
 
             {/* 3.5. PERSONALIZED LEARNING PATH BANNER */}
             <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 p-8 sm:p-10 border border-amber-500/30 shadow-xl text-white">
+                <div className="rounded-2xl bg-stone-900 p-6 sm:p-8 border border-stone-800 text-white">
                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="space-y-3 max-w-2xl text-center md:text-left">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-wider border border-amber-400/30">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-xs font-semibold">
                                 <Sparkles className="w-3.5 h-3.5" />
                                 Tính Năng Nổi Bật Mới
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-black font-heritage text-amber-100">
+                            <h2 className="text-xl sm:text-2xl font-bold font-heritage text-white">
                                 Lộ Trình Học Văn Hóa Cá Nhân Hóa
                             </h2>
                             <p className="text-sm text-stone-300 leading-relaxed">
@@ -426,7 +418,7 @@ const Home = () => {
                         <div className="flex-shrink-0">
                             <Link
                                 to="/lo-trinh-hoc"
-                                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-red-950 font-bold shadow-lg shadow-amber-950/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer text-sm whitespace-nowrap"
+                                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap"
                             >
                                 <GraduationCap className="w-5 h-5" />
                                 <span>Khám Phá Lộ Trình Ngay</span>
@@ -499,8 +491,7 @@ const Home = () => {
                     <div className="home-works-grid">
                         {displayWorks.map((work) => (
                             <div key={work._id || work.slug} className="home-work-card group">
-                                <span className="absolute top-2 right-2 text-[9px] text-amber-600 font-bold">❖</span>
-                                <div className="space-y-3">
+                                                                <div className="space-y-3">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100/80 text-red-950 border border-amber-300/80">
                                             {work.categoryName || work.category}
@@ -539,7 +530,7 @@ const Home = () => {
                                         </button>
                                         <button
                                             onClick={() => setActiveModalWork(work)}
-                                            className="px-4 py-1.5 bg-gradient-to-r from-red-900 to-amber-800 hover:from-red-800 hover:to-amber-700 text-amber-100 rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-xs border border-amber-400/40 cursor-pointer"
+                                            className="px-3.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
                                         >
                                             <span>Xem chi tiết</span>
                                             <ArrowRight className="w-3 h-3 text-amber-300" />
@@ -603,14 +594,14 @@ const Home = () => {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => openAiChat()}
-                                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs transition shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
+                                    className="px-4 py-2 bg-white hover:bg-stone-100 text-stone-900 font-semibold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                                 >
                                     <Bot className="w-3.5 h-3.5" />
                                     <span>Hỏi Trợ lý AI ngay</span>
                                 </button>
                                 <Link
                                     to="/do-vui"
-                                    className="px-4 py-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/60 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                                    className="px-4 py-2 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
                                 >
                                     <Trophy className="w-3.5 h-3.5 text-amber-400" />
                                     <span>Thử tài Đố vui</span>

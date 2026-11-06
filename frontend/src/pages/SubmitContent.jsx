@@ -190,28 +190,26 @@ const SubmitContent = () => {
     return (
         <div className="space-y-12 pb-24 min-h-[90vh]">
             {/* 1. HERO HEADER: CỔ THIỆN THƯ PHÒNG & KHÍ CHẤT HOÀNG THÀNH */}
-            <section className="relative overflow-hidden pt-12 pb-16 bg-gradient-to-b from-[#240606] via-[#160404] to-[#0e0202] text-amber-50 border-b-2 border-amber-500/30">
+            <section className="relative overflow-hidden pt-10 pb-12 bg-[#faf7f0] text-stone-900 border-b border-stone-200">
                 <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
                     <DragonPhoenixHeritage variant="hero" />
                 </div>
 
-                <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
-
+                                
                 <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-                    <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#450a0a]/80 text-[#fcd34d] text-xs font-semibold border border-amber-500/50 shadow-md shadow-red-950/40">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
-                        <span>❖ RỒNG BAY THĂNG LONG • GÓP NHẶT TINH HOA ❖</span>
+                    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-700 text-xs font-semibold border border-stone-200">
+                        <BookOpen className="w-3.5 h-3.5 text-amber-800" />
+                        <span>Đóng Góp Di Sản Văn Tộc</span>
                     </div>
 
-                    <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-heritage text-[#fffbeb] drop-shadow-md">
+                    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight font-heritage text-stone-900">
                         Chung Tay Dựng Xây{' '}
-                        <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                        <span className="text-amber-900">
                             Bách Khoa Di Sản Văn Tộc
                         </span>
                     </h1>
 
-                    <p className="max-w-3xl mx-auto text-sm sm:text-base text-amber-100/90 font-vietnam font-light leading-relaxed">
+                    <p className="max-w-3xl mx-auto text-sm sm:text-base text-stone-600 font-vietnam font-normal leading-relaxed">
                         Mỗi câu ca dao, tục ngữ bạn hiến tặng là một viên gạch gìn giữ hồn thiêng sông núi cho muôn đời sau. Mọi nội dung đóng góp đều được thẩm định học thuật và vinh danh trang trọng trên kho tàng quốc gia.
                     </p>
                 </div>
@@ -221,14 +219,14 @@ const SubmitContent = () => {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
                 {/* Navigation Tabs Cung Đình */}
                 <div className="flex justify-center mb-8">
-                    <div className="inline-flex p-1.5 bg-[#2c0808]/90 backdrop-blur-md rounded-2xl border border-amber-500/40 shadow-xl shadow-red-950/30">
+                    <div className="inline-flex p-1 bg-stone-100 rounded-xl border border-stone-200">
                         <button
                             type="button"
                             onClick={() => setActiveTab('new')}
                             className={`py-2.5 px-6 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
                                 activeTab === 'new'
-                                    ? 'bg-gradient-to-r from-[#991b1b] to-[#b45309] text-amber-100 shadow-md border border-amber-400/50'
-                                    : 'text-amber-200/70 hover:text-amber-100'
+                                    ? 'bg-stone-900 text-white font-semibold shadow-xs'
+                                    : 'text-stone-600 hover:text-stone-900'
                             }`}
                         >
                             <Feather className="w-4 h-4" />
@@ -240,8 +238,8 @@ const SubmitContent = () => {
                             onClick={() => setActiveTab('my')}
                             className={`py-2.5 px-6 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
                                 activeTab === 'my'
-                                    ? 'bg-gradient-to-r from-[#991b1b] to-[#b45309] text-amber-100 shadow-md border border-amber-400/50'
-                                    : 'text-amber-200/70 hover:text-amber-100'
+                                    ? 'bg-stone-900 text-white font-semibold shadow-xs'
+                                    : 'text-stone-600 hover:text-stone-900'
                             }`}
                         >
                             <Scroll className="w-4 h-4" />
@@ -257,16 +255,11 @@ const SubmitContent = () => {
 
                 {/* TAB 1: FORM SOẠN THẢO CHIẾU CHỈ */}
                 {activeTab === 'new' ? (
-                    <div className="relative bg-[#fffdf9]/98 rounded-3xl border-2 border-amber-600/40 shadow-2xl shadow-red-950/40 p-6 sm:p-10 overflow-hidden">
+                    <div className="relative bg-white rounded-2xl border border-stone-200 shadow-xs p-6 sm:p-8">
                         {/* 4 họa tiết góc truyền thống ❖ */}
-                        <span className="absolute -top-1.5 -left-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute -top-1.5 -right-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute -bottom-1.5 -left-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
-                        <span className="absolute -bottom-1.5 -right-1.5 text-amber-600 text-sm font-bold select-none">❖</span>
-
+                                                                                                
                         {/* Dải vân màu hoàng cung trên đỉnh */}
-                        <div className="h-1.5 w-full bg-gradient-to-r from-red-800 via-amber-500 to-red-800 absolute top-0 left-0"></div>
-
+                        
                         {/* Thông báo Thành công & Lỗi */}
                         {successMessage && (
                             <div className="mb-8 p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 flex items-start gap-3 shadow-sm animate-in fade-in duration-200">
@@ -299,7 +292,7 @@ const SubmitContent = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-8">
                             {/* KHỐI 1: CÂU CA DAO / TỤC NGỮ VÀ NÚT AI CO-PILOT */}
-                            <div className="p-5 sm:p-6 rounded-2xl bg-[#faf6ed] border border-amber-300/80 space-y-4">
+                            <div className="p-5 sm:p-6 rounded-2xl bg-stone-50 border border-stone-200 space-y-4">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                     <label className="block text-xs font-bold uppercase tracking-wider text-amber-950 font-vietnam">
                                         Câu Ca Dao / Tục Ngữ / Tích Xưa <span className="text-red-600">*</span>
@@ -310,7 +303,7 @@ const SubmitContent = () => {
                                         type="button"
                                         onClick={handleAiAssist}
                                         disabled={aiAnalyzing}
-                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-stone-950 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 border border-amber-500/70 shadow-md shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-stone-900 hover:bg-stone-800 transition disabled:opacity-50 cursor-pointer"
                                     >
                                         {aiAnalyzing ? (
                                             <>
