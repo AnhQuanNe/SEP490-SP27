@@ -100,6 +100,30 @@ class KnowledgeGraphController {
             next(error);
         }
     }
+    /**
+     * @route   POST /api/literature/knowledge-graph/ai-generate-tour
+     * @desc    AI Real 100%: Thiết kế Chuyến Du Hành Tiến Hóa Thi Pháp (Semantic Drift Tour) theo chủ đề
+     * @access  Public
+     */
+    async generateTourWithAI(req, res, next) {
+        try {
+            const { keyword } = req.body;
+            if (!keyword || !keyword.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Vui lòng cung cấp chủ đề hoặc hình tượng để AI thiết kế tour',
+                });
+            }
+
+            const tour = await knowledgeGraphService.generateCustomEvolutionTour(keyword);
+            res.status(200).json({
+                success: true,
+                data: tour,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new KnowledgeGraphController();

@@ -1,4 +1,5 @@
 const Artifact = require('../models/Artifact');
+const artifactAiService = require('../services/artifactAi.service');
 
 // Lấy danh sách tất cả các bảo vật đang active
 exports.getAllArtifacts = async (req, res) => {
@@ -82,6 +83,84 @@ exports.updateArtifact = async (req, res) => {
             success: false,
             message: 'Không thể cập nhật bảo vật',
             error: error.message
+        });
+    }
+};
+
+/**
+ * @route   POST /api/artifacts/ai-generate-quiz
+ * @desc    AI Real 100%: Sinh bộ 3 câu hỏi trắc nghiệm tương tác cho bảo vật bằng Google Gemini
+ * @access  Public
+ */
+exports.generateQuizWithAI = async (req, res, next) => {
+    try {
+        let artifact = req.body?.artifact;
+        const slug = req.body?.slug || req.params?.slug;
+
+        // Nếu client chỉ truyền slug hoặc id, tìm trong Database MongoDB
+        if (!artifact && slug) {
+            artifact = await Artifact.findOne({ slug, isActive: true }).lean();
+        }
+
+        if (!artifact) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp dữ liệu hoặc slug của bảo vật để AI tạo câu hỏi',
+            });
+        }
+
+        const quizData = await artifactAiService.generateQuizForArtifact(artifact, req.body || {});
+
+        return res.status(200).json({
+            success: true,
+            data: quizData,
+        });
+    } catch (error) {
+        console.error('Lỗi sinh câu đố AI cho bảo vật:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Không thể tạo câu hỏi trắc nghiệm AI',
+            error: error.message,
+        });
+    }
+};
+
+/**
+ * @route   POST /api/artifacts/ai-inspect-hotspot
+ * @desc    AI Real 100%: Kính Lúp Di Sản AI mổ xẻ chuyên sâu điểm chạm khảo cứu
+ * @access  Public
+ */
+exports.inspectHotspotWithAI = async (req, res, next) => {
+    try {
+        let { artifact, hotspot, angleTitle, slug } = req.body;
+
+        if (!artifact && slug) {
+            artifact = await Artifact.findOne({ slug, isActive: true }).lean();
+        }
+
+        if (!artifact || !hotspot) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp dữ liệu bảo vật và điểm chạm để AI phân tích',
+            });
+        }
+
+        const inspectionData = await artifactAiService.inspectHotspotWithAI({
+            artifact,
+            hotspot,
+            angleTitle
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: inspectionData,
+        });
+    } catch (error) {
+        console.error('Lỗi mổ xẻ điểm chạm bằng AI:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Không thể phân tích điểm chạm bằng AI',
+            error: error.message,
         });
     }
 };

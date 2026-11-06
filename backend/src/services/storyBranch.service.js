@@ -1,10 +1,11 @@
 const { removeVietnameseTones } = require('../utils/vietnamese.utils');
 
 const GEMINI_MODELS = [
-    'gemini-3.1-flash-lite',
+    'gemini-flash-lite-latest',
     'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash',
 ];
 
 /**
@@ -321,6 +322,7 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
                         generationConfig: {
                             temperature: 0.7,
                             maxOutputTokens: 2048,
+                            responseMimeType: 'application/json',
                         },
                     }),
                     signal: AbortSignal.timeout(9000),

@@ -7,6 +7,7 @@ import {
     VolumeX, 
     Route, 
     Play, 
+    Compass,
     Clock, 
     BookOpen, 
     ZoomIn, 
@@ -191,14 +192,17 @@ const GraphHeaderToolbar = ({
                     <span className="hidden md:inline">Đường Đi Văn Hóa</span>
                 </button>
 
-                {/* Nút mở Chuyến Du Hành Văn Hóa Tự Động (AI Guided Tour) */}
+                {/* Nút mở Chuyến Du Hành Thi Pháp (Semantic Drift AI Tour) - Hero Highlight CTA */}
                 <button
                     onClick={() => setIsTourModalOpen(!isTourModalOpen)}
-                    className="kg-interactive-panel px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-stone-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-200 transition-all cursor-pointer shadow-lg shadow-amber-500/20 active:scale-95"
-                    title="Bắt đầu chuyến du hành văn hóa tự động theo dòng cảm xúc"
+                    className="kg-tour-cta-btn text-xs font-extrabold group"
+                    title="Du Hành Thi Pháp & Cổ Mẫu Di Sản (Semantic Drift AI Tour)"
                 >
-                    <Play className="w-3.5 h-3.5 fill-stone-950" />
-                    <span>Du Hành AI</span>
+                    <Compass className="w-4 h-4 text-stone-950 stroke-[2.4] group-hover:rotate-45 transition-transform duration-300 flex-shrink-0" />
+                    <span>Du Hành Thi Pháp</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-950/20 text-stone-950 font-black tracking-wider uppercase border border-stone-950/20">
+                        AI
+                    </span>
                 </button>
 
                 {/* Nút mở Cỗ Máy Thời Gian Di Sản (Cultural Time-Lapse) */}
