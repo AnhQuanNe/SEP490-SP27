@@ -52,7 +52,7 @@ const getStoryDetail = async (req, res) => {
  */
 const nextChapter = async (req, res) => {
     try {
-        const { storySlug, step, chosenText, previousHistory, currentStats } = req.body;
+        const { storySlug, step, chosenText, isCustomAction, previousHistory, currentStats } = req.body;
 
         if (!storySlug || !chosenText) {
             return res.status(400).json({
@@ -65,6 +65,7 @@ const nextChapter = async (req, res) => {
             storySlug,
             step: Number(step) || 1,
             chosenText,
+            isCustomAction: !!isCustomAction,
             previousHistory: previousHistory || [],
             currentStats: currentStats || { tam: 50, tri: 50, dung: 50, longDan: 50 },
         });
