@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
     Sparkles,
-    GitBranch,
     Heart,
     Brain,
     Sword,
@@ -23,12 +22,14 @@ import {
     X,
     LogIn,
     UserPlus,
-    Volume2,
-    VolumeX,
     Type,
-    Quote
+    Quote,
+    Scale,
+    Shield,
+    Flower2
 } from 'lucide-react';
 import storyBranchService from '../services/storyBranch.service';
+import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
 
 /**
  * Thẻ trạng thái cảm xúc của cảnh (Scene Mood)
@@ -97,6 +98,33 @@ const STORY_VISUALS = {
     },
 };
 
+const STAT_NAMES = {
+    tam: 'Tâm Đức',
+    tri: 'Trí Mưu',
+    dung: 'Dũng Khí',
+    longDan: 'Lòng Dân',
+};
+
+const renderCardIcon = (iconType) => {
+    switch (iconType) {
+        case 'scale':
+            return <Scale className="w-6 h-6 text-blue-400 mx-auto" />;
+        case 'sword':
+            return <Sword className="w-6 h-6 text-amber-400 mx-auto" />;
+        case 'feather':
+            return <Feather className="w-6 h-6 text-emerald-400 mx-auto" />;
+        case 'shield':
+            return <Shield className="w-6 h-6 text-orange-400 mx-auto" />;
+        case 'compass':
+            return <Compass className="w-6 h-6 text-cyan-400 mx-auto" />;
+        case 'scroll':
+            return <Scroll className="w-6 h-6 text-yellow-400 mx-auto" />;
+        case 'lotus':
+        default:
+            return <Flower2 className="w-6 h-6 text-rose-400 mx-auto" />;
+    }
+};
+
 const InteractiveStory = () => {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -114,8 +142,7 @@ const InteractiveStory = () => {
     const [customActionText, setCustomActionText] = useState('');
     const [copied, setCopied] = useState(false);
 
-    // Tiện ích đọc truyện: Nghe âm thanh & Tùy chỉnh cỡ chữ
-    const [isNarrating, setIsNarrating] = useState(false);
+    // Tiện ích đọc truyện: Tùy chỉnh cỡ chữ
     const [fontSizeLevel, setFontSizeLevel] = useState('normal'); // 'normal' | 'large'
 
     // Trạng thái modal yêu cầu đăng nhập khi khách tương tác
@@ -167,10 +194,6 @@ const InteractiveStory = () => {
 
     // Quay về màn hình chọn truyện
     const handleBackToCatalog = () => {
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            setIsNarrating(false);
-        }
         setSelectedStory(null);
         setCurrentChapter(null);
         setHistoryNodes([]);
@@ -179,10 +202,6 @@ const InteractiveStory = () => {
 
     // Người chơi chọn một lựa chọn
     const handleChooseOption = async (optionText, isCustom = false) => {
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            setIsNarrating(false);
-        }
         if (!isAuthenticated) {
             setShowAuthModal(true);
             return;
@@ -284,38 +303,6 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
         });
     };
 
-    // Đọc giọng dẫn chuyện bằng Web Speech API
-    const handleToggleNarration = () => {
-        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-            alert('Trình duyệt của bạn hiện chưa hỗ trợ tính năng đọc âm thanh tự động.');
-            return;
-        }
-
-        if (isNarrating) {
-            window.speechSynthesis.cancel();
-            setIsNarrating(false);
-        } else {
-            if (!currentChapter?.storyText) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(currentChapter.storyText);
-            utterance.lang = 'vi-VN';
-            utterance.rate = 0.95;
-            utterance.onend = () => setIsNarrating(false);
-            utterance.onerror = () => setIsNarrating(false);
-            window.speechSynthesis.speak(utterance);
-            setIsNarrating(true);
-        }
-    };
-
-    // Dừng giọng đọc khi chuyển hồi hoặc đổi câu chuyện
-    useEffect(() => {
-        return () => {
-            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, [currentChapter]);
-
     // Trình kết xuất lời dẫn chuyện thông minh: tách thoại, drop cap, hộp tình thế then chốt
     const renderFormattedStoryText = (rawText) => {
         if (!rawText) return null;
@@ -412,10 +399,16 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
     const currentMood = MOOD_STYLES[currentChapter?.sceneMood] || MOOD_STYLES.dramatic;
 
     return (
-        <div className="min-h-screen bg-[#110e0c] text-stone-200 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-vietnam">
-            {/* Họa tiết nền Cung đình chìm */}
-            <div className="absolute inset-0 bg-[radial-gradient(#b45309_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-amber-600/10 via-rose-900/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="min-h-screen bg-[#0e0b09] text-stone-200 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-vietnam">
+            {/* 1. HIỆU ỨNG RỒNG BAY PHƯỢNG MÚA & TRỐNG ĐỒNG ĐÔNG SƠN MỜ ẢO */}
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-25">
+                <DragonPhoenixHeritage variant="hero" />
+            </div>
+
+            {/* 2. MÀN SƯƠNG ĐÊM CUNG ĐÌNH & QUẦNG HOÀNG KIM (ĐẢM BẢO CHỮ VÀ THẺ BÀI LUÔN DỄ NHÌN) */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0e0b09]/30 via-[#0e0b09]/80 to-[#0e0b09] pointer-events-none z-0" />
+            <div className="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:32px_32px] opacity-10 pointer-events-none z-0" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 bg-gradient-to-b from-amber-600/15 via-rose-900/5 to-transparent blur-3xl pointer-events-none z-0" />
 
             <div className="max-w-6xl mx-auto relative z-10">
                 {/* ============================================================ */}
@@ -604,21 +597,8 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                                     </span>
                                 </div>
 
-                                {/* Bộ công cụ đọc: Nghe âm thanh & Tăng cỡ chữ */}
+                                {/* Bộ công cụ đọc: Tăng giảm cỡ chữ */}
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={handleToggleNarration}
-                                        title={isNarrating ? "Dừng giọng đọc" : "Nghe giọng đọc diễn cảm"}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
-                                            isNarrating
-                                                ? 'bg-amber-500 text-stone-950 border-amber-400 font-bold animate-pulse'
-                                                : 'bg-[#201915] hover:bg-[#2b221c] text-stone-300 border-amber-800/40 hover:text-amber-300'
-                                        }`}
-                                    >
-                                        {isNarrating ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                                        <span className="hidden sm:inline">{isNarrating ? 'Dừng đọc' : 'Nghe giọng kể'}</span>
-                                    </button>
-
                                     <button
                                         onClick={() => setFontSizeLevel((prev) => (prev === 'normal' ? 'large' : 'normal'))}
                                         title="Điều chỉnh cỡ chữ dễ đọc"
@@ -686,89 +666,144 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                                 </div>
                             )}
 
-                            {/* CÁC LỰA CHỌN TIẾP THEO (CHI TIẾT, RÕ RÀNG HÀNH ĐỘNG, KHÔNG BỊ TRUNCATE) */}
+                            {/* BỘ 3 THẺ TRÚC MỆNH LỆNH (THUẦN PHONG MỸ TỤC, XẾP HÀNG NGANG) */}
                             {!currentChapter?.isEnding && (
-                                <div className="mt-6 pt-5 border-t border-amber-900/30 space-y-3">
-                                    <p className="text-xs uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
-                                        <GitBranch className="w-3.5 h-3.5 text-amber-500" />
-                                        <span>Lựa chọn bước tiếp theo:</span>
-                                    </p>
+                                <div className="mt-6 pt-5 border-t border-amber-900/30 space-y-3.5">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
+                                            <Scroll className="w-3.5 h-3.5 text-amber-500" />
+                                            <span>Bộ 3 Thẻ Trúc Mệnh Lệnh (Chọn 1 để hạ chiếu):</span>
+                                        </p>
+                                        <span className="text-[11px] text-stone-400 italic hidden sm:inline">
+                                            * Thẻ bài cổ phong • Soi chiếu đạo lý
+                                        </span>
+                                    </div>
 
                                     {loadingNext ? (
-                                        <div className="py-6 text-center space-y-2 bg-[#201915] rounded-xl border border-amber-600/25">
+                                        <div className="py-8 text-center space-y-2 bg-[#201915] rounded-2xl border border-amber-600/25">
                                             <div className="inline-block w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                                             <p className="text-xs font-medium text-amber-300/90 font-heritage animate-pulse">
-                                                AI đang dệt tiếp diễn biến...
+                                                Tiền nhân đang dệt tiếp mệnh đề...
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-2.5">
-                                            {currentChapter?.choices?.map((choice, idx) => (
-                                                <button
-                                                    key={choice.id || idx}
-                                                    onClick={() => handleChooseOption(choice.text)}
-                                                    className="w-full group text-left p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-[#201915] to-[#1c1613] hover:from-[#2a211c] hover:to-[#241c18] border border-amber-700/30 hover:border-amber-500/60 shadow-sm hover:shadow-md hover:shadow-amber-950/40 transition-all duration-150 flex items-start gap-3.5 cursor-pointer active:scale-[0.99]"
-                                                >
-                                                    {/* Số thứ tự lựa chọn */}
-                                                    <span className="w-6 h-6 rounded-lg bg-amber-500/15 group-hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors">
-                                                        {idx + 1}
-                                                    </span>
+                                        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                                            {currentChapter?.choices?.map((choice, idx) => {
+                                                const req = choice.requiredStat;
+                                                const isLocked = req && stats[req.stat] !== undefined && stats[req.stat] < req.min;
 
-                                                    {/* Nội dung chi tiết & Gợi ý tác động */}
-                                                    <div className="flex-1 min-w-0 space-y-2">
-                                                        <p className="text-sm sm:text-[15px] font-semibold text-stone-100 group-hover:text-amber-200 leading-snug break-words">
-                                                            {choice.text}
-                                                        </p>
-
-                                                        {choice.hint && (
-                                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-[11px] sm:text-xs font-medium text-amber-300/90 leading-tight">
-                                                                    <Sparkles className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                                                                    <span>{choice.hint}</span>
+                                                return (
+                                                    <div
+                                                        key={choice.id || idx}
+                                                        className={`rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-200 relative group ${
+                                                            isLocked
+                                                                ? 'bg-[#15100d] border-2 border-stone-800 opacity-75'
+                                                                : 'bg-gradient-to-b from-[#281c15] via-[#1d1510] to-[#150f0c] border-2 border-amber-500/50 hover:border-amber-400 hover:-translate-y-1 shadow-lg hover:shadow-xl hover:shadow-amber-950/50 cursor-pointer'
+                                                        }`}
+                                                    >
+                                                        <div className="space-y-2">
+                                                            {/* Đỉnh thẻ: Ấn triện son & Trạng thái */}
+                                                            <div className="flex items-center justify-between border-b border-amber-900/30 pb-1.5 gap-1">
+                                                                <span className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border ${
+                                                                    isLocked
+                                                                        ? 'border-stone-700 text-stone-400 bg-stone-900/40'
+                                                                        : 'border-red-600/70 text-red-400 bg-red-950/25'
+                                                                }`}>
+                                                                    {choice.sealText || 'ĐẠO LÝ'}
                                                                 </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
 
-                                                    {/* Mũi tên tương tác */}
-                                                    <ArrowRight className="w-4 h-4 text-stone-500 group-hover:text-amber-300 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
-                                                </button>
-                                            ))}
+                                                                {isLocked ? (
+                                                                    <span className="text-[9px] sm:text-[10px] text-rose-400 font-bold bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/40 flex items-center gap-0.5 flex-shrink-0">
+                                                                        <Lock className="w-2.5 h-2.5" />
+                                                                        <span>{STAT_NAMES[req.stat] || req.stat} {req.min}%</span>
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[9px] sm:text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40 flex-shrink-0">
+                                                                        ✓ Đủ Điều Kiện
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Tên thẻ bài & Biểu tượng văn hóa */}
+                                                            <div className="text-center py-1 sm:py-2 space-y-1">
+                                                                <div className={`transition-transform duration-200 ${!isLocked && 'group-hover:scale-110'}`}>
+                                                                    {renderCardIcon(choice.iconType)}
+                                                                </div>
+                                                                <h4 className="text-xs sm:text-sm font-bold font-heritage text-amber-100 group-hover:text-amber-300 leading-tight">
+                                                                    {choice.cardTitle || choice.text}
+                                                                </h4>
+                                                            </div>
+
+                                                            {/* Nội dung hành động chi tiết */}
+                                                            <p className="text-[11px] sm:text-xs text-stone-300 leading-relaxed bg-black/40 p-2 sm:p-2.5 rounded-lg border border-amber-900/25 min-h-[70px] sm:min-h-[85px] flex items-center">
+                                                                {choice.text}
+                                                            </p>
+
+                                                            {/* Gương soi Ca dao / Tục ngữ */}
+                                                            {choice.folkQuote && (
+                                                                <div className="bg-amber-950/40 p-1.5 sm:p-2 rounded border-l-2 border-amber-500/80 text-[10px] sm:text-[11px] text-amber-200/90 italic leading-snug">
+                                                                    📖 <i>"{choice.folkQuote}"</i>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Chân thẻ: Nút chọn hoặc Báo khóa */}
+                                                        <div className="pt-2 mt-2 border-t border-amber-900/30 space-y-1.5">
+                                                            {isLocked ? (
+                                                                <button
+                                                                    disabled
+                                                                    className="w-full py-1.5 sm:py-2 rounded-xl bg-stone-900/80 border border-stone-800 text-stone-500 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 cursor-not-allowed"
+                                                                >
+                                                                    <Lock className="w-3 h-3" />
+                                                                    <span>Đang Khóa 🔒</span>
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleChooseOption(choice.text)}
+                                                                    className="w-full py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                                                                >
+                                                                    <span>Hạ Chiếu</span>
+                                                                    <ArrowRight className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
 
-                                    {/* Khung tự gõ hành động riêng */}
+                                    {/* Khung Bút Lực Tự Biên (Toàn chiều rộng bên dưới 3 lá bài) */}
                                     {!loadingNext && (
-                                        <div className="pt-2">
-                                            <div className="flex gap-2">
-                                                <div className="relative flex-1">
-                                                    <Feather className="w-4 h-4 text-amber-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                                    <input
-                                                        type="text"
-                                                        value={customActionText}
-                                                        onChange={(e) => setCustomActionText(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' && customActionText.trim()) {
-                                                                handleChooseOption(customActionText.trim(), true);
-                                                            }
-                                                        }}
-                                                        placeholder="Tự do sáng tạo bước đi riêng (VD: Rủ Cám trốn đi buôn lụa, liên minh với các tướng...)"
-                                                        className="w-full text-xs sm:text-sm pl-9 pr-3.5 py-2.5 rounded-xl border border-amber-700/30 bg-[#201915] text-stone-100 placeholder:text-stone-400/50 focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 transition-all"
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={() => {
-                                                        if (customActionText.trim()) {
-                                                            handleChooseOption(customActionText.trim(), true);
-                                                        }
-                                                    }}
-                                                    disabled={!customActionText.trim()}
-                                                    className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                                                >
-                                                    <Send className="w-3.5 h-3.5" />
-                                                    <span>Hành động</span>
-                                                </button>
+                                        <div className="p-3 sm:p-3.5 rounded-xl bg-[#17120f] border border-amber-800/30 flex flex-col sm:flex-row items-center gap-2.5 shadow-md">
+                                            <div className="flex items-center gap-1.5 flex-shrink-0 text-amber-300 font-bold text-xs">
+                                                <Feather className="w-4 h-4 text-amber-400" />
+                                                <span>Bút Lực Tự Biên:</span>
                                             </div>
+                                            <input
+                                                type="text"
+                                                value={customActionText}
+                                                onChange={(e) => setCustomActionText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && customActionText.trim()) {
+                                                        handleChooseOption(customActionText.trim(), true);
+                                                    }
+                                                }}
+                                                placeholder="Hoặc tự gõ hành động đạo lý riêng của bạn (VD: Rủ Cám trốn đi buôn lụa, mở trường dạy chữ...)"
+                                                className="flex-1 w-full bg-[#110d0b] text-xs px-3.5 py-2.5 rounded-lg border border-amber-900/40 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-400/80 transition-all"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    if (customActionText.trim()) {
+                                                        handleChooseOption(customActionText.trim(), true);
+                                                    }
+                                                }}
+                                                disabled={!customActionText.trim()}
+                                                className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 font-bold text-xs whitespace-nowrap transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                            >
+                                                <Send className="w-3.5 h-3.5" />
+                                                <span>Hành Động</span>
+                                            </button>
                                         </div>
                                     )}
                                 </div>
