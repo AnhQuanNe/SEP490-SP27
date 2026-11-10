@@ -19,10 +19,10 @@ const speak = async (req, res) => {
             });
         }
 
-        if (text.length > 1000) {
+        if (text.length > 3000) {
             return res.status(400).json({
                 success: false,
-                message: 'Đoạn văn bản quá dài (tối đa 1000 ký tự cho mỗi lần đọc)'
+                message: 'Đoạn văn bản quá dài (tối đa 3000 ký tự cho mỗi lần đọc)'
             });
         }
 

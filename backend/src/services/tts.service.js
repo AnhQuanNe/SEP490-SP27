@@ -1,5 +1,6 @@
 const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
 const crypto = require('crypto');
+const https = require('https');
 
 /**
  * Memory Cache để tái sử dụng Audio Buffer của các câu ca dao/tục ngữ thường gặp.
@@ -20,6 +21,12 @@ const SUPPORTED_VOICES = {
         gender: 'male',
         region: 'Bắc Bộ',
         label: 'Nam Minh (Nam - Giọng Bắc trang trọng, hào hùng)',
+    },
+    'female': {
+        name: 'vi-VN-GoogleFemale',
+        gender: 'female',
+        region: 'Toàn quốc',
+        label: 'Giọng Nữ Diễn Cảm (Google Tiếng Việt)',
     },
 };
 
@@ -42,91 +49,121 @@ const MODES = {
 };
 
 /**
- * Làm sạch văn bản thô khỏi các ký tự đóng mở ngoặc kép
+ * Làm sạch văn bản thô khỏi các ký tự đóng mở ngoặc kép & markdown
  */
 function cleanRawText(text) {
     if (!text || typeof text !== 'string') return '';
     return text
-        .replace(/["'“”«»]/g, '') // Bỏ dấu ngoặc kép bọc ngoài
+        .replace(/["'“”«»]/g, '')
+        .replace(/[*#_~`]/g, '')
         .replace(/\r\n/g, '\n')
         .trim();
 }
 
 /**
+ * Phân tách văn bản dài thành các đoạn nhỏ dưới 160 ký tự theo ngữ pháp
+ */
+function splitTextIntoGoogleChunks(text, maxLen = 160) {
+    if (!text) return [];
+    const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+    const chunks = [];
+    let current = '';
+    for (const s of sentences) {
+        if ((current + ' ' + s).trim().length <= maxLen) {
+            current = (current ? current + ' ' : '') + s.trim();
+        } else {
+            if (current) chunks.push(current);
+            if (s.length > maxLen) {
+                const words = s.split(/\s+/);
+                let sub = '';
+                for (const w of words) {
+                    if ((sub + ' ' + w).length <= maxLen) {
+                        sub = (sub ? sub + ' ' : '') + w;
+                    } else {
+                        if (sub) chunks.push(sub);
+                        sub = w;
+                    }
+                }
+                if (sub) chunks.push(sub);
+                current = '';
+            } else {
+                current = s.trim();
+            }
+        }
+    }
+    if (current) chunks.push(current);
+    return chunks.filter(Boolean);
+}
+
+/**
+ * Tải từng đoạn âm thanh giọng đọc tiếng Việt chuẩn từ Google TTS
+ */
+function fetchGoogleTTSChunk(chunkText) {
+    return new Promise((resolve, reject) => {
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunkText)}&tl=vi&client=tw-ob`;
+        https.get(url, (res) => {
+            if (res.statusCode !== 200) {
+                return reject(new Error(`Google TTS status code: ${res.statusCode}`));
+            }
+            const chunks = [];
+            res.on('data', (d) => chunks.push(d));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+}
+
+/**
+ * Ghép các đoạn âm thanh giọng nữ Google Tiếng Việt trong trẻo, tự nhiên
+ */
+async function synthesizeGoogleFemale(text) {
+    const clean = cleanRawText(text);
+    const chunks = splitTextIntoGoogleChunks(clean);
+    if (chunks.length === 0) return Buffer.from([]);
+    const buffers = await Promise.all(chunks.map(fetchGoogleTTSChunk));
+    return Buffer.concat(buffers);
+}
+
+/**
  * Bộ định dạng Diễn ngâm Chuyên sâu (Advanced Folk Poetic Prosody Formatter):
- * Tự động phân tích luật thơ Việt Nam (Lục bát 6/8, Thất ngôn 7, Ngũ ngôn 5, Tục ngữ đối vế 4/4 hoặc 2/2)
- * Bổ sung điểm dừng hơi và độ ngân vang tự nhiên (...) giúp AI diễn xướng đúng hồn cốt thi ca.
  */
 function formatTextForRecitation(rawText) {
     if (!rawText) return '';
     const cleaned = cleanRawText(rawText);
-
-    // Tách dòng bởi xuống dòng HOẶC dấu gạch chéo / (rất phổ biến trong CSDL ca dao tục ngữ)
     const rawLines = cleaned.split(/[\n/]+/).map((l) => l.trim()).filter(Boolean);
 
     const formattedLines = rawLines.map((line) => {
-        // Bỏ dấu câu ở cuối để tự điều phối nhịp ngân
         const lineWithoutEndPunct = line.replace(/[.,;:!?]+$/, '').trim();
         const words = lineWithoutEndPunct.split(/\s+/).filter(Boolean);
         const len = words.length;
 
-        // 1. Thơ Thất ngôn (7 chữ như Nam Quốc Sơn Hà, thơ Đường luật): Nhịp 4/3 bất biến
-        if (len === 7) {
-            return `${words.slice(0, 4).join(' ')}... ${words.slice(4).join(' ')}...`;
-        }
-
-        // 2. Thơ Lục bát câu 6 (6 chữ): Nhịp 2/4 (hoặc 2/2/2)
-        // Ví dụ: "Trăm năm... trong cõi người ta...", "Công cha... như núi Thái Sơn..."
-        if (len === 6) {
-            return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
-        }
-
-        // 3. Thơ Lục bát câu 8 (8 chữ): Nhịp 4/4
-        // Ví dụ: "Chữ tài chữ mệnh... khéo là ghét nhau...", "Nghĩa mẹ như nước... trong nguồn chảy ra..."
-        if (len === 8) {
-            return `${words.slice(0, 4).join(' ')}... ${words.slice(4).join(' ')}...`;
-        }
-
-        // 4. Tục ngữ / Thành ngữ 4 chữ: Nhịp 2/2
-        // Ví dụ: "Uống nước... nhớ nguồn...", "Lá lành... đùm lá rách..."
-        if (len === 4) {
-            return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
-        }
-
-        // 5. Thơ Ngũ ngôn (5 chữ): Nhịp 2/3
-        if (len === 5) {
-            return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
-        }
-
-        // 6. Dòng có sẵn dấu phẩy (như tục ngữ vế đối: "Gần mực thì đen, gần đèn thì rạng")
+        if (len === 7) return `${words.slice(0, 4).join(' ')}... ${words.slice(4).join(' ')}...`;
+        if (len === 6) return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
+        if (len === 8) return `${words.slice(0, 4).join(' ')}... ${words.slice(4).join(' ')}...`;
+        if (len === 4) return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
+        if (len === 5) return `${words.slice(0, 2).join(' ')}... ${words.slice(2).join(' ')}...`;
         if (lineWithoutEndPunct.includes(',')) {
             const parts = lineWithoutEndPunct.split(',').map((p) => p.trim()).filter(Boolean);
             return parts.map((part) => `${part}...`).join(' ');
         }
-
-        // 7. Dòng dài tự do khác: ngắt nhịp ở vị trí giữa câu
         if (len >= 6) {
             const mid = Math.floor(len / 2);
             return `${words.slice(0, mid).join(' ')}... ${words.slice(mid).join(' ')}...`;
         }
-
         return `${lineWithoutEndPunct}...`;
     });
 
-    // Kết nối các dòng thơ bằng khoảng lặng lắng đọng
     return formattedLines.join('\n');
 }
 
 /**
  * Bộ định dạng Đọc chuẩn (Standard Expressive Formatter):
- * Chuẩn hóa ngữ pháp, chuyển đổi gạch chéo thành dấu phẩy tự nhiên,
- * giữ tốc độ mượt mà, dứt khoát và chuẩn xác 100%.
  */
 function formatTextForStandard(rawText) {
     if (!rawText) return '';
     return cleanRawText(rawText)
-        .replace(/[,;]?\s*[/]\s*/g, ', ') // Đổi gạch chéo thành dấu phẩy ngắt câu tự nhiên
-        .replace(/\s*,\s*,+/g, ',') // Xóa dấu phẩy trùng lặp
+        .replace(/[,;]?\s*[/]\s*/g, ', ')
+        .replace(/\s*,\s*,+/g, ',')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -140,28 +177,45 @@ function getCacheKey(text, voice, mode) {
 
 /**
  * Chuyển văn bản thành Audio Buffer MP3
- * @param {Object} options
- * @param {string} options.text - Đoạn ca dao, tục ngữ hoặc lời giảng
- * @param {string} [options.voice='hoaimy'] - Mã giọng ('hoaimy' | 'namminh')
- * @param {string} [options.mode='recite'] - Kiểu đọc ('recite' | 'standard' | 'slow')
- * @param {string} [options.rate] - Tùy chỉnh tốc độ
- * @param {string} [options.pitch] - Tùy chỉnh cao độ
- * @returns {Promise<Buffer>}
  */
-async function synthesize({ text, voice = 'hoaimy', mode = 'recite', rate, pitch }) {
+async function synthesize({ text, voice = 'female', mode = 'standard', rate, pitch }) {
     if (!text || typeof text !== 'string' || !text.trim()) {
         throw new Error('Văn bản cần đọc không được để trống');
     }
 
     const cleanText = text.trim();
+    const isFemale = voice === 'female' || voice === 'hoaimy' || voice === 'google';
+
+    const cacheKey = getCacheKey(cleanText, isFemale ? 'female_google' : voice, mode);
+    if (audioCache.has(cacheKey)) {
+        return audioCache.get(cacheKey);
+    }
+
+    // 1. Ưu tiên giọng Nữ tự nhiên thông qua Google TTS đa luồng siêu tốc
+    if (isFemale) {
+        try {
+            const buf = await synthesizeGoogleFemale(cleanText);
+            if (buf && buf.length > 0) {
+                if (audioCache.size >= MAX_CACHE_ITEMS) {
+                    const firstKey = audioCache.keys().next().value;
+                    audioCache.delete(firstKey);
+                }
+                audioCache.set(cacheKey, buf);
+                return buf;
+            }
+        } catch (err) {
+            console.warn('[TTS] Google female fallback failed:', err.message);
+        }
+    }
+
+    // 2. Dự phòng cho giọng khác
     const selectedVoiceConfig = SUPPORTED_VOICES[voice] || SUPPORTED_VOICES['hoaimy'];
     const selectedVoice = selectedVoiceConfig.name;
-    const selectedMode = MODES[mode] || MODES['recite'];
+    const selectedMode = MODES[mode] || MODES['standard'];
 
     const effectiveRate = rate || selectedMode.rate;
     const effectivePitch = pitch || selectedMode.pitch;
 
-    // Định dạng tiền xử lý văn bản theo từng chế độ chuyên biệt
     let processedText = cleanText;
     if (mode === 'recite') {
         processedText = formatTextForRecitation(cleanText);
@@ -169,49 +223,34 @@ async function synthesize({ text, voice = 'hoaimy', mode = 'recite', rate, pitch
         processedText = formatTextForStandard(cleanText);
     }
 
-    const cacheKey = getCacheKey(processedText, selectedVoice, `${effectiveRate}_${effectivePitch}`);
-    if (audioCache.has(cacheKey)) {
-        return audioCache.get(cacheKey);
-    }
+    try {
+        const tts = new MsEdgeTTS();
+        await tts.setMetadata(selectedVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
 
-    const tts = new MsEdgeTTS();
-    await tts.setMetadata(selectedVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-
-    return new Promise((resolve, reject) => {
-        try {
+        const buffer = await new Promise((resolve, reject) => {
             const { audioStream } = tts.toStream(processedText, {
                 rate: effectiveRate,
                 pitch: effectivePitch,
             });
 
             const chunks = [];
-            audioStream.on('data', (chunk) => {
-                chunks.push(chunk);
-            });
+            audioStream.on('data', (chunk) => chunks.push(chunk));
+            audioStream.on('end', () => resolve(Buffer.concat(chunks)));
+            audioStream.on('error', reject);
+        });
 
-            audioStream.on('end', () => {
-                const buffer = Buffer.concat(chunks);
-                tts.close();
-
-                // Lưu vào cache
-                if (audioCache.size >= MAX_CACHE_ITEMS) {
-                    const firstKey = audioCache.keys().next().value;
-                    audioCache.delete(firstKey);
-                }
-                audioCache.set(cacheKey, buffer);
-
-                resolve(buffer);
-            });
-
-            audioStream.on('error', (err) => {
-                tts.close();
-                reject(err);
-            });
-        } catch (error) {
-            tts.close();
-            reject(error);
+        if (audioCache.size >= MAX_CACHE_ITEMS) {
+            const firstKey = audioCache.keys().next().value;
+            audioCache.delete(firstKey);
         }
-    });
+        audioCache.set(cacheKey, buffer);
+        return buffer;
+    } catch (edgeErr) {
+        console.warn('[TTS] MsEdgeTTS error, fallback to Google TTS:', edgeErr.message);
+        const buf = await synthesizeGoogleFemale(cleanText);
+        audioCache.set(cacheKey, buf);
+        return buf;
+    }
 }
 
 function getAvailableVoices() {
