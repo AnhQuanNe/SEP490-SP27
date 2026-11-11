@@ -40,8 +40,11 @@ export const gamificationService = {
     /**
      * Ghép cặp trực tiếp với Trạng Nguyên AI (Bot)
      */
-    async matchmakeBotDuel() {
-        const response = await api.post('/gamification/duel/match-bot');
+    async matchmakeBotDuel({ botDifficulty = 'medium', questionCount = 5 } = {}) {
+        const response = await api.post('/gamification/duel/match-bot', {
+            botDifficulty,
+            questionCount,
+        });
         return response.data;
     },
 
@@ -50,6 +53,24 @@ export const gamificationService = {
      */
     async leaveDuelQueue() {
         const response = await api.post('/gamification/duel/leave-queue');
+        return response.data;
+    },
+
+    /**
+     * Tạo phòng thách đấu riêng với bạn bè (mã 6 số)
+     */
+    async createPrivateRoom({ questionCount = 5 } = {}) {
+        const response = await api.post('/gamification/duel/create-room', {
+            questionCount,
+        });
+        return response.data;
+    },
+
+    /**
+     * Tham gia phòng riêng bằng mã 6 số
+     */
+    async joinPrivateRoom(roomCode) {
+        const response = await api.post('/gamification/duel/join-room', { roomCode });
         return response.data;
     },
 

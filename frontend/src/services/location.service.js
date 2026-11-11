@@ -50,6 +50,23 @@ export const locationService = {
         const response = await api.get(`/map/works?${params.toString()}`);
         return response.data;
     },
+
+    /**
+     * Lấy danh mục các địa danh cổ & cửa ải lịch sử Đại Việt
+     */
+    async getAncientLandmarks() {
+        const response = await api.get('/locations/ancient-landmarks');
+        return response.data || [];
+    },
+
+    /**
+     * AI Định vị & giải mã địa danh cổ sang GPS ngày nay
+     * @param {string} query - Tên địa danh cổ hoặc câu thơ
+     */
+    async resolveAncientLandmark(query) {
+        const response = await api.post('/locations/ancient-landmarks/resolve', { query });
+        return response.data || response;
+    },
 };
 
 export default locationService;

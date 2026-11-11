@@ -103,10 +103,13 @@ const matchmakeDuel = async (req, res) => {
  */
 const matchmakeBotDuel = async (req, res) => {
     try {
+        const { botDifficulty = 'medium', questionCount = 5 } = req.body || {};
         const result = await duelService.createBotMatch({
             userId: req.user._id,
             name: req.user.name,
             avatar: req.user.avatar,
+            botDifficulty,
+            questionCount,
         });
 
         res.status(200).json({
@@ -136,6 +139,56 @@ const leaveDuelQueue = async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message || 'Lỗi khi rời hàng đợi',
+        });
+    }
+};
+
+/**
+ * Tạo phòng thách đấu bạn bè
+ */
+const createPrivateRoom = async (req, res) => {
+    try {
+        const { questionCount = 5 } = req.body || {};
+        const result = await duelService.createPrivateRoom({
+            userId: req.user._id,
+            name: req.user.name,
+            avatar: req.user.avatar,
+            questionCount,
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Không thể tạo phòng lúc này',
+        });
+    }
+};
+
+/**
+ * Vào phòng bạn bè bằng mã 6 số
+ */
+const joinPrivateRoom = async (req, res) => {
+    try {
+        const { roomCode } = req.body;
+        const result = await duelService.joinPrivateRoom({
+            roomCode,
+            userId: req.user._id,
+            name: req.user.name,
+            avatar: req.user.avatar,
+        });
+
+        res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Mã phòng không hợp lệ hoặc đã bắt đầu',
         });
     }
 };
@@ -223,6 +276,8 @@ module.exports = {
     matchmakeDuel,
     matchmakeBotDuel,
     leaveDuelQueue,
+    createPrivateRoom,
+    joinPrivateRoom,
     getDuelMatchStatus,
     answerDuelRound,
     getDuelHistory,

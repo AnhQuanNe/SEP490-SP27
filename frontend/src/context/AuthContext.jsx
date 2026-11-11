@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/auth.service';
 import userService from '../services/user.service';
+import { SERVER_URL } from '../config/env';
 
 const AuthContext = createContext(null);
 
@@ -9,15 +10,13 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [loading, setLoading] = useState(true);
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
-
     // Helper tính toán đường dẫn Avatar (hỗ trợ ảnh Google hoặc ảnh lưu trên server)
     const getAvatarUrl = (avatarPath) => {
         if (!avatarPath || typeof avatarPath !== 'string') return null;
         if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
             return avatarPath;
         }
-        return `${serverUrl}${avatarPath}`;
+        return `${SERVER_URL}${avatarPath}`;
     };
 
     // Khi khởi động ứng dụng: nếu có token thì tải thông tin profile
