@@ -329,22 +329,22 @@ const LiteratureMap = () => {
             </header>
 
             {/* 2. CHỌN CHẾ ĐỘ BẢN ĐỒ & THANH CÔNG CỤ (2 MODES) */}
-            <section className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 space-y-3">
+            <section className="bg-white border-b border-slate-200 lg:sticky lg:top-0 z-30 shadow-xs">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-3.5 space-y-2.5 sm:space-y-3">
                     {/* HÀNG 1: TAB CHUYỂN ĐỔI 2 CHẾ ĐỘ THÔNG MINH */}
-                    <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-100 pb-2.5">
-                        <div className="flex items-center gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80">
+                    <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3 border-b border-slate-100 pb-2.5">
+                        <div className="flex items-center gap-1 sm:gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 w-full sm:w-auto">
                             {/* Tab 1: Địa phương */}
                             <button
                                 type="button"
                                 onClick={() => setMapMode('places')}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
                                     mapMode === 'places'
                                         ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90'
                                         : 'text-slate-600 hover:text-slate-900'
                                 }`}
                             >
-                                <MapPin className="w-3.5 h-3.5 text-amber-600" />
+                                <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                                 <span>Bản đồ Địa phương</span>
                             </button>
 
@@ -352,15 +352,15 @@ const LiteratureMap = () => {
                             <button
                                 type="button"
                                 onClick={() => setMapMode('ancient')}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
                                     mapMode === 'ancient'
                                         ? 'bg-slate-900 text-amber-300 shadow-sm border border-slate-950'
                                         : 'text-slate-600 hover:text-slate-900'
                                 }`}
                             >
-                                <Landmark className="w-3.5 h-3.5 text-amber-400" />
-                                <span>Cổ Danh & Cửa Ải Lịch Sử</span>
-                                <span className="px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-600 border border-amber-500/30 text-[9px] font-extrabold tracking-wider">
+                                <Landmark className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                                <span>Cổ Danh<span className="hidden sm:inline"> &amp; Cửa Ải</span> Lịch Sử</span>
+                                <span className="hidden sm:inline px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-600 border border-amber-500/30 text-[9px] font-extrabold tracking-wider">
                                     GPS AI
                                 </span>
                             </button>
@@ -581,7 +581,7 @@ const LiteratureMap = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* KHU VỰC BẢN ĐỒ CHÍNH (7 hoặc 8 cột) */}
                     <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-                        <div className="h-[560px] lg:h-[680px] w-full">
+                        <div className="h-[380px] sm:h-[520px] lg:h-[680px] w-full">
                             <CulturalMap
                                 locations={locations}
                                 selectedLocation={selectedLocation}

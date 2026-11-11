@@ -30,7 +30,8 @@ import {
     HelpCircle,
     Lock,
     RotateCcw,
-    ArrowDown
+    ArrowDown,
+    AlertTriangle
 } from 'lucide-react';
 import { useAiChat } from '../context/AiChatContext';
 
@@ -56,6 +57,7 @@ const Explore = () => {
     const [categories, setCategories] = useState([]);
     const [popularTags, setPopularTags] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
     const [showQuotaModal, setShowQuotaModal] = useState(false);
     const [guestQuota, setGuestQuota] = useState({ remaining: null, limit: 5 });
 
@@ -194,6 +196,7 @@ const Explore = () => {
 
     const fetchWorks = async (targetQuery = searchQuery, targetMode = searchMode) => {
         setIsLoading(true);
+        setFetchError(null);
         try {
             if (targetMode === 'semantic' && targetQuery.trim() !== '') {
                 try {
@@ -251,6 +254,7 @@ const Explore = () => {
         } catch (err) {
             console.error('Lỗi khi tải tác phẩm:', err);
             setWorks([]);
+            setFetchError(err?.message || 'Không thể tải danh sách tác phẩm từ máy chủ.');
         } finally {
             setIsLoading(false);
         }
@@ -854,6 +858,25 @@ const Explore = () => {
                                 <div className="h-16 bg-stone-100 rounded-xl"></div>
                             </div>
                         ))}
+                    </div>
+                ) : fetchError ? (
+                    <div className="bg-[#fffdfa] rounded-3xl p-8 sm:p-12 text-center border border-rose-200 max-w-xl mx-auto space-y-4 my-8 shadow-sm">
+                        <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs border border-rose-200">
+                            <AlertTriangle className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-bold text-stone-900 font-heritage">
+                            Không thể tải kho tàng tác phẩm
+                        </h3>
+                        <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">
+                            {fetchError}
+                        </p>
+                        <button
+                            onClick={() => fetchWorks()}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-800 to-amber-950 text-amber-50 rounded-xl text-xs font-bold hover:shadow-md transition cursor-pointer"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Thử tải lại</span>
+                        </button>
                     </div>
                 ) : works.length === 0 ? (
                     <div className="bg-[#fffdfa] rounded-3xl p-12 text-center border border-amber-900/15 max-w-xl mx-auto space-y-4 my-8 shadow-sm">

@@ -213,7 +213,7 @@ const VirtualExhibition = () => {
             onMouseUp={handleMouseUp}
         >
             {/* HIỆU ỨNG ÁNH SÁNG MÔ PHÒNG KHÔNG GIAN ĐẠI ĐIỆN BẢO TÀNG */}
-            <div className="fixed inset-0 pointer-events-none z-0">
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-amber-600/10 via-amber-800/5 to-transparent blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[400px] bg-red-950/15 blur-3xl" />
                 <div className="absolute bottom-0 right-0 w-[500px] h-[400px] bg-amber-900/10 blur-3xl" />

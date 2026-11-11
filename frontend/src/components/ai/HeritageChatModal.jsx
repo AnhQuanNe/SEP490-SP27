@@ -267,7 +267,7 @@ Bạn muốn tìm hiểu tác phẩm hoặc câu chuyện nào hôm nay?`,
     return (
         <>
             <div
-                className="fixed bottom-22 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[420px] h-[580px] max-h-[calc(100vh-105px)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-3xl shadow-2xl shadow-indigo-950/60 flex flex-col overflow-hidden text-white animate-in slide-in-from-bottom-5 zoom-in-95 duration-200"
+                className="fixed bottom-20 sm:bottom-22 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[420px] h-[min(580px,calc(100dvh-100px))] max-h-[calc(100dvh-96px)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-3xl shadow-2xl shadow-indigo-950/60 flex flex-col overflow-hidden text-white animate-in slide-in-from-bottom-5 zoom-in-95 duration-200"
                 role="dialog"
                 aria-label="VietHeritage AI Assistant"
             >

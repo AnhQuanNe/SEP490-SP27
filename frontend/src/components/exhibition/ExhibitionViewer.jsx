@@ -55,10 +55,9 @@ const ExhibitionViewer = ({
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            className={`relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#18110b] via-[#0d0906] to-[#140e0a] border-2 border-amber-500/40 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_30px_rgba(217,119,6,0.15)] ring-1 ring-amber-400/20 select-none transition-all ${
+            className={`relative h-[340px] sm:h-[460px] lg:h-[560px] rounded-3xl overflow-hidden bg-gradient-to-b from-[#18110b] via-[#0d0906] to-[#140e0a] border-2 border-amber-500/40 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_30px_rgba(217,119,6,0.15)] ring-1 ring-amber-400/20 select-none transition-all ${
                 isPanning ? 'cursor-grabbing' : zoomScale > 1 ? 'cursor-grab' : 'cursor-zoom-in'
             }`}
-            style={{ minHeight: '560px', height: '560px' }}
         >
             {/* 1. HIỆU ỨNG HẠT BỤI VÀNG LƠ LỬNG TRONG PHÒNG BẢO TÀNG */}
             <MuseumGoldDustCanvas isActive={true} />
@@ -66,16 +65,15 @@ const ExhibitionViewer = ({
             {/* 2. CHÙM SÁNG RỌI SPOTLIGHT BẢO TÀNG ĐIỆN ẢNH */}
             <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.18),transparent_65%),radial-gradient(circle_at_bottom,_rgba(0,0,0,0.8)_0%,transparent_100%)]" />
 
-            {/* Huy hiệu hiển thị tên bức ảnh hiện tại góc trên bên trái */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-                <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#140e09]/90 text-amber-200 border border-amber-500/40 backdrop-blur-xl flex items-center gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
-                    <Camera className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{(activePhoto?.title || '').replace(/\s*\(\d+°?\)/g, '').trim()}</span>
+            {/* THANH TRÊN CÙNG: TÊN GÓC CHỤP + THANH ZOOM KHÔNG BAO GIỜ CHỒNG CHÉO */}
+            <div className="absolute top-3 inset-x-3 sm:top-4 sm:inset-x-4 z-20 flex items-center justify-between gap-2 pointer-events-none">
+                <span className="min-w-0 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold bg-[#140e09]/90 text-amber-200 border border-amber-500/40 backdrop-blur-xl flex items-center gap-1.5 sm:gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+                    <Camera className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <span className="truncate">{(activePhoto?.title || '').replace(/\s*\(\d+°?\)/g, '').trim()}</span>
                 </span>
-            </div>
 
-            {/* THANH ĐIỀU KHIỂN ZOOM CHUYÊN NGHIỆP GÓC TRÊN BÊN PHẢI */}
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-[#120d09]/90 backdrop-blur-xl p-1.5 rounded-2xl border border-amber-500/35 shadow-[0_8px_30px_rgba(0,0,0,0.7)]">
+                {/* THANH ĐIỀU KHIỂN ZOOM CHUYÊN NGHIỆP */}
+                <div className="pointer-events-auto flex-shrink-0 flex items-center gap-0.5 sm:gap-1.5 bg-[#120d09]/90 backdrop-blur-xl p-1 sm:p-1.5 rounded-2xl border border-amber-500/35 shadow-[0_8px_30px_rgba(0,0,0,0.7)]">
                 {/* Nút nghe thuyết minh nhanh trên thanh công cụ */}
                 <button
                     type="button"
@@ -157,6 +155,7 @@ const ExhibitionViewer = ({
                 >
                     {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </button>
+                </div>
             </div>
 
             {/* NÚT MŨI TÊN CHUYỂN ẢNH NHANH TRÁI / PHẢI */}
@@ -254,7 +253,7 @@ const ExhibitionViewer = ({
 
                 {/* BẢNG CHÚ GIẢI CHI TIẾT KHI CLICK VÀO ĐIỂM GHIM (CÓ NÚT NGHE THUYẾT MINH TẠI CHỖ) */}
                 {activeHotspot && (
-                    <div className="absolute bottom-16 left-4 right-4 z-30 bg-[#150f0a]/95 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-amber-500/50 text-left shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-bottom-2 duration-200 pointer-events-auto">
+                    <div className="absolute bottom-14 sm:bottom-16 left-3 right-3 sm:left-4 sm:right-4 z-30 bg-[#150f0a]/95 backdrop-blur-xl p-3.5 sm:p-5 rounded-2xl border border-amber-500/50 text-left shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-bottom-2 duration-200 pointer-events-auto max-h-[58%] overflow-y-auto">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-2.5">
                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-400/40">
@@ -293,7 +292,7 @@ const ExhibitionViewer = ({
 
             {/* DẢI NÚT CHUYỂN ẢNH TINH TẾ CĂN GIỮA DƯỚI ĐÁY */}
             {currentGallery?.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-[#120d09]/90 backdrop-blur-xl p-1.5 rounded-full border border-amber-500/35 shadow-[0_10px_35px_rgba(0,0,0,0.8)]">
+                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 sm:gap-1.5 bg-[#120d09]/90 backdrop-blur-xl p-1 sm:p-1.5 rounded-full border border-amber-500/35 shadow-[0_10px_35px_rgba(0,0,0,0.8)] max-w-[calc(100%-24px)] overflow-x-auto scrollbar-none">
                     {currentGallery.map((photo, pIdx) => {
                         const isSelected = pIdx === currentPhotoIndex;
                         const displayTitle = (photo.shortTitle || photo.title || '').replace(/\s*\(\d+°?\)/g, '').trim();
@@ -302,18 +301,18 @@ const ExhibitionViewer = ({
                                 key={photo.id || pIdx}
                                 type="button"
                                 onClick={() => onSelectPhoto(pIdx)}
-                                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0 ${
                                     isSelected
-                                        ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105'
+                                        ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 shadow-[0_0_12px_rgba(245,158,11,0.45)]'
                                         : 'bg-[#1a120b] text-stone-300 hover:text-amber-200 hover:bg-[#251b11]'
                                 }`}
                             >
                                 <img 
                                     src={photo.image} 
                                     alt={displayTitle}
-                                    className="w-4 h-4 rounded-full object-cover border border-amber-500/40"
+                                    className="w-4 h-4 rounded-full object-cover border border-amber-500/40 flex-shrink-0"
                                 />
-                                <span>{displayTitle}</span>
+                                <span className="max-w-[110px] sm:max-w-none truncate">{displayTitle}</span>
                             </button>
                         );
                     })}

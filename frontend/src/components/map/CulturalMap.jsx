@@ -558,9 +558,9 @@ const CulturalMap = ({
             }`}
         >
             {/* Dải băng Khẳng định Chủ quyền Biển đảo Việt Nam trên bản đồ */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-gradient-to-r from-red-950/90 via-slate-900/90 to-red-950/90 text-amber-300 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl backdrop-blur-md text-xs font-bold pointer-events-auto">
-                <span className="text-sm">🇻🇳</span>
-                <span className="font-heritage tracking-wide">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-red-950/90 via-slate-900/90 to-red-950/90 text-amber-300 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-amber-500/40 shadow-xl backdrop-blur-md text-[10px] sm:text-xs font-bold pointer-events-auto max-w-[calc(100%-120px)] sm:max-w-none">
+                <span className="text-xs sm:text-sm flex-shrink-0">🇻🇳</span>
+                <span className="font-heritage tracking-wide truncate">
                     Hoàng Sa & Trường Sa là của Việt Nam
                 </span>
             </div>
@@ -574,10 +574,10 @@ const CulturalMap = ({
             )}
 
             {/* Container bản đồ Leaflet */}
-            <div ref={mapContainerRef} className="w-full h-full min-h-[500px] z-10" />
+            <div ref={mapContainerRef} className="w-full h-full min-h-[360px] sm:min-h-[500px] z-10" />
 
             {/* Cụm nút điều hướng & Phóng to / Bay tới Biển Đảo */}
-            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex flex-col gap-1.5 sm:gap-2">
                 {/* Nút bay nhanh tới Hoàng Sa */}
                 <button
                     type="button"

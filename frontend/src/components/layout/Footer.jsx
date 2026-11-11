@@ -13,22 +13,22 @@ const Footer = () => {
                 </svg>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
                     {/* Brand column */}
                     <div className="lg:col-span-2 space-y-4">
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 font-bold shadow-md border border-amber-400/40">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 font-bold shadow-md border border-amber-400/40 flex-shrink-0">
                                 <BookOpen className="w-5 h-5 text-amber-300" />
                             </div>
-                            <span className="text-2xl font-extrabold text-amber-100 font-heritage tracking-tight">
-                                VietHeritage <span className="text-amber-400 font-sans text-lg font-bold">AI</span>
+                            <span className="text-xl sm:text-2xl font-extrabold text-amber-100 font-heritage tracking-tight">
+                                VietHeritage <span className="text-amber-400 font-sans text-base sm:text-lg font-bold">AI</span>
                             </span>
                         </div>
                         <p className="text-sm text-stone-400 leading-relaxed max-w-sm">
                             Nền tảng tri thức số hóa và khám phá ca dao, tục ngữ và văn học dân gian Việt Nam ứng dụng Trí tuệ Nhân tạo thế hệ mới. Gìn giữ và tôn vinh tinh hoa di sản tiền nhân.
                         </p>
-                        <div className="pt-2 flex items-center gap-3 text-xs text-stone-400">
+                        <div className="pt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-stone-400">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-950/80 rounded-full border border-amber-600/40 text-amber-300">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                 Rồng Bay Phượng Múa

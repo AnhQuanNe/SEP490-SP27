@@ -1060,24 +1060,24 @@ const HeritageArena = () => {
                 {/* GIAI ĐOẠN 2: THI ĐẤU (PLAYING) & CÔNG BỐ HIỆP (ROUND_RESULT) */}
                 {/* ============================================================ */}
                 {(gameState === 'PLAYING' || gameState === 'ROUND_RESULT') && matchData && (
-                    <div className="bg-[#fffdf9] rounded-3xl p-6 sm:p-10 border border-amber-900/15 shadow-md space-y-6 relative animate-in fade-in">
-                        <div className="flex items-center justify-between -mt-2 mb-1">
-                            <span className="text-[11px] font-bold text-stone-500 flex items-center gap-1.5">
+                    <div className="bg-[#fffdf9] rounded-3xl p-4 sm:p-10 border border-amber-900/15 shadow-md space-y-5 sm:space-y-6 relative animate-in fade-in">
+                        <div className="flex flex-wrap items-center justify-between gap-2 -mt-1 sm:-mt-2 mb-1">
+                            <span className="text-[11px] font-bold text-stone-500 flex flex-wrap items-center gap-1.5 min-w-0">
                                 {matchData.isBotMatch ? (
                                     <>
-                                        <span>🤖 Danh Nho AI</span>
-                                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] border border-amber-200">
+                                        <span className="whitespace-nowrap">🤖 Danh Nho AI</span>
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] border border-amber-200 whitespace-nowrap">
                                             {activeBotDifficultyMeta.badge} {activeBotDifficultyMeta.label} • {totalQuestionsCount} câu
                                         </span>
                                     </>
                                 ) : (
-                                    <span>⚔️ Thi Đình Đối Kháng • {totalQuestionsCount} câu</span>
+                                    <span className="whitespace-nowrap">⚔️ Thi Đình Đối Kháng • {totalQuestionsCount} câu</span>
                                 )}
                             </span>
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="text-[11px] font-bold text-stone-400 hover:text-rose-700 flex items-center gap-1 transition cursor-pointer"
+                                className="text-[11px] font-bold text-stone-400 hover:text-rose-700 flex items-center gap-1 transition cursor-pointer whitespace-nowrap flex-shrink-0"
                                 title="Thoát khỏi trận đấu này"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -1086,113 +1086,88 @@ const HeritageArena = () => {
                         </div>
 
                         {/* 1. THANH TIẾN ĐỘ CÁC HIỆP ĐẤU (5 / 10 / 15 ROUND TRACKER DOTS) */}
-                        <div className="p-3 bg-amber-50/50 rounded-2xl border border-amber-200/50 space-y-2 text-xs">
+                        <div className="px-2 py-2.5 sm:p-3 bg-amber-50/50 rounded-2xl border border-amber-200/50 space-y-2 text-xs">
                             {totalQuestionsCount > 5 && (
                                 <div className="text-center font-heritage font-bold text-amber-900 text-xs uppercase tracking-wider">
                                     Hiệp {currentQIdx + 1} / {totalQuestionsCount}
                                 </div>
                             )}
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                                <div className="flex items-center gap-1.5 flex-wrap justify-center md:justify-start">
-                                    <span className="font-bold text-stone-700 text-[11px]">Bạn:</span>
-                                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                                        {roundIndices.map((idx) => {
-                                            const ans = myPlayer?.answers?.find((a) => a.questionIndex === idx);
-                                            const isCurrent = currentQIdx === idx;
-                                            const isCorrect = ans?.isCorrect === true;
-                                            const isWrong = ans?.isCorrect === false;
-                                            const isSubmittedPending =
-                                                (ans && ans.isCorrect === undefined) ||
-                                                (isCurrent && gameState === 'PLAYING' && hasAnsweredRound && !ans);
-                                            const dotSize = totalQuestionsCount >= 15
-                                                ? 'w-[19px] h-[19px] text-[9px]'
-                                                : 'w-6 h-6 text-[10px]';
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-2 sm:gap-3">
+                                {[
+                                    {
+                                        key: 'me',
+                                        label: 'Bạn:',
+                                        player: myPlayer,
+                                        hasAnsweredCurrent: hasAnsweredRound,
+                                        isOpponent: false,
+                                    },
+                                    {
+                                        key: 'opponent',
+                                        label: 'Đối thủ:',
+                                        player: opponentPlayer,
+                                        hasAnsweredCurrent: opponentPlayer?.hasAnsweredCurrent,
+                                        isOpponent: true,
+                                    },
+                                ].map((group, groupIdx) => (
+                                    <React.Fragment key={group.key}>
+                                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 w-full md:w-auto">
+                                            <span className="font-bold text-stone-700 text-[11px]">{group.label}</span>
+                                            <div className={`flex items-center ${totalQuestionsCount >= 15 ? 'gap-[2px] sm:gap-1' : 'gap-1'} flex-wrap justify-center`}>
+                                                {roundIndices.map((idx) => {
+                                                    const ans = group.player?.answers?.find((a) => a.questionIndex === idx);
+                                                    const isCurrent = currentQIdx === idx;
+                                                    const isCorrect = ans?.isCorrect === true;
+                                                    const isWrong = ans?.isCorrect === false;
+                                                    const isSubmittedPending =
+                                                        (ans && ans.isCorrect === undefined) ||
+                                                        (isCurrent &&
+                                                            gameState === 'PLAYING' &&
+                                                            group.hasAnsweredCurrent &&
+                                                            !ans);
+                                                    const dotSize = totalQuestionsCount >= 15
+                                                        ? 'w-[15px] h-[15px] text-[8px] sm:w-[19px] sm:h-[19px] sm:text-[9px]'
+                                                        : 'w-6 h-6 text-[10px]';
+                                                    const currentPulseCls = group.isOpponent
+                                                        ? 'bg-stone-400 text-white ring-2 ring-stone-300 animate-pulse'
+                                                        : 'bg-amber-600 text-white ring-2 ring-amber-300 animate-pulse';
 
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    title={
-                                                        isCorrect
-                                                            ? `Câu ${idx + 1}: Chính xác`
-                                                            : isWrong
-                                                                ? `Câu ${idx + 1}: Chưa chính xác`
-                                                                : isSubmittedPending
-                                                                    ? `Câu ${idx + 1}: Đã nộp bài, đang chờ công bố`
-                                                                    : `Câu ${idx + 1}`
-                                                    }
-                                                    className={`${dotSize} rounded-full flex items-center justify-center font-bold transition-all ${
-                                                        isCorrect
-                                                            ? 'bg-emerald-600 text-white shadow-xs'
-                                                            : isWrong
-                                                                ? 'bg-rose-600 text-white shadow-xs'
-                                                                : isSubmittedPending
-                                                                    ? 'bg-sky-600 text-white ring-2 ring-sky-300 shadow-xs'
-                                                                    : isCurrent
-                                                                        ? 'bg-amber-600 text-white ring-2 ring-amber-300 animate-pulse'
-                                                                        : 'bg-stone-200 text-stone-500'
-                                                    }`}
-                                                >
-                                                    {isCorrect ? '✓' : isWrong ? '✗' : isSubmittedPending ? '•' : idx + 1}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {totalQuestionsCount <= 5 && (
-                                    <span className="font-heritage font-bold text-amber-900 text-xs uppercase tracking-wider hidden sm:inline whitespace-nowrap">
-                                        Hiệp {currentQIdx + 1} / {totalQuestionsCount}
-                                    </span>
-                                )}
-
-                                <div className="flex items-center gap-1.5 flex-wrap justify-center md:justify-end">
-                                    <span className="font-bold text-stone-700 text-[11px]">Đối thủ:</span>
-                                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                                        {roundIndices.map((idx) => {
-                                            const ans = opponentPlayer?.answers?.find((a) => a.questionIndex === idx);
-                                            const isCurrent = currentQIdx === idx;
-                                            const isCorrect = ans?.isCorrect === true;
-                                            const isWrong = ans?.isCorrect === false;
-                                            const isSubmittedPending =
-                                                (ans && ans.isCorrect === undefined) ||
-                                                (isCurrent &&
-                                                    gameState === 'PLAYING' &&
-                                                    opponentPlayer?.hasAnsweredCurrent &&
-                                                    !ans);
-                                            const dotSize = totalQuestionsCount >= 15
-                                                ? 'w-[19px] h-[19px] text-[9px]'
-                                                : 'w-6 h-6 text-[10px]';
-
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    title={
-                                                        isCorrect
-                                                            ? `Câu ${idx + 1}: Đối thủ trả lời đúng`
-                                                            : isWrong
-                                                                ? `Câu ${idx + 1}: Đối thủ trả lời sai`
-                                                                : isSubmittedPending
-                                                                    ? `Câu ${idx + 1}: Đối thủ đã nộp đáp án`
-                                                                    : `Câu ${idx + 1}`
-                                                    }
-                                                    className={`${dotSize} rounded-full flex items-center justify-center font-bold transition-all ${
-                                                        isCorrect
-                                                            ? 'bg-emerald-600 text-white shadow-xs'
-                                                            : isWrong
-                                                                ? 'bg-rose-600 text-white shadow-xs'
-                                                                : isSubmittedPending
-                                                                    ? 'bg-sky-600 text-white ring-2 ring-sky-300 shadow-xs'
-                                                                    : isCurrent
-                                                                        ? 'bg-stone-400 text-white ring-2 ring-stone-300 animate-pulse'
-                                                                        : 'bg-stone-200 text-stone-500'
-                                                    }`}
-                                                >
-                                                    {isCorrect ? '✓' : isWrong ? '✗' : isSubmittedPending ? '•' : idx + 1}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            title={
+                                                                isCorrect
+                                                                    ? `Câu ${idx + 1}: ${group.isOpponent ? 'Đối thủ trả lời đúng' : 'Chính xác'}`
+                                                                    : isWrong
+                                                                        ? `Câu ${idx + 1}: ${group.isOpponent ? 'Đối thủ trả lời sai' : 'Chưa chính xác'}`
+                                                                        : isSubmittedPending
+                                                                            ? `Câu ${idx + 1}: ${group.isOpponent ? 'Đối thủ đã nộp đáp án' : 'Đã nộp bài, đang chờ công bố'}`
+                                                                            : `Câu ${idx + 1}`
+                                                            }
+                                                            className={`${dotSize} rounded-full flex items-center justify-center font-bold transition-all ${
+                                                                isCorrect
+                                                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                                                    : isWrong
+                                                                        ? 'bg-rose-600 text-white shadow-xs'
+                                                                        : isSubmittedPending
+                                                                            ? 'bg-sky-600 text-white ring-2 ring-sky-300 shadow-xs'
+                                                                            : isCurrent
+                                                                                ? currentPulseCls
+                                                                                : 'bg-stone-200 text-stone-500'
+                                                            }`}
+                                                        >
+                                                            {isCorrect ? '✓' : isWrong ? '✗' : isSubmittedPending ? '•' : idx + 1}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        {groupIdx === 0 && totalQuestionsCount <= 5 && (
+                                            <span className="font-heritage font-bold text-amber-900 text-xs uppercase tracking-wider hidden sm:inline whitespace-nowrap">
+                                                Hiệp {currentQIdx + 1} / {totalQuestionsCount}
+                                            </span>
+                                        )}
+                                    </React.Fragment>
+                                ))}
                             </div>
                         </div>
 
