@@ -66,6 +66,19 @@ const GraphTourPlayerHUD = ({
                     {currentStop.title}
                 </h3>
 
+                {/* Hộp Tiến Hóa Thi Pháp & Cổ Mẫu (Semantic Drift Highlight) */}
+                {currentStop.semanticDrift && (
+                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent border border-amber-400/30 text-xs mb-2.5 shadow-sm">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-300 uppercase tracking-wider mb-1">
+                            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse flex-shrink-0" />
+                            <span>🧬 Tiến Hóa Thi Pháp (Semantic Drift)</span>
+                        </div>
+                        <p className="text-[11.5px] text-amber-100 font-serif italic leading-relaxed">
+                            &ldquo;{currentStop.semanticDrift}&rdquo;
+                        </p>
+                    </div>
+                )}
+
                 {/* Hộp Chuyển Tiếp Bối Cảnh (Contextual Transition Bridge) */}
                 {currentStop.transition && (
                     <div className="kg-tour-transition-box mb-2.5">
@@ -85,7 +98,7 @@ const GraphTourPlayerHUD = ({
 
                 {/* Quote Ca dao/Thơ */}
                 {currentStop.quote && (
-                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs italic font-serif leading-relaxed mb-2.5 shadow-sm">
+                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs italic font-serif leading-relaxed mb-2.5 shadow-sm whitespace-pre-line">
                         &ldquo;{currentStop.quote}&rdquo;
                     </div>
                 )}

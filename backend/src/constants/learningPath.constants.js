@@ -4,9 +4,10 @@
  */
 
 const GEMINI_MODELS = [
+    'gemini-flash-lite-latest',
     'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
+    'gemini-3-flash-preview',
     'gemini-2.5-flash',
 ];
 
@@ -218,7 +219,7 @@ function synthesizeCurriculumFallback({ topicLabel, goal, totalDays, dailyMinute
 
         const workIndex = i % availableWorks.length;
         const primaryWork = availableWorks[workIndex];
-        const dayWorkIds = [primaryWork._id.toString()];
+        const dayWorkIds = [primaryWork._id ? primaryWork._id.toString() : (primaryWork.id ? String(primaryWork.id) : primaryWork.slug || 'work')];
 
         const practiceQuestions = [
             {

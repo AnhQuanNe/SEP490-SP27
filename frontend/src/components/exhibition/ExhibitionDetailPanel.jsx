@@ -7,6 +7,7 @@ import {
     Volume2, 
     Sparkles 
 } from 'lucide-react';
+import ExhibitionQuizTab from './ExhibitionQuizTab';
 
 /**
  * ExhibitionDetailPanel - Cột thông tin học thuật chuẩn Sách Giáo Khoa
@@ -20,7 +21,8 @@ const ExhibitionDetailPanel = ({
     audio,
     onTabChange,
     onHotspotClick,
-    onOpenAiChat
+    onOpenAiChat,
+    onInspectHotspot
 }) => {
     if (!selectedArtifact) return null;
 
@@ -98,6 +100,21 @@ const ExhibitionDetailPanel = ({
                     }`}
                 >
                     Điểm Khảo Cứu ({currentHotspots?.length || 0})
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onTabChange('quiz')}
+                    className={`px-3.5 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                        activeTab === 'quiz'
+                            ? 'border-amber-400 text-amber-300 font-black bg-amber-500/10'
+                            : 'border-transparent text-stone-400 hover:text-amber-200'
+                    }`}
+                >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Thử Thách AI</span>
+                    <span className="text-[9px] bg-red-950/80 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded-full font-bold">
+                        3 câu
+                    </span>
                 </button>
             </div>
 
@@ -248,6 +265,18 @@ const ExhibitionDetailPanel = ({
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    onInspectHotspot?.(spot);
+                                                }}
+                                                className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-400/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                                title="Mở AI Kính Lúp mổ xẻ chi tiết này"
+                                            >
+                                                <Sparkles className="w-3 h-3 text-amber-300" />
+                                                <span>AI Soi Sâu</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     onHotspotClick(spot);
                                                     audio?.narrateHotspot(spot);
                                                 }}
@@ -266,13 +295,24 @@ const ExhibitionDetailPanel = ({
                         })}
                     </div>
                 )}
+
+                {/* TAB 4: THỬ THÁCH TRẮC NGHIỆM AI REAL-TIME */}
+                {activeTab === 'quiz' && (
+                    <ExhibitionQuizTab
+                        selectedArtifact={selectedArtifact}
+                        onOpenAiChat={onOpenAiChat}
+                    />
+                )}
             </div>
 
             {/* Nút đàm đạo cùng Gia sư AI ở cuối trang sách */}
             <div className="p-4 border-t border-amber-600/25 bg-[#120d09]/80 mt-auto">
                 <button
                     type="button"
-                    onClick={onOpenAiChat}
+                    onClick={() => onOpenAiChat?.(
+                        selectedArtifact,
+                        `Hãy luận giải chi tiết ý nghĩa văn hóa, biểu tượng và bài học lịch sử của bảo vật "${selectedArtifact.name}" gắn liền với bài học ${selectedArtifact.textbookUnit}.`
+                    )}
                     className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-red-950 via-red-900 to-amber-700 hover:from-red-900 hover:to-amber-600 text-amber-100 text-xs font-bold transition-all shadow-[0_0_20px_rgba(185,28,28,0.3)] flex items-center justify-center gap-2 cursor-pointer border border-amber-400/40 group hover:scale-[1.01]"
                 >
                     <Sparkles className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />

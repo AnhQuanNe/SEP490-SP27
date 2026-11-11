@@ -35,6 +35,8 @@ const AppRoutes = () => {
             <Route path="/do-thi-tri-thuc" element={<KnowledgeGraph />} />
             <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
             <Route path="/ban-do" element={<LiteratureMap />} />
+            <Route path="/trien-lam" element={<VirtualExhibition />} />
+            <Route path="/trien-lam-ao" element={<VirtualExhibition />} />
             <Route path="/trien-lam-3d" element={<VirtualExhibition />} />
             <Route path="/virtual-exhibition" element={<VirtualExhibition />} />
             <Route path="/do-vui" element={<HeritageQuiz />} />

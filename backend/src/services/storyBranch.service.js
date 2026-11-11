@@ -4,8 +4,9 @@ const GEMINI_MODELS = [
     'gemini-2.5-flash',
     'gemini-3.1-flash-lite',
     'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash',
 ];
 
 /**
@@ -451,6 +452,7 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
                         generationConfig: {
                             temperature: isCustomAction ? 0.85 : 0.75,
                             maxOutputTokens: 2048,
+                            responseMimeType: 'application/json',
                         },
                     }),
                     signal: AbortSignal.timeout(9000),

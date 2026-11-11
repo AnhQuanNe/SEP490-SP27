@@ -119,6 +119,14 @@ export const literatureService = {
         const response = await api.post('/literature/knowledge-graph/ai-inspect-node', { nodeId });
         return response.data;
     },
+
+    /**
+     * TÍNH NĂNG AI REAL: Thiết kế Chuyến Du Hành Tiến Hóa Thi Pháp (Semantic Drift Tour) theo chủ đề
+     */
+    async generateTourWithAI(keyword) {
+        const response = await api.post('/literature/knowledge-graph/ai-generate-tour', { keyword });
+        return response.data;
+    },
 };
 
 export default literatureService;

@@ -76,7 +76,7 @@ class LearningPathService {
 
         // Tóm lược danh sách tác phẩm thực sự gửi cho AI
         const worksPayload = candidateWorks.slice(0, Math.min(candidateWorks.length, totalDays * 2 + 3)).map((w) => ({
-            id: w._id.toString(),
+            id: w._id ? w._id.toString() : (w.id ? String(w.id) : w.slug || 'work'),
             title: w.title,
             slug: w.slug,
             category: w.category,
@@ -120,9 +120,13 @@ class LearningPathService {
                     if (rawText) {
                         const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
                         if (parsed && Array.isArray(parsed.days) && parsed.days.length > 0) {
+                            console.log(`[Gemini Learning Path] Đã tạo lộ trình AI thành công bằng model: ${model}`);
                             return parsed;
                         }
                     }
+                } else {
+                    const errText = await response.text().catch(() => '');
+                    console.warn(`[Gemini Learning Path] Model ${model} trả về HTTP ${response.status}:`, errText.slice(0, 120));
                 }
             } catch (err) {
                 console.warn(`[Gemini Learning Path] Model ${model} không thành công:`, err.message);
@@ -173,7 +177,8 @@ class LearningPathService {
         // Tạo map để tra cứu tác phẩm nhanh
         const worksMap = {};
         candidateWorks.forEach((w) => {
-            worksMap[w._id.toString()] = w;
+            const idKey = w._id ? w._id.toString() : (w.id ? String(w.id) : w.slug);
+            if (idKey) worksMap[idKey] = w;
         });
 
         // 3. Thử tạo lộ trình bằng Gemini trước

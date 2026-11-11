@@ -21,6 +21,38 @@ export const artifactService = {
             console.error(`Lỗi tải bảo vật ${slug}:`, error);
             throw error;
         }
+    },
+
+    // AI Real 100%: Sinh 3 câu hỏi trắc nghiệm tương tác bằng AI
+    generateQuizWithAI: async (artifact, options = {}) => {
+        try {
+            const res = await api.post('/artifacts/ai-generate-quiz', {
+                artifact,
+                slug: artifact?.slug,
+                isRefresh: options.isRefresh || false,
+                timestamp: options.timestamp || Date.now()
+            });
+            return res.data?.data || res.data;
+        } catch (error) {
+            console.error('Lỗi gọi API sinh câu đố AI:', error);
+            throw error;
+        }
+    },
+
+    // AI Real 100%: Kính Lúp Di Sản AI mổ xẻ chuyên sâu điểm chạm khảo cứu
+    inspectHotspotWithAI: async (artifact, hotspot, angleTitle = '') => {
+        try {
+            const res = await api.post('/artifacts/ai-inspect-hotspot', {
+                artifact,
+                hotspot,
+                angleTitle,
+                slug: artifact?.slug
+            });
+            return res.data?.data || res.data;
+        } catch (error) {
+            console.error('Lỗi gọi API AI Kính Lúp điểm chạm:', error);
+            throw error;
+        }
     }
 };
 

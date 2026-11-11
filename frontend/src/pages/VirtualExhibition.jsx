@@ -7,6 +7,7 @@ import ExhibitionViewer from '../components/exhibition/ExhibitionViewer';
 import ExhibitionAudioGuideBar from '../components/exhibition/ExhibitionAudioGuideBar';
 import ExhibitionArtifactSelector from '../components/exhibition/ExhibitionArtifactSelector';
 import ExhibitionDetailPanel from '../components/exhibition/ExhibitionDetailPanel';
+import HotspotAiInspectionModal from '../components/exhibition/HotspotAiInspectionModal';
 import { Layers, Sparkles, Volume2, VolumeX } from 'lucide-react';
 
 /**
@@ -31,6 +32,7 @@ const VirtualExhibition = () => {
     const [panStart, setPanStart] = useState({ x: 0, y: 0 });
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [activeHotspot, setActiveHotspot] = useState(null);
+    const [inspectingHotspot, setInspectingHotspot] = useState(null);
     const [activeTab, setActiveTab] = useState('textbook');
 
     const containerRef = useRef(null);
@@ -303,6 +305,7 @@ const VirtualExhibition = () => {
                         onSelectPhoto={handleSelectPhoto}
                         onHotspotClick={handleHotspotClick}
                         onCloseHotspot={resetZoom}
+                        onInspectHotspot={setInspectingHotspot}
                         onWheel={handleWheel}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
@@ -336,10 +339,22 @@ const VirtualExhibition = () => {
                         onTabChange={setActiveTab}
                         onHotspotClick={handleHotspotClick}
                         onOpenAiChat={openAiChat}
+                        onInspectHotspot={setInspectingHotspot}
                     />
                 </div>
 
             </main>
+
+            {/* MODAL KÍNH LÚP DI SẢN AI (MỔ XẺ CHUYÊN SÂU ĐIỂM CHẠM) */}
+            <HotspotAiInspectionModal
+                isOpen={Boolean(inspectingHotspot)}
+                onClose={() => setInspectingHotspot(null)}
+                hotspot={inspectingHotspot}
+                artifact={selectedArtifact}
+                angleTitle={activePhoto?.title}
+                audio={audio}
+                onOpenAiChat={openAiChat}
+            />
         </div>
     );
 };

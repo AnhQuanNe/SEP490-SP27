@@ -61,6 +61,7 @@ const KnowledgeGraph = () => {
     const [pathTarget, setPathTarget] = useState('');
     const [pathResult, setPathResult] = useState(null);
     const [isFindingPath, setIsFindingPath] = useState(false);
+    const [pathError, setPathError] = useState(null);
 
     // Đảm bảo khi mở Modal tìm đường thì 2 điểm khởi nguồn và đích luôn hợp lệ và khác nhau
     useEffect(() => {
@@ -920,6 +921,7 @@ const KnowledgeGraph = () => {
 
         try {
             setIsFindingPath(true);
+            setPathError(null);
             setActiveNode(null); // Đóng sidebar chi tiết nốt đơn lẻ để nhường không gian cho con đường
 
             let res;
@@ -934,6 +936,7 @@ const KnowledgeGraph = () => {
 
             if (finalData && finalData.found && finalData.path?.length > 1) {
                 setPathResult(finalData);
+                setPathError(null);
                 setIsPathModalOpen(false);
 
                 if (graphInstance.current) {
@@ -952,12 +955,11 @@ const KnowledgeGraph = () => {
                     }
                 }
             } else {
-                console.warn('Không tìm thấy đường đi giữa 2 thực thể đã chọn');
-                setIsPathModalOpen(false);
+                setPathError('Không tìm thấy đường đi giữa 2 thực thể này trên đồ thị. Hãy thử chọn các thực thể khác!');
             }
         } catch (err) {
             console.error('Lỗi tìm đường đi văn hóa:', err);
-            setIsPathModalOpen(false);
+            setPathError('Có lỗi xảy ra khi duyệt cây đồ thị hoặc kết nối máy chủ.');
         } finally {
             setIsFindingPath(false);
         }
@@ -1292,14 +1294,24 @@ const KnowledgeGraph = () => {
             {/* 4. MODAL TÌM ĐƯỜNG ĐI VĂN HÓA (BFS) */}
             <GraphPathModal
                 isOpen={isPathModalOpen}
-                onClose={() => setIsPathModalOpen(false)}
+                onClose={() => {
+                    setIsPathModalOpen(false);
+                    setPathError(null);
+                }}
                 pathSource={pathSource}
-                setPathSource={setPathSource}
+                setPathSource={(val) => {
+                    setPathSource(val);
+                    setPathError(null);
+                }}
                 pathTarget={pathTarget}
-                setPathTarget={setPathTarget}
+                setPathTarget={(val) => {
+                    setPathTarget(val);
+                    setPathError(null);
+                }}
                 isFindingPath={isFindingPath}
                 onFindShortestPath={handleFindShortestPath}
                 graphData={graphData}
+                pathError={pathError}
             />
 
             {/* 4.5. HUD HIỂN THỊ ĐƯỜNG ĐI VĂN HÓA KÈM AI LUẬN GIẢI */}

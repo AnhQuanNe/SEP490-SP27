@@ -3,10 +3,10 @@ const { analyzeLucBatPoem, checkWordRhyme, getToneType, extractRime } = require(
 
 // Tích hợp gọi Gemini AI
 const GEMINI_MODELS = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash-lite',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
     'gemini-2.5-flash',
 ];
 
