@@ -27,6 +27,7 @@ import {
     Share2,
     GitBranch
 } from 'lucide-react';
+import adminService from '../../services/admin.service';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout, getAvatarUrl } = useAuth();
@@ -37,6 +38,18 @@ const Navbar = () => {
     const sidebarRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Thông báo toàn hệ thống do Quản trị viên cấu hình (UC19)
+    const [systemNotice, setSystemNotice] = useState('');
+    const [noticeDismissed, setNoticeDismissed] = useState(false);
+
+    useEffect(() => {
+        adminService.getPublicSettings().then((settings) => {
+            if (settings?.systemNotice && settings.systemNotice.trim()) {
+                setSystemNotice(settings.systemNotice.trim());
+            }
+        }).catch(() => {});
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -168,6 +181,25 @@ const Navbar = () => {
     return (
         <>
             <header className="sticky top-0 z-40 bg-[#fffdf9]/95 backdrop-blur-md border-b border-amber-900/15 shadow-[0_2px_12px_rgba(139,24,24,0.04)] transition-all">
+                {/* Banner Thông báo vận hành do Admin cấu hình (UC19) */}
+                {systemNotice && !noticeDismissed && (
+                    <aside aria-label="Thông báo hệ thống" className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-amber-50 px-4 py-2 text-xs font-semibold text-center flex items-center justify-between gap-3 shadow-inner select-none animate-in fade-in">
+                        <div className="w-5 hidden sm:block" />
+                        <div className="flex items-center justify-center gap-2 flex-grow truncate">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-200 flex-shrink-0 animate-pulse" />
+                            <span className="truncate">{systemNotice}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setNoticeDismissed(true)}
+                            className="text-amber-200 hover:text-white p-1 rounded-md hover:bg-amber-800/50 transition-colors cursor-pointer"
+                            title="Đóng thông báo"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </aside>
+                )}
+
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 

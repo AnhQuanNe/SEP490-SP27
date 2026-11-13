@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { TrendingUp, Users, Calendar } from 'lucide-react';
+import { TrendingUp, Users } from 'lucide-react';
 
 const UserGrowthChart = ({ data = [] }) => {
     const [hoveredPoint, setHoveredPoint] = useState(null);
 
-    // Fallback nếu chưa có dữ liệu từ backend
-    const chartData = data && data.length > 0 ? data : [
-        { label: '22/10', count: 2 },
-        { label: '23/10', count: 4 },
-        { label: '24/10', count: 3 },
-        { label: '25/10', count: 7 },
-        { label: '26/10', count: 5 },
-        { label: '27/10', count: 8 },
-        { label: '28/10', count: 12 },
-    ];
+    // Chuẩn bị 7 ngày gần nhất nếu chưa có dữ liệu từ backend
+    const defaultData = (() => {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            days.push({
+                label: `${d.getDate()}/${d.getMonth() + 1}`,
+                count: 0,
+            });
+        }
+        return days;
+    })();
 
+    const chartData = data && data.length > 0 ? data : defaultData;
     const totalNew = chartData.reduce((acc, curr) => acc + (curr.count || 0), 0);
 
     // Kích thước SVG
@@ -34,7 +38,7 @@ const UserGrowthChart = ({ data = [] }) => {
 
     // Tọa độ các điểm (X, Y)
     const points = chartData.map((item, index) => {
-        const x = paddingLeft + (index / (chartData.length - 1)) * chartWidth;
+        const x = paddingLeft + (index / (chartData.length - 1 || 1)) * chartWidth;
         const countVal = item.count || 0;
         const y = paddingTop + (1 - countVal / yMax) * chartHeight;
         return { ...item, x, y };
@@ -43,6 +47,7 @@ const UserGrowthChart = ({ data = [] }) => {
     // Tạo đường cong Cubic Bezier mượt mà
     const generateSmoothPath = (pts) => {
         if (pts.length === 0) return '';
+        if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
         let d = `M ${pts[0].x} ${pts[0].y}`;
         for (let i = 0; i < pts.length - 1; i++) {
             const p0 = pts[i];
@@ -103,138 +108,123 @@ const UserGrowthChart = ({ data = [] }) => {
                             <stop offset="100%" stopColor="#b45309" stopOpacity="0.0" />
                         </linearGradient>
 
-                        {/* Bộ lọc phát sáng neon cho đường viền */}
-                        <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#f59e0b" floodOpacity="0.4" />
+                        {/* Điểm sáng phát quang */}
+                        <filter id="pointGlow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
                         </filter>
                     </defs>
 
-                    {/* Đường lưới ngang Y-Axis */}
-                    {gridLevels.map((val, idx) => {
-                        const y = paddingTop + (1 - val / yMax) * chartHeight;
+                    {/* Vạch lưới ngang mờ */}
+                    {gridLevels.map((lvl, idx) => {
+                        const yPos = paddingTop + (1 - lvl / yMax) * chartHeight;
                         return (
                             <g key={idx}>
                                 <line
                                     x1={paddingLeft}
-                                    y1={y}
+                                    y1={yPos}
                                     x2={width - paddingRight}
-                                    y2={y}
+                                    y2={yPos}
                                     stroke="#334155"
                                     strokeWidth="1"
                                     strokeDasharray="4 4"
-                                    opacity="0.5"
+                                    opacity="0.35"
                                 />
                                 <text
                                     x={paddingLeft - 8}
-                                    y={y + 3.5}
+                                    y={yPos + 4}
                                     textAnchor="end"
                                     fill="#64748b"
                                     fontSize="10"
                                     fontFamily="monospace"
                                 >
-                                    {val}
+                                    {lvl}
                                 </text>
                             </g>
                         );
                     })}
 
-                    {/* Vùng đổ màu Gradient (Area Fill) */}
-                    <path d={areaPath} fill="url(#amberGlow)" />
+                    {/* Miền Gradient phía dưới đường cong */}
+                    {areaPath && (
+                        <path d={areaPath} fill="url(#amberGlow)" />
+                    )}
 
-                    {/* Đường viền cong chính (Main Curve Line) */}
-                    <path
-                        d={linePath}
-                        fill="none"
-                        stroke="#f59e0b"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        filter="url(#goldGlow)"
-                    />
+                    {/* Đường cong biểu đồ chính */}
+                    {linePath && (
+                        <path
+                            d={linePath}
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    )}
 
-                    {/* Các mốc điểm tương tác (Interactive Dots & Axis Labels) */}
-                    {points.map((p, index) => {
-                        const isHovered = hoveredPoint?.date === p.date || hoveredPoint?.label === p.label;
+                    {/* Các điểm dữ liệu mốc tròn và nhãn X-axis */}
+                    {points.map((pt, idx) => {
+                        const isHovered = hoveredPoint?.label === pt.label;
                         return (
-                            <g key={index} className="cursor-pointer">
-                                {/* Trục X - Nhãn Ngày */}
-                                <text
-                                    x={p.x}
-                                    y={baselineY + 20}
-                                    textAnchor="middle"
-                                    fill={isHovered ? '#fbbf24' : '#94a3b8'}
-                                    fontSize="11"
-                                    fontWeight={isHovered ? 'bold' : 'normal'}
-                                    className="transition-colors"
-                                >
-                                    {p.label}
-                                </text>
+                            <g key={idx}>
+                                {/* Đường dóng dọc khi hover hoặc mặc định mờ */}
+                                <line
+                                    x1={pt.x}
+                                    y1={pt.y}
+                                    x2={pt.x}
+                                    y2={baselineY}
+                                    stroke={isHovered ? '#fbbf24' : '#475569'}
+                                    strokeWidth={isHovered ? '1.5' : '1'}
+                                    strokeDasharray="3 3"
+                                    opacity={isHovered ? '0.8' : '0.25'}
+                                />
 
-                                {/* Cột cảm ứng hover dọc */}
-                                <rect
-                                    x={p.x - 18}
-                                    y={paddingTop}
-                                    width={36}
-                                    height={chartHeight}
-                                    fill="transparent"
-                                    onMouseEnter={() => setHoveredPoint(p)}
+                                {/* Điểm nút (Node Point) */}
+                                <circle
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r={isHovered ? '6' : '4.5'}
+                                    fill="#0f172a"
+                                    stroke="#fbbf24"
+                                    strokeWidth={isHovered ? '3' : '2'}
+                                    filter="url(#pointGlow)"
+                                    className="cursor-pointer transition-all duration-150"
+                                    onMouseEnter={() => setHoveredPoint(pt)}
                                     onMouseLeave={() => setHoveredPoint(null)}
                                 />
 
-                                {/* Đường dọi thẳng khi hover */}
-                                {isHovered && (
-                                    <line
-                                        x1={p.x}
-                                        y1={paddingTop}
-                                        x2={p.x}
-                                        y2={baselineY}
-                                        stroke="#f59e0b"
-                                        strokeWidth="1.5"
-                                        strokeDasharray="3 3"
-                                        opacity="0.8"
-                                    />
-                                )}
-
-                                {/* Điểm tròn dữ liệu */}
-                                <circle
-                                    cx={p.x}
-                                    cy={p.y}
-                                    r={isHovered ? 6 : 4}
-                                    fill="#0f172a"
-                                    stroke="#f59e0b"
-                                    strokeWidth={isHovered ? 3 : 2}
-                                    className="transition-all duration-150"
-                                />
-
-                                {isHovered && (
-                                    <circle
-                                        cx={p.x}
-                                        cy={p.y}
-                                        r={10}
-                                        fill="#f59e0b"
-                                        opacity="0.3"
-                                        className="animate-ping pointer-events-none"
-                                    />
-                                )}
+                                {/* Nhãn ngày dưới trục X */}
+                                <text
+                                    x={pt.x}
+                                    y={baselineY + 18}
+                                    textAnchor="middle"
+                                    fill={isHovered ? '#fbbf24' : '#94a3b8'}
+                                    fontSize="11"
+                                    fontWeight={isHovered ? '700' : '500'}
+                                    className="select-none"
+                                >
+                                    {pt.label}
+                                </text>
                             </g>
                         );
                     })}
                 </svg>
 
-                {/* Floating Tooltip HTML khi rê chuột */}
+                {/* Tooltip nổi khi rê chuột vào điểm */}
                 {hoveredPoint && (
                     <div
-                        className="absolute pointer-events-none z-20 px-3 py-1.5 rounded-xl bg-slate-950 border border-amber-500/50 shadow-xl shadow-black/80 text-center transform -translate-x-1/2 -translate-y-full transition-all"
                         style={{
                             left: `${(hoveredPoint.x / width) * 100}%`,
                             top: `${(hoveredPoint.y / height) * 100}%`,
-                            marginTop: '-12px',
+                            transform: 'translate(-50%, -120%)',
                         }}
+                        className="absolute pointer-events-none px-2.5 py-1.5 rounded-lg bg-slate-950 border border-amber-500/50 text-[11px] shadow-xl text-center whitespace-nowrap z-20"
                     >
-                        <p className="text-[10px] text-slate-400 font-medium">
-                            Ngày {hoveredPoint.label}
-                        </p>
-                        <p className="text-xs font-extrabold text-amber-300">
-                            +{hoveredPoint.count} Sĩ tử mới
+                        <p className="text-slate-400 font-semibold">{hoveredPoint.label}</p>
+                        <p className="text-amber-300 font-bold">
+                            +{hoveredPoint.count} sĩ tử mới
                         </p>
                     </div>
                 )}

@@ -1,23 +1,22 @@
-import { CheckCircle2, Clock, XCircle, FileCheck, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, FileCheck2 } from 'lucide-react';
 
 const SubmissionRateChart = ({ submissionsStats = {} }) => {
-    const total = submissionsStats.total || 0;
-    const pending = submissionsStats.pending || 0;
-    const approved = submissionsStats.approved || 0;
-    const rejected = submissionsStats.rejected || 0;
+    const approved = submissionsStats?.approved || 0;
+    const pending = submissionsStats?.pending || 0;
+    const rejected = submissionsStats?.rejected || 0;
 
-    const baseTotal = total > 0 ? total : 1;
-    const approvedRate = Math.round((approved / baseTotal) * 100);
-    const pendingRate = Math.round((pending / baseTotal) * 100);
-    const rejectedRate = Math.max(0, 100 - approvedRate - pendingRate);
+    const total = approved + pending + rejected;
+    const approvedRate = total > 0 ? Math.round((approved / total) * 100) : 0;
+    const pendingRate = total > 0 ? Math.round((pending / total) * 100) : 0;
+    const rejectedRate = total > 0 ? Math.max(0, 100 - approvedRate - pendingRate) : 0;
 
     return (
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-5 shadow-sm">
-            {/* Header */}
+        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-4 shadow-sm">
+            {/* Header Thống Kê */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                        <FileCheck className="w-4 h-4 text-amber-400" />
+                        <FileCheck2 className="w-4 h-4 text-amber-400" />
                         <h3 className="text-sm font-bold text-slate-100 font-heritage tracking-wide">
                             Hiệu Quả Thẩm Định Đóng Góp
                         </h3>
@@ -36,24 +35,36 @@ const SubmissionRateChart = ({ submissionsStats = {} }) => {
             {/* Thanh tiến độ đa đoạn (Multi-segment Progress Bar) */}
             <div className="space-y-2">
                 <div className="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800 flex gap-0.5 shadow-inner">
-                    {/* Đoạn 1: Đã duyệt */}
-                    <div
-                        style={{ width: `${approvedRate}%` }}
-                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-l-full transition-all duration-500"
-                        title={`Đã duyệt: ${approved} bài (${approvedRate}%)`}
-                    />
-                    {/* Đoạn 2: Chờ duyệt */}
-                    <div
-                        style={{ width: `${pendingRate}%` }}
-                        className="h-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500"
-                        title={`Chờ duyệt: ${pending} bài (${pendingRate}%)`}
-                    />
-                    {/* Đoạn 3: Từ chối */}
-                    <div
-                        style={{ width: `${rejectedRate}%` }}
-                        className="h-full bg-gradient-to-r from-rose-700 to-rose-600 rounded-r-full transition-all duration-500"
-                        title={`Từ chối: ${rejected} bài (${rejectedRate}%)`}
-                    />
+                    {total === 0 ? (
+                        <div className="w-full h-full bg-slate-800/60 rounded-full" title="Chưa có dữ liệu bài đóng góp" />
+                    ) : (
+                        <>
+                            {/* Đoạn 1: Đã duyệt */}
+                            {approvedRate > 0 && (
+                                <div
+                                    style={{ width: `${approvedRate}%` }}
+                                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-l-full transition-all duration-500"
+                                    title={`Đã duyệt: ${approved} bài (${approvedRate}%)`}
+                                />
+                            )}
+                            {/* Đoạn 2: Chờ duyệt */}
+                            {pendingRate > 0 && (
+                                <div
+                                    style={{ width: `${pendingRate}%` }}
+                                    className="h-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500"
+                                    title={`Chờ duyệt: ${pending} bài (${pendingRate}%)`}
+                                />
+                            )}
+                            {/* Đoạn 3: Từ chối */}
+                            {rejectedRate > 0 && (
+                                <div
+                                    style={{ width: `${rejectedRate}%` }}
+                                    className="h-full bg-gradient-to-r from-rose-700 to-rose-600 rounded-r-full transition-all duration-500"
+                                    title={`Từ chối: ${rejected} bài (${rejectedRate}%)`}
+                                />
+                            )}
+                        </>
+                    )}
                 </div>
 
                 {/* Nhãn tỷ lệ dưới thanh */}

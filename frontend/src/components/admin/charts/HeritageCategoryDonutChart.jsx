@@ -7,36 +7,33 @@ const CATEGORY_COLORS = {
     'co-tich': { label: 'Cổ Tích Dân Gian', color: '#10b981', bgClass: 'bg-emerald-500' }, // Emerald
     'truyen-thuyet': { label: 'Truyền Thuyết', color: '#6366f1', bgClass: 'bg-indigo-500' }, // Indigo
     'than-thoai': { label: 'Thần Thoại', color: '#06b6d4', bgClass: 'bg-cyan-500' }, // Cyan
-    'other': { label: 'Khác', color: '#a855f7', bgClass: 'bg-purple-500' }, // Purple
+    'trung-dai': { label: 'Văn Học Trung Đại', color: '#8b5cf6', bgClass: 'bg-purple-500' }, // Purple
+    'hien-dai': { label: 'Văn Học Hiện Đại', color: '#ec4899', bgClass: 'bg-pink-500' }, // Pink
+    'other': { label: 'Khác', color: '#94a3b8', bgClass: 'bg-slate-400' },
 };
 
 const HeritageCategoryDonutChart = ({ byCategory = {}, totalWorks = 0 }) => {
     const [hoveredCategory, setHoveredCategory] = useState(null);
 
-    // Chuẩn bị dữ liệu mảng
-    const items = Object.entries(byCategory).map(([key, count]) => {
-        const config = CATEGORY_COLORS[key] || {
-            label: key.toUpperCase(),
-            color: '#94a3b8',
-            bgClass: 'bg-slate-400',
-        };
-        return {
-            key,
-            count: Number(count) || 0,
-            label: config.label,
-            color: config.color,
-            bgClass: config.bgClass,
-        };
-    });
+    // Chuẩn bị dữ liệu mảng từ database thật
+    const items = Object.entries(byCategory)
+        .filter(([, count]) => Number(count) > 0)
+        .map(([key, count]) => {
+            const config = CATEGORY_COLORS[key] || {
+                label: key.toUpperCase(),
+                color: '#94a3b8',
+                bgClass: 'bg-slate-400',
+            };
+            return {
+                key,
+                count: Number(count),
+                label: config.label,
+                color: config.color,
+                bgClass: config.bgClass,
+            };
+        });
 
-    // Fallback data nếu trống
-    const chartItems = items.length > 0 ? items : [
-        { key: 'ca-dao', count: 42, label: 'Ca Dao Dân Ca', color: '#f59e0b', bgClass: 'bg-amber-500' },
-        { key: 'tuc-ngu', count: 28, label: 'Tục Ngữ Việt Nam', color: '#ef4444', bgClass: 'bg-red-500' },
-        { key: 'co-tich', count: 15, label: 'Cổ Tích Dân Gian', color: '#10b981', bgClass: 'bg-emerald-500' },
-    ];
-
-    const total = chartItems.reduce((acc, curr) => acc + curr.count, 0) || 1;
+    const total = totalWorks || items.reduce((acc, curr) => acc + curr.count, 0);
 
     // SVG parameters
     const size = 180;
@@ -46,8 +43,8 @@ const HeritageCategoryDonutChart = ({ byCategory = {}, totalWorks = 0 }) => {
 
     // Tính toán góc và offset cho từng đoạn donut
     let accumulatedAngle = 0;
-    const slices = chartItems.map((item) => {
-        const percentage = (item.count / total) * 100;
+    const slices = items.map((item) => {
+        const percentage = total > 0 ? (item.count / total) * 100 : 0;
         const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
         const strokeDashoffset = -accumulatedAngle;
         accumulatedAngle += (percentage / 100) * circumference;
@@ -95,7 +92,7 @@ const HeritageCategoryDonutChart = ({ byCategory = {}, totalWorks = 0 }) => {
                         strokeWidth={strokeWidth}
                     />
 
-                    {/* Các cung thể loại */}
+                    {/* Các cung thể loại thực tế */}
                     {slices.map((slice) => {
                         const isHovered = hoveredCategory === slice.key;
                         return (
@@ -123,7 +120,7 @@ const HeritageCategoryDonutChart = ({ byCategory = {}, totalWorks = 0 }) => {
                     <span className="text-2xl font-extrabold text-white font-heritage leading-none">
                         {hoveredCategory
                             ? slices.find((s) => s.key === hoveredCategory)?.count
-                            : totalWorks || total}
+                            : total}
                     </span>
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-1">
                         {hoveredCategory
@@ -134,31 +131,35 @@ const HeritageCategoryDonutChart = ({ byCategory = {}, totalWorks = 0 }) => {
             </div>
 
             {/* Danh mục Legend chi tiết */}
-            <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                {slices.map((item) => (
-                    <div
-                        key={item.key}
-                        onMouseEnter={() => setHoveredCategory(item.key)}
-                        onMouseLeave={() => setHoveredCategory(null)}
-                        className={`flex items-center justify-between p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                            hoveredCategory === item.key ? 'bg-slate-800' : 'hover:bg-slate-800/50'
-                        }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: item.color }}
-                            />
-                            <span className="text-slate-300 font-medium">{item.label}</span>
+            <div className="space-y-1.5 pt-2 border-t border-slate-800/80 max-h-48 overflow-y-auto">
+                {slices.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-2">Chưa có tác phẩm trong kho tàng</p>
+                ) : (
+                    slices.map((item) => (
+                        <div
+                            key={item.key}
+                            onMouseEnter={() => setHoveredCategory(item.key)}
+                            onMouseLeave={() => setHoveredCategory(null)}
+                            className={`flex items-center justify-between p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                                hoveredCategory === item.key ? 'bg-slate-800' : 'hover:bg-slate-800/50'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                />
+                                <span className="text-slate-300 font-medium truncate max-w-[140px]">{item.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2 font-mono">
+                                <span className="text-slate-400">{item.count} mục</span>
+                                <span className="font-bold text-slate-100 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                                    {item.percentage}%
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 font-mono">
-                            <span className="text-slate-400">{item.count} mục</span>
-                            <span className="font-bold text-slate-100 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
-                                {item.percentage}%
-                            </span>
-                        </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     );
