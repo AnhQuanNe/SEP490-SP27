@@ -40,7 +40,7 @@ const seedQuizQuestions = async ({ force = false } = {}) => {
             await QuizQuestion.findOneAndUpdate(
                 { questionId: item.questionId },
                 { $set: docData },
-                { upsert: true, new: true, setDefaultsOnInsert: true }
+                { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
             );
             insertedOrUpdated++;
         }
@@ -59,3 +59,20 @@ const seedQuizQuestions = async ({ force = false } = {}) => {
 };
 
 module.exports = seedQuizQuestions;
+
+if (require.main === module) {
+    require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+    const mongoose = require('mongoose');
+    const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/sep490';
+    console.log(`[Seed Quiz] Đang kết nối MongoDB: ${uri}`);
+    mongoose.connect(uri)
+        .then(async () => {
+            await seedQuizQuestions({ force: true });
+            await mongoose.disconnect();
+            process.exit(0);
+        })
+        .catch((err) => {
+            console.error('[Seed Quiz] Thất bại:', err);
+            process.exit(1);
+        });
+}
