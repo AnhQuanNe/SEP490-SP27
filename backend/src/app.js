@@ -33,6 +33,51 @@ app.use(express.urlencoded({ extended: true }));
 // Cung cấp file tĩnh (cho phép xem ảnh avatar đã upload)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Middleware kiểm tra chế độ bảo trì toàn hệ thống (UC19)
+const SystemSetting = require('./models/SystemSetting');
+app.use(async (req, res, next) => {
+    // Không chặn các request quản trị, xác thực, health check và public settings
+    if (
+        req.path.startsWith('/api/admin') ||
+        req.path.startsWith('/api/auth') ||
+        req.path === '/api/health' ||
+        req.path === '/api/settings/public' ||
+        req.path.startsWith('/uploads')
+    ) {
+        return next();
+    }
+
+    try {
+        const maintenance = await SystemSetting.findOne({ key: 'maintenanceMode' }).lean();
+        if (maintenance && maintenance.value === true) {
+            // Cho phép Admin truy cập mọi route để kiểm thử trong thời gian bảo trì
+            if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+                const token = req.headers.authorization.split(' ')[1];
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const User = require('./models/User');
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sep490_super_secret_jwt_key_2026_sp27');
+                    const user = await User.findById(decoded.id).select('role status').lean();
+                    if (user && user.role === 'admin' && user.status !== 'locked') {
+                        return next();
+                    }
+                } catch (authErr) {
+                    // Token không hợp lệ thì tiếp tục chặn 503
+                }
+            }
+
+            return res.status(503).json({
+                success: false,
+                code: 'MAINTENANCE_MODE',
+                message: 'Hệ thống hiện đang tạm thời bảo trì để nâng cấp hạ tầng. Vui lòng quay lại sau ít phút.',
+            });
+        }
+    } catch (err) {
+        // Nếu lỗi kết nối DB tạm thời thì bỏ qua để không chặn người dùng
+    }
+    next();
+});
+
 // API Routes
 app.use('/api', routes);
 

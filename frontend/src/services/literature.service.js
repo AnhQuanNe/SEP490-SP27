@@ -103,6 +103,30 @@ export const literatureService = {
         const response = await api.get(`/literature/knowledge-graph/shortest-path?source=${encodeURIComponent(source)}&target=${encodeURIComponent(target)}`);
         return response.data;
     },
+
+    /**
+     * TÍNH NĂNG AI REAL: Yêu cầu Gemini AI luận giải chuyên sâu mạch nguồn văn hóa kết nối 2 thực thể
+     */
+    async explainPathWithAI(source, target) {
+        const response = await api.post('/literature/knowledge-graph/ai-explain-path', { source, target });
+        return response.data;
+    },
+
+    /**
+     * TÍNH NĂNG AI REAL: Yêu cầu Gemini AI phân tích vị trí của một nốt tri thức trong văn hóa dân gian
+     */
+    async inspectNodeWithAI(nodeId) {
+        const response = await api.post('/literature/knowledge-graph/ai-inspect-node', { nodeId });
+        return response.data;
+    },
+
+    /**
+     * TÍNH NĂNG AI REAL: Thiết kế Chuyến Du Hành Tiến Hóa Thi Pháp (Semantic Drift Tour) theo chủ đề
+     */
+    async generateTourWithAI(keyword) {
+        const response = await api.post('/literature/knowledge-graph/ai-generate-tour', { keyword });
+        return response.data;
+    },
 };
 
 export default literatureService;

@@ -10,7 +10,8 @@ import {
     Camera, 
     Move, 
     Headphones, 
-    Volume2 
+    Volume2,
+    Sparkles 
 } from 'lucide-react';
 
 /**
@@ -39,6 +40,7 @@ const ExhibitionViewer = ({
     onSelectPhoto,
     onHotspotClick,
     onCloseHotspot,
+    onInspectHotspot,
     onWheel,
     onMouseDown,
     onMouseMove,
@@ -264,6 +266,17 @@ const ExhibitionViewer = ({
                                 </h4>
                             </div>
                             <div className="flex items-center gap-2">
+                                {/* Nút kích hoạt AI Kính Lúp Chuyên Sâu */}
+                                <button
+                                    type="button"
+                                    onClick={() => onInspectHotspot?.(activeHotspot)}
+                                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-200 text-stone-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-200 transition-all hover:scale-105"
+                                    title="Kính Lúp Di Sản AI: Mổ xẻ kỹ nghệ, biểu tượng và SGK"
+                                >
+                                    <Sparkles className="w-3.5 h-3.5 text-stone-950" />
+                                    <span>AI Kính Lúp</span>
+                                </button>
+
                                 {/* Nút nghe thuyết minh điểm này */}
                                 <button
                                     type="button"

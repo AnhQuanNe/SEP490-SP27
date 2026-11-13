@@ -183,7 +183,7 @@ const AdminSidebar = ({ activeTab, onSelectTab, stats, mobileOpen, onCloseMobile
                                     {user?.name || 'Quản Trị Viên'}
                                 </p>
                                 <p className="text-[10px] text-amber-400/90 font-medium truncate">
-                                    admin@vietheritage.vn
+                                    {user?.email || 'admin@vietheritage.vn'}
                                 </p>
                             </div>
                         </div>

@@ -27,21 +27,36 @@ Trước mắt bá quan văn võ và muôn dân trăm họ, Tấm nhìn mẹ con
             choices: [
                 {
                     id: 'tam_c1',
-                    text: 'Khoan dung tha tội chết, cấp ruộng đất cho về quê làm ruộng và mở trường dạy dệt vải cho con em nghèo khó',
-                    hint: '+Tâm (Lòng nhân ái), +Lòng Dân',
-                    statChanges: { tam: 15, tri: 5, dung: 0, longDan: 15 },
+                    cardTitle: 'Chiếu Chỉ Ân Xá',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
+                    text: 'Khoan dung tha tội chết, cấp ruộng đất và mở xưởng dệt lụa dạy nghề cho Cám phục thiện.',
+                    folkQuote: 'Bầu ơi thương lấy bí cùng / Tuy rằng khác giống nhưng chung một giàn',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 5, dung: 0, longDan: 15 },
                 },
                 {
                     id: 'tam_c2',
-                    text: 'Chiếu theo phép nước nghiêm trị, tịch thu gia sản và đày mẹ con Cám đi khai hoang biên ải',
-                    hint: '+Trí (Phép nước), +Dũng (Cương quyết)',
-                    statChanges: { tam: -5, tri: 15, dung: 15, longDan: 5 },
+                    cardTitle: 'Nghiêm Trị Phép Nước',
+                    sealText: 'PHÁP ĐỘ',
+                    pillar: 'tri',
+                    iconType: 'scale',
+                    text: 'Chiếu theo luật nước, phế truất thường dân và lưu đày mẹ con Cám ra biên ải xa xôi.',
+                    folkQuote: 'Quốc có quốc pháp, gia có gia quy',
+                    requiredStat: { stat: 'tri', min: 55 },
+                    statChanges: { tam: -5, tri: 20, dung: 15, longDan: 5 },
                 },
                 {
                     id: 'tam_c3',
-                    text: 'Từ bỏ nhung lụa hoàng cung, rủ Cám cùng rời cung phiêu bạt nhân gian để hành thiện cứu giúp người cơ hàn',
-                    hint: '+Dũng (Khí phách), +Đặc Biệt',
-                    statChanges: { tam: 20, tri: -5, dung: 20, longDan: 10 },
+                    cardTitle: 'Hành Thiện Nhân Gian',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'feather',
+                    text: 'Rời hoàng cung nhung lụa, rủ Cám cùng chu du khắp non sông cứu tế người nghèo khó.',
+                    folkQuote: 'Thương người như thể thương thân / Thấy người đói rét chẳng ngần sẻ chia',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: -5, dung: 25, longDan: 20 },
                 },
             ],
         },
@@ -67,21 +82,36 @@ Tiếng tù và giục giã, đất trời rung chuyển. Nhà vua và triều �
             choices: [
                 {
                     id: 'ts_c1',
-                    text: 'Một mình bước ra trận tiền, gảy đàn thần làm mềm lòng binh sĩ và dọn niêu cơm thần đãi tiệc hòa hiếu',
-                    hint: '+Tâm (Nhân nghĩa), +Lòng Dân',
-                    statChanges: { tam: 20, tri: 10, dung: 10, longDan: 15 },
+                    cardTitle: 'Tiếng Đàn Hòa Hiếu',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
+                    text: 'Gảy khúc đàn thần hóa giải oán hận và dọn niêu cơm thần vô tận thết đãi vạn quân chư hầu.',
+                    folkQuote: 'Đem đại nghĩa để thắng hung tàn / Lấy chí nhân để thay cường bạo',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 10, dung: 10, longDan: 20 },
                 },
                 {
                     id: 'ts_c2',
-                    text: 'Thân chinh cưỡi ngựa xuất kích, vung búa thần chém tướng giặc để thị uy dũng khí Đại Việt',
-                    hint: '+Dũng (Chiến trận), -Tâm',
+                    cardTitle: 'Trảm Tướng Thị Uy',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'sword',
+                    text: 'Khoác hoàng bào vung búa thần xuất kích, trảm tướng tiên phong chư hầu trấn áp can qua.',
+                    folkQuote: 'Trai thời trung hiếu làm đầu / Gặp cơn quốc nạn quản chi thân mình',
+                    requiredStat: { stat: 'dung', min: 55 },
                     statChanges: { tam: -10, tri: 5, dung: 25, longDan: 5 },
                 },
                 {
                     id: 'ts_c3',
-                    text: 'Cử sứ giả mời 18 vị quốc vương vào trướng nghị hòa, dùng tài hùng biện và phân tích lẽ được mất để lui binh',
-                    hint: '+Trí (Ngoại giao), +Thái bình',
-                    statChanges: { tam: 5, tri: 20, dung: 5, longDan: 15 },
+                    cardTitle: 'Biện Thuyết Nghị Hòa',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scroll',
+                    text: 'Một mình vào trướng giặc, đem đại nghĩa và thời thế phân tích để 18 quốc vương tự nguyện lui binh.',
+                    folkQuote: 'Lời nói chẳng mất tiền mua / Lựa lời mà nói cho vừa lòng nhau',
+                    requiredStat: null,
+                    statChanges: { tam: 10, tri: 25, dung: 10, longDan: 15 },
                 },
             ],
         },
@@ -107,21 +137,36 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
             choices: [
                 {
                     id: 'adv_c1',
-                    text: 'Bí mật chế tạo chiếc lẫy nỏ giả đem giấu lẫy thật đi, giả vờ không biết để thử lòng Trọng Thủy',
-                    hint: '+Trí (Mưu lược sâu sắc), +Bảo vệ nỏ',
-                    statChanges: { tam: 0, tri: 20, dung: 10, longDan: 15 },
+                    cardTitle: 'Tráo Lẫy Giữ Nỏ',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scroll',
+                    text: 'Bí mật đúc lẫy nỏ giả đem tráo đổi, cất giấu lẫy thật để vừa thử lòng phu quân vừa giữ yên xã tắc.',
+                    folkQuote: 'Vỏ quýt dày có móng tay nhọn / Trí tuệ giữ yên vạn dặm giang sơn',
+                    requiredStat: { stat: 'tri', min: 55 },
+                    statChanges: { tam: 0, tri: 25, dung: 10, longDan: 15 },
                 },
                 {
                     id: 'adv_c2',
-                    text: 'Lập tức mang bí mật tâu lên vua cha An Dương Vương để phong tỏa kinh đô, bắt giữ những kẻ mưu phản',
-                    hint: '+Dũng (Quyết đoán), +Quốc Pháp',
-                    statChanges: { tam: -10, tri: 10, dung: 20, longDan: 20 },
+                    cardTitle: 'Phong Tỏa Cổ Loa',
+                    sealText: 'PHÁP ĐỘ',
+                    pillar: 'dung',
+                    iconType: 'shield',
+                    text: 'Khẩn cấp tâu vua cha phong tỏa thành ốc, bắt giữ Trọng Thủy cùng thuộc hạ để tra xét dã tâm.',
+                    folkQuote: 'Thà phụ tình riêng một khắc / Chẳng để non sông muôn thuở lầm than',
+                    requiredStat: null,
+                    statChanges: { tam: -10, tri: 15, dung: 25, longDan: 20 },
                 },
                 {
                     id: 'adv_c3',
-                    text: 'Thẳng thắn đối chất cùng Trọng Thủy, khuyên chàng gạt bỏ tham vọng đao binh của Triệu Đà để bảo vệ hạnh phúc gia đình',
-                    hint: '+Tâm (Tình nghĩa), -Trí',
-                    statChanges: { tam: 15, tri: -5, dung: 5, longDan: -10 },
+                    cardTitle: 'Cảm Hóa Phu Quân',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
+                    text: 'Trực diện chất vấn Trọng Thủy trong đêm, lấy tình phu thê khuyên chàng từ bỏ mưu toan đao binh.',
+                    folkQuote: 'Thuận vợ thuận chồng tát biển Đông cũng cạn',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: -5, dung: 5, longDan: -10 },
                 },
             ],
         },
@@ -145,21 +190,36 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
             choices: [
                 {
                     id: 'st_c1',
-                    text: 'Vung gậy thần bốc từng quả đồi, dựng lũy đá ngăn nước, đồng thời mở kho lương và điều thuyền bè cứu vớt bá tánh',
-                    hint: '+Dũng (Khí phách kiên cường), +Lòng Dân',
-                    statChanges: { tam: 10, tri: 5, dung: 20, longDan: 20 },
+                    cardTitle: 'Dời Non Đắp Lũy',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'sword',
+                    text: 'Vung gậy thần dời non lấp biển, nâng cao sườn núi đắp lũy đá kiên cố chặn đứng bão lũ thủy quái.',
+                    folkQuote: 'Nước dâng cao bao nhiêu, núi dâng cao bấy nhiêu',
+                    requiredStat: null,
+                    statChanges: { tam: 10, tri: 5, dung: 25, longDan: 20 },
                 },
                 {
                     id: 'st_c2',
-                    text: 'Cưỡi mây xuống giữa tâm bão lũ gặp Thủy Tinh, đề nghị đàm phán phân chia lưu vực sông và nguồn nước tưới tiêu cho dân',
-                    hint: '+Trí (Mưu lược hòa hiếu), +Tâm',
-                    statChanges: { tam: 20, tri: 15, dung: 5, longDan: 10 },
+                    cardTitle: 'Hòa Hợp Thủy Thổ',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
+                    text: 'Cưỡi bạch tượng ra giữa dòng lũ, đàm phán phân định ranh giới nguồn nước để cứu muôn loài trăm họ.',
+                    folkQuote: 'Một sự nhịn, chín sự lành / Hòa hợp đất trời nuôi dưỡng vạn vật',
+                    requiredStat: null,
+                    statChanges: { tam: 25, tri: 15, dung: 5, longDan: 15 },
                 },
                 {
                     id: 'st_c3',
-                    text: 'Lập trận đồ Bát Quái dẫn nước lũ ra biển Đông, đào kênh khơi thông dòng chảy biến hiểm họa thành hệ thống thủy lợi ngàn năm',
-                    hint: '+Trí (Đại trí tuệ thủy lợi), +Quốc gia trường tồn',
-                    statChanges: { tam: 5, tri: 25, dung: 10, longDan: 15 },
+                    cardTitle: 'Bát Quái Phá Lũ',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'compass',
+                    text: 'Thi triển Bát Quái trận đồ khơi thông các dòng phụ lưu, biến sóng thần cuộn trào thành nguồn nước tưới tiêu.',
+                    folkQuote: 'Trí giả bất hoặc, dũng giả bất cụ / Chuyển họa thiên tai thành phúc thái bình',
+                    requiredStat: { stat: 'tri', min: 55 },
+                    statChanges: { tam: 5, tri: 30, dung: 10, longDan: 20 },
                 },
             ],
         },
@@ -168,7 +228,7 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
         slug: 'cay-khe',
         title: 'Cây Khế: Lời Hứa Chim Phượng Hoàng',
         subtitle: 'Vàng bạc vô tận nơi đảo xa hay tấm lòng thảo thơm cứu đời?',
-        category: 'Truyện cổ tích thần kỳ',
+        category: 'Truyền thuyết thần thoại',
         coverColor: 'from-amber-600 via-emerald-800 to-stone-950',
         badgeTheme: 'Minh Bạch & Phúc Đức',
         summary: 'Chim thần đưa người em nghèo ra đảo hoang nhặt vàng trả ơn quả khế. Trước kho báu vô tận giữa đại dương, người em sẽ lựa chọn cách thức dùng của cải ra sao?',
@@ -185,21 +245,36 @@ Trước kho vàng vô tận giữa biển khơi, người em sẽ đưa ra quy�
             choices: [
                 {
                     id: 'ck_c1',
-                    text: 'Chỉ nhặt nửa túi ba gang vừa đủ sống, khẩn khoản xin chim thần chở thêm các giống cây ăn quả và lúa nước quý về giúp dân làng thoát nghèo',
-                    hint: '+Tâm (Nhân ái tột bậc), +Lòng Dân',
+                    cardTitle: 'Cứu Tế Thôn Bản',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'feather',
+                    text: 'Chỉ nhặt nửa túi vàng, xin chim thần ban tặng các giống lúa quý và cây ăn trái về cứu đói dân làng.',
+                    folkQuote: 'Nhiễu điều phủ lấy giá gương / Người trong một nước phải thương nhau cùng',
+                    requiredStat: null,
                     statChanges: { tam: 25, tri: 10, dung: 5, longDan: 25 },
                 },
                 {
                     id: 'ck_c2',
-                    text: 'Lấy đúng một túi ba gang vàng ròng, đem về chia đều cho người anh một nửa và thành lập xưởng thủ công tạo kế sinh nhai cho bá tánh',
-                    hint: '+Trí (Kiến thiết kinh tế), +Lấy đức báo oán',
-                    statChanges: { tam: 15, tri: 20, dung: 10, longDan: 15 },
+                    cardTitle: 'Lập Nghiệp Bền Lâu',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scroll',
+                    text: 'Lấy đúng một túi ba gang, dùng một nửa san sẻ cho anh trai và nửa còn lại mở xưởng mộc dạy nghề.',
+                    folkQuote: 'Khéo ăn thì no, khéo co thì ấm / Buôn có bạn, bán có phường',
+                    requiredStat: { stat: 'tri', min: 55 },
+                    statChanges: { tam: 15, tri: 25, dung: 10, longDan: 15 },
                 },
                 {
                     id: 'ck_c3',
-                    text: 'Khuyên chim thần đưa người anh cùng ra đảo một lần để tự mắt thấy sự linh diệu của trời đất, từ đó cảm hóa lòng tham của anh',
-                    hint: '+Tâm (Tình ruột thịt), +Thử thách',
-                    statChanges: { tam: 20, tri: 5, dung: 15, longDan: 5 },
+                    cardTitle: 'Thức Tỉnh Lương Tri',
+                    sealText: 'ĐẠI NGHĨA',
+                    pillar: 'dung',
+                    iconType: 'lotus',
+                    text: 'Không màng vàng bạc, khẩn cầu chim thần đưa người anh ra đảo ngắm cảnh tiên để thức tỉnh lòng tham.',
+                    folkQuote: 'Anh em như thể tay chân / Rách lành đùm bọc, dở hay đỡ đần',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 5, dung: 20, longDan: 10 },
                 },
             ],
         },
@@ -237,6 +312,7 @@ async function generateNextChapter({
     storySlug,
     step,
     chosenText,
+    isCustomAction = false,
     previousHistory = [],
     currentStats = { tam: 50, tri: 50, dung: 50, longDan: 50 },
 }) {
@@ -251,25 +327,55 @@ async function generateNextChapter({
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey) {
-        const systemPrompt = `Bạn là Nghệ nhân kể chuyện cổ tích dân gian Việt Nam kiêm Game Master của một trò chơi phiêu lưu tương tác (Interactive Heritage Story Engine).
-Phong cách: Văn phong trang trọng, gợi cảm, thấm đẫm phong vị cổ tích dân gian Việt Nam.
+        const customDirective = isCustomAction
+            ? `
+[CHẾ ĐỘ SÁNG TẠO TỰ DO (SANDBOX CHOICE)]:
+Người chơi vừa TỰ TAY GÕ HÀNH ĐỘNG RIÊNG: "${chosenText}".
+- TUYỆT ĐỐI TÔN TRỌNG ý tưởng của người chơi! Không được gạt bỏ, không được 'tẩy trắng' hay bẻ lái thô bạo câu chuyện quay lại khuôn mẫu cổ tích quen thuộc.
+- Hãy phản ánh chân thực hậu quả của hành động này: Những người xung quanh (Vua, bá quan, Cám, dân chúng, tướng sĩ...) sẽ sững sờ, hoảng loạn, ngỡ ngàng hay hưởng ứng ra sao trước bước đi bất ngờ này?
+- TẠO BIẾN CỐ & KỊCH TÍNH: Tạo ra hệ quả trực tiếp, phản ứng dây chuyền sống động, cho thấy quyết định này làm xoay chuyển tình thế ra sao.
+`
+            : `
+Người chơi vừa chọn hướng đi: "${chosenText}".
+`;
 
+        const systemPrompt = `Bạn là Game Master kiêm Nhà văn cốt truyện tương tác (Interactive Heritage Story Engine) cho kho tàng tích truyện Việt Nam.
+Phong cách kể: Văn phong sắc sảo, điện ảnh, giàu tính hành động và cảm xúc chân thực của nhân vật, tránh xa sự sáo rỗng hay giáo điều.
+${customDirective}
 QUY TẮC BẮT BUỘC:
-1. Dựa trên lựa chọn gần nhất của người chơi: "${chosenText}".
-2. Lịch sử các bước trước: ${JSON.stringify(previousHistory)}.
+1. NGUYÊN TẮC KỂ CHUYỆN (STORY TEXT):
+- Độ dài khoảng 140 - 200 từ, chia làm 2 - 3 đoạn văn ngắn rõ ràng, ngăn cách nhau bằng đúng 2 dấu xuống dòng (\n\n).
+- Đưa lời thoại trực tiếp của nhân vật vào nếu có tình huống đối đáp (đặt trong ngoặc kép "..." để tạo điểm nhấn kịch tính).
+- Đoạn cuối cùng phải kết thúc bằng một biến cố mở hoặc một tình thế nan giải/câu hỏi quyết định mà nhân vật phải đối mặt (VD: Trước tình thế ấy, nàng sẽ quyết định ra sao?).
+- NGUYÊN TẮC SHOW, DON'T TELL: Kể hành động cụ thể, biểu cảm sắc nét. TUYỆT ĐỐI CẤM câu đúc kết triết lý giáo điều hay răn dạy đạo lý ở cuối đoạn (VD: CẤM các câu như '...dùng lòng nhân ái hóa giải...', '...cái giá phải trả là sự thanh thản...', '...gieo nhân nào gặt quả nấy...').
+2. BỘ 3 THẺ TRÚC MỆNH LỆNH (CHOICES):
+- Nếu chưa phải Hồi kết, cung cấp ĐÚNG 3 LỰA CHỌN ("choices") đại diện cho 3 Thẻ Trúc Đạo Lý dân gian mang tính thuần phong mỹ tục:
+  + Thẻ 1 (Thiên về Tâm Đức / Khoan Dung): Lấy đức phục nhân, hóa giải oán thù, chia sẻ phúc đức. Không yêu cầu chỉ số (requiredStat: null).
+  + Thẻ 2 (Thiên về Trí Mưu / Pháp Độ): Giữ nghiêm phép nước, mưu lược sâu sắc. Thẻ này CÓ THỂ ĐÒI HỎI ĐIỀU KIỆN chỉ số (VD: {"stat": "tri", "min": 55} hoặc {"stat": "dung", "min": 55}) để tạo thử thách nhập vai.
+  + Thẻ 3 (Thiên về Dũng Khí / Đại Nghĩa): Khí phách kiên cường, dám dấn thân cứu tế muôn dân. Thẻ mở (requiredStat: null).
+- Mỗi lựa chọn phải có đầy đủ:
+  + "cardTitle": Tên thẻ bài cổ phong (3-5 từ, VD: Chiếu Chỉ Ân Xá, Phong Tỏa Cổ Loa, Lập Nghiệp Bền Lâu...)
+  + "sealText": Chữ ấn triện son ngắn gọn (TÂM ĐỨC | TRÍ MƯU | DŨNG KHÍ | PHÁP ĐỘ | ĐẠI NGHĨA)
+  + "pillar": Trụ cột chính ("tam" | "tri" | "dung" | "longDan")
+  + "iconType": Biểu tượng văn hóa ("lotus" | "scale" | "sword" | "feather" | "scroll" | "compass")
+  + "text": Miêu tả cụ thể hành động nhân vật sẽ làm (15 - 25 từ)
+  + "folkQuote": Một câu ca dao hoặc tục ngữ dân gian tương ứng soi chiếu đạo lý
+  + "requiredStat": {"stat": "tri" | "dung" | "tam", "min": 55} HOẶC null nếu không yêu cầu
+  + "statChanges": Thay đổi điểm số tương ứng (+/- từ 5 đến 25)
 3. Chỉ số hiện tại: Tâm: ${currentStats.tam}, Trí: ${currentStats.tri}, Dũng: ${currentStats.dung}, Lòng Dân: ${currentStats.longDan}.
-4. Bước hiện tại: ${nextStep}. ${isTargetEnding ? 'ĐÂY LÀ HỒI KẾT (Ending). Hãy viết đoạn kết trọn vẹn, xúc động, đúc kết vận mệnh nhân vật.' : 'Đây là hồi cao trào, mở ra 2 đến 3 lựa chọn tiếp theo.'}
+4. Lịch sử các bước trước: ${JSON.stringify(previousHistory)}.
+5. Bước hiện tại: ${nextStep}. ${isTargetEnding ? 'ĐÂY LÀ HỒI KẾT (Ending). Hãy viết đoạn kết trọn vẹn, xúc động, đúc kết vận mệnh nhân vật một cách độc đáo.' : 'Đây là hồi cao trào, mở ra 2 lựa chọn tiếp theo đối mặt với tình thế mới.'}
 
 BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG ĐƯỢC KÈM LỜI DẪN, KHÔNG DÙNG BACKTICKS MARKDOWN):
 {
   "chapterTitle": "Tiêu đề của hồi này (VD: Hồi ${nextStep}: ...)",
   "sceneMood": "serene" | "dramatic" | "mystic" | "dark" | "triumphant",
-  "storyText": "Nội dung kể chuyện dài khoảng 130 - 180 từ, giàu hình ảnh, mô tả tác động của lựa chọn vừa rồi.",
+  "storyText": "Nội dung kể chuyện dài khoảng 140 - 180 từ, giàu hình ảnh, kịch tính, mô tả tác động thực tế của lựa chọn vừa rồi.",
   "statChanges": {
-    "tam": số nguyên từ -15 đến +20 (thay đổi lòng nhân ái),
-    "tri": số nguyên từ -15 đến +20 (thay đổi trí tuệ/mưu lược),
-    "dung": số nguyên từ -15 đến +20 (thay đổi khí phách/dũng khí),
-    "longDan": số nguyên từ -15 đến +20 (thay đổi uy tín/sự ủng hộ của nhân dân)
+    "tam": số nguyên từ -20 đến +20,
+    "tri": số nguyên từ -20 đến +20,
+    "dung": số nguyên từ -20 đến +20,
+    "longDan": số nguyên từ -20 đến +20
   },
   "isEnding": ${isTargetEnding},
   "choices": ${
@@ -277,23 +383,46 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
           ? '[]'
           : `[
     {
-      "id": "choice_a",
-      "text": "Nội dung lựa chọn tiếp theo A",
-      "hint": "Gợi ý tác động (VD: +Tâm, +Lòng Dân)"
+      "id": "choice_1",
+      "cardTitle": "Tên Thẻ Trúc 1 (Tâm Đức)",
+      "sealText": "TÂM ĐỨC",
+      "pillar": "tam",
+      "iconType": "lotus",
+      "text": "Miêu tả hành động lấy ân báo oán hoặc cứu tế muôn dân",
+      "folkQuote": "Câu ca dao tục ngữ tương ứng",
+      "requiredStat": null,
+      "statChanges": { "tam": 20, "tri": 5, "dung": 0, "longDan": 15 }
     },
     {
-      "id": "choice_b",
-      "text": "Nội dung lựa chọn tiếp theo B",
-      "hint": "Gợi ý tác động (VD: +Trí, +Dũng)"
+      "id": "choice_2",
+      "cardTitle": "Tên Thẻ Trúc 2 (Pháp Độ / Trí Mưu)",
+      "sealText": "PHÁP ĐỘ",
+      "pillar": "tri",
+      "iconType": "scale",
+      "text": "Miêu tả hành động giữ nghiêm phép nước hoặc mưu lược sâu xa",
+      "folkQuote": "Câu ca dao tục ngữ tương ứng",
+      "requiredStat": { "stat": "tri", "min": 55 },
+      "statChanges": { "tam": -5, "tri": 20, "dung": 15, "longDan": 5 }
+    },
+    {
+      "id": "choice_3",
+      "cardTitle": "Tên Thẻ Trúc 3 (Dũng Khí / Đại Nghĩa)",
+      "sealText": "DŨNG KHÍ",
+      "pillar": "dung",
+      "iconType": "feather",
+      "text": "Miêu tả hành động khí phách xả thân vì nhân dân",
+      "folkQuote": "Câu ca dao tục ngữ tương ứng",
+      "requiredStat": null,
+      "statChanges": { "tam": 15, "tri": 0, "dung": 25, "longDan": 20 }
     }
   ]`
   },
   "endingData": ${
       isTargetEnding
           ? `{
-    "endingType": "Tên loại kết cục (VD: Đại Thái Bình / Bi Kịch Hào Hùng / Đạo Lý Thâm Sâu)",
-    "badgeTitle": "Danh hiệu cổ phong tặng người chơi (VD: Đại Đức Minh Quân / Bồ Tát Tái Thế / Thiết Huyết Anh Hùng)",
-    "moralComparison": "Đoạn văn 2-3 câu so sánh: Bản gốc răn dạy điều gì, còn dị bản do người chơi lựa chọn đã đem lại bài học nhân sinh mới mẻ nào."
+    "endingType": "Tên loại kết cục (VD: Đại Thái Bình / Bi Kịch Hào Hùng / Đạo Lý Thâm Sâu / Vương Triều Mới)",
+    "badgeTitle": "Danh hiệu cổ phong tặng người chơi (VD: Đại Đức Minh Quân / Bồ Tát Tái Thế / Thiết Huyết Nữ Vương)",
+    "moralComparison": "Đoạn văn 2-3 câu so sánh: Bản gốc dân gian giải quyết ra sao, còn dị bản do người chơi lựa chọn đã đem lại bài học nhân sinh mới mẻ nào."
   }`
           : 'null'
   }
@@ -310,12 +439,13 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
                         contents: [
                             {
                                 role: 'user',
-                                parts: [{ text: `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi chọn: "${chosenText}"` }],
+                                parts: [{ text: `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi ${isCustomAction ? 'đột phá thực hiện' : 'chọn'}: "${chosenText}"` }],
                             },
                         ],
                         generationConfig: {
-                            temperature: 0.7,
+                            temperature: isCustomAction ? 0.85 : 0.75,
                             maxOutputTokens: 2048,
+                            responseMimeType: 'application/json',
                         },
                     }),
                     signal: AbortSignal.timeout(15000),

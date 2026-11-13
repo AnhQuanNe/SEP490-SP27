@@ -25,10 +25,12 @@ router.get('/:idOrSlug/related', literatureController.getRelated);
 // Đồ thị tri thức văn hóa tương tác (Interactive Cultural Knowledge Graph)
 const knowledgeGraphController = require('../controllers/knowledgeGraph.controller');
 router.get('/knowledge-graph/shortest-path', knowledgeGraphController.getShortestPath);
+router.post('/knowledge-graph/ai-explain-path', knowledgeGraphController.explainPathWithAI);
+router.post('/knowledge-graph/ai-inspect-node', knowledgeGraphController.inspectNodeWithAI);
+router.post('/knowledge-graph/ai-generate-tour', knowledgeGraphController.generateTourWithAI);
 router.get('/knowledge-graph', knowledgeGraphController.getGraph);
 
 // Xem chi tiết tác phẩm theo slug (UC08 View Details)
 router.get('/:slug', literatureController.getDetail);
 
 module.exports = router;
-

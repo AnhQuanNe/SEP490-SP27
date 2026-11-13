@@ -213,7 +213,7 @@ function synthesizeCurriculumFallback({ topicLabel, goal, totalDays, dailyMinute
 
         const workIndex = i % availableWorks.length;
         const primaryWork = availableWorks[workIndex];
-        const dayWorkIds = [primaryWork._id.toString()];
+        const dayWorkIds = [primaryWork._id ? primaryWork._id.toString() : (primaryWork.id ? String(primaryWork.id) : primaryWork.slug || 'work')];
 
         const practiceQuestions = [
             {

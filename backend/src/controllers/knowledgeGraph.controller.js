@@ -3,7 +3,7 @@ const knowledgeGraphService = require('../services/knowledgeGraph.service');
 class KnowledgeGraphController {
     /**
      * @route   GET /api/literature/knowledge-graph
-     * @desc    Lấy toàn bộ dữ liệu Đồ thị Tri thức Dân gian (Nodes, Links, Summary, Categories)
+     * @desc    Lấy toàn bộ dữ liệu Đồ thị Tri thức Dân gian ĐỘNG từ Database (Nodes, Links, Summary, Categories)
      * @access  Public
      */
     async getGraph(req, res, next) {
@@ -25,7 +25,7 @@ class KnowledgeGraphController {
      */
     async getShortestPath(req, res, next) {
         try {
-            const { source, target } = req.query;
+            const { source, target, withAi } = req.query;
             if (!source || !target) {
                 return res.status(400).json({
                     success: false,
@@ -33,10 +33,92 @@ class KnowledgeGraphController {
                 });
             }
 
+            if (withAi === 'true') {
+                const result = await knowledgeGraphService.explainPathWithAI(source, target);
+                return res.status(200).json({
+                    success: true,
+                    data: result,
+                });
+            }
+
             const result = await knowledgeGraphService.getShortestPath(source, target);
             res.status(200).json({
                 success: true,
                 data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @route   POST /api/literature/knowledge-graph/ai-explain-path
+     * @desc    AI Real 100%: Luận giải chuyên sâu mạch nguồn văn hóa kết nối 2 thực thể
+     * @access  Public
+     */
+    async explainPathWithAI(req, res, next) {
+        try {
+            const { source, target } = req.body;
+            if (!source || !target) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Vui lòng cung cấp source và target để AI luận giải',
+                });
+            }
+
+            const result = await knowledgeGraphService.explainPathWithAI(source, target);
+            res.status(200).json({
+                success: true,
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @route   POST /api/literature/knowledge-graph/ai-inspect-node
+     * @desc    AI Real 100%: Luận giải chuyên sâu một thực thể tri thức đơn lẻ
+     * @access  Public
+     */
+    async inspectNodeWithAI(req, res, next) {
+        try {
+            const { nodeId } = req.body;
+            if (!nodeId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Vui lòng cung cấp nodeId để AI phân tích',
+                });
+            }
+
+            const result = await knowledgeGraphService.inspectNodeWithAI(nodeId);
+            res.status(200).json({
+                success: true,
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+    /**
+     * @route   POST /api/literature/knowledge-graph/ai-generate-tour
+     * @desc    AI Real 100%: Thiết kế Chuyến Du Hành Tiến Hóa Thi Pháp (Semantic Drift Tour) theo chủ đề
+     * @access  Public
+     */
+    async generateTourWithAI(req, res, next) {
+        try {
+            const { keyword } = req.body;
+            if (!keyword || !keyword.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Vui lòng cung cấp chủ đề hoặc hình tượng để AI thiết kế tour',
+                });
+            }
+
+            const tour = await knowledgeGraphService.generateCustomEvolutionTour(keyword);
+            res.status(200).json({
+                success: true,
+                data: tour,
             });
         } catch (error) {
             next(error);

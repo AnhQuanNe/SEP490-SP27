@@ -1,4 +1,4 @@
-import { Route, X, Loader2, Sparkles } from 'lucide-react';
+import { Route, X, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 
 /**
  * GraphPathModal - Modal tìm kiếm đường đi ngắn nhất giữa 2 thực thể bất kỳ (BFS)
@@ -12,7 +12,8 @@ const GraphPathModal = ({
     setPathTarget,
     isFindingPath,
     onFindShortestPath,
-    graphData
+    graphData,
+    pathError,
 }) => {
     if (!isOpen) return null;
 
@@ -73,6 +74,13 @@ const GraphPathModal = ({
                         </select>
                     </div>
                 </div>
+
+                {pathError && (
+                    <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-200 text-xs flex items-center gap-2 animate-fade-in">
+                        <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <span>{pathError}</span>
+                    </div>
+                )}
 
                 <div className="pt-2">
                     <button

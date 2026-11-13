@@ -1,49 +1,33 @@
 const Work = require('../models/Work');
+const Location = require('../models/Location');
 const {
-    CULTURAL_ARCHETYPES,
-    PHILOSOPHIES,
-    CULTURAL_REGIONS,
-    ARCHETYPE_PHILOSOPHY_LINKS,
-    ARCHETYPE_REGION_LINKS,
     CATEGORY_COLORS,
-    buildCulturalTours,
     CULTURAL_ERAS,
 } = require('../constants/knowledgeGraph.constants');
+const { buildDynamicTours } = require('../constants/knowledgeGraphTours.constants');
+const {
+    findShortestPathBFS,
+    calculateDegreeCentrality,
+} = require('../utils/graphAlgorithms.util');
+const knowledgeGraphAiService = require('./knowledgeGraphAi.service');
 
-const ARCHETYPE_ERA_MAP = {
-    'arc-trau-cau': 1,
-    'arc-hat-gao-noi-com': 1,
-    'arc-cay-tre-canh-truc': 1,
-    'arc-song-nui-dia-linh': 1,
-    'arc-con-co': 2,
-    'arc-cay-da-ben-nuoc': 2,
-    'arc-bau-bi-la-lanh': 2,
-    'arc-chuoi-ba-huong-thai-son': 2,
-    'arc-hoa-sen': 4,
-    'arc-nguoi-linh-ve-quoc': 5,
-};
+/**
+ * Chuyển đổi chuỗi tiếng Việt thành slug an toàn cho ID đồ thị
+ */
+function toSlug(str) {
+    if (!str) return 'unknown';
+    return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[đĐ]/g, 'd')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
 
-const PHILOSOPHY_ERA_MAP = {
-    'phil-hieu-thao': 1,
-    'phil-biet-on': 1,
-    'phil-yeu-nuoc': 1,
-    'phil-kien-tri': 1,
-    'phil-nhan-ai': 2,
-    'phil-chinh-nghia': 2,
-    'phil-ung-xu': 2,
-    'phil-tri-thuc': 3,
-};
-
-const REGION_ERA_MAP = {
-    'reg-bac-bo': 1,
-    'reg-toan-quoc': 1,
-    'reg-thang-long': 2,
-    'reg-xu-nghe': 2,
-    'reg-hue': 4,
-    'reg-nam-bo': 4,
-    'reg-viet-bac': 5,
-};
-
+/**
+ * Dự đoán kỷ nguyên lịch sử cho tác phẩm dựa trên văn bản
+ */
 function detectWorkEra(work) {
     const text = `${work.title} ${work.period || ''} ${work.summary || ''} ${work.category || ''}`.toLowerCase();
     if (text.includes('1077') || text.includes('1428') || text.includes('nam quốc sơn hà') || text.includes('bình ngô') || text.includes('bạch đằng')) {
@@ -63,12 +47,23 @@ function detectWorkEra(work) {
 
 class KnowledgeGraphService {
     /**
-     * Khởi tạo và sinh dữ liệu đồ thị tri thức từ cơ sở dữ liệu thực tế
+     * Dựng đồ thị tri thức ĐỘNG 100% từ cơ sở dữ liệu MongoDB
+     * Phân tách thành 4 tầng tri thức:
+     * - Tầng 1: Triết lý & Đạo lý nhân sinh (Topic)
+     * - Tầng 2: Cổ mẫu & Hình tượng biểu trưng (Tags)
+     * - Tầng 3: Không gian văn hóa & Địa linh (Location)
+     * - Tầng 4: Tác phẩm di sản (Work)
      */
     async getGraphData() {
-        // Lấy tất cả tác phẩm đã xuất bản
+        // 1. Truy vấn toàn bộ tác phẩm đã xuất bản (kèm thông tin địa danh liên kết)
         const works = await Work.find({ status: 'published' })
-            .select('title slug category categoryName period region author summary quote topic tags literalMeaning figurativeMeaning lesson')
+            .populate('locationIds', 'name slug region coordinates description')
+            .select('title slug category categoryName period region author summary quote topic tags literalMeaning figurativeMeaning lesson locationIds')
+            .lean();
+
+        // 2. Truy vấn toàn bộ địa danh văn hóa đã xuất bản
+        const locations = await Location.find({ status: 'published' })
+            .select('name slug region coordinates description')
             .lean();
 
         const nodes = [];
@@ -82,251 +77,398 @@ class KnowledgeGraphService {
             }
         };
 
-        const addLink = (source, target, label, relation, strength = 1) => {
-            // Đảm bảo cả source và target đều tồn tại
+        const addLink = (source, target, label, relation, description = '', strength = 1) => {
             if (nodeMap.has(source) && nodeMap.has(target) && source !== target) {
-                links.push({
-                    source,
-                    target,
-                    label,
-                    relation,
-                    strength,
-                });
+                const exists = links.some(
+                    (l) => (l.source === source && l.target === target) || (l.source === target && l.target === source)
+                );
+                if (!exists) {
+                    links.push({
+                        source,
+                        target,
+                        label,
+                        relation,
+                        description: description || relation,
+                        strength,
+                    });
+                }
             }
         };
 
-        // 1. Thêm các Node Cổ mẫu (Archetypes) có gắn bornEra
-        CULTURAL_ARCHETYPES.forEach((arc) => {
+        // -------------------------------------------------------------
+        // TẦNG 1: CHỦ ĐỀ & TRIẾT LÝ NHÂN SINH (Topic Hub Nodes từ DB)
+        // -------------------------------------------------------------
+        const topicCounts = {};
+        works.forEach((w) => {
+            const top = (w.topic || 'Văn hóa & Đạo lý').trim();
+            topicCounts[top] = (topicCounts[top] || 0) + 1;
+        });
+
+        const topicNodeIds = {};
+        Object.entries(topicCounts).forEach(([topicName, count]) => {
+            const topicId = `topic-${toSlug(topicName)}`;
+            topicNodeIds[topicName] = topicId;
             addNode({
-                ...arc,
-                bornEra: ARCHETYPE_ERA_MAP[arc.id] || 1,
+                id: topicId,
+                name: topicName,
+                type: 'philosophy',
+                val: Math.min(32, 22 + count * 1.5),
+                color: '#ec4899',
+                icon: 'Heart',
+                summary: `Chủ đề đạo đức & triết lý nhân sinh: "${topicName}". Kết tinh qua ${count} áng văn ca dao, tục ngữ truyền đời.`,
+                details: `Giá trị tư tưởng cốt lõi được đúc kết qua hàng ngàn năm lịch sử, phản chiếu nhân sinh quan và đạo lý làm người của dân tộc Việt Nam.`,
+                worksCount: count,
+                bornEra: 1,
+                isDatabaseDerived: true,
             });
         });
 
-        // 2. Thêm các Node Triết lý (Philosophies) có gắn bornEra
-        PHILOSOPHIES.forEach((phil) => {
+        // -------------------------------------------------------------
+        // TẦNG 2: CỔ MẪU & HÌNH TƯỢNG BIỂU TRƯNG (Tag Nodes từ DB)
+        // -------------------------------------------------------------
+        const tagCounts = {};
+        const tagToWorks = {};
+        works.forEach((w) => {
+            if (Array.isArray(w.tags)) {
+                w.tags.forEach((rawTag) => {
+                    const tag = rawTag.trim();
+                    if (!tag) return;
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    if (!tagToWorks[tag]) tagToWorks[tag] = [];
+                    tagToWorks[tag].push(`work-${w._id}`);
+                });
+            }
+        });
+
+        const tagNodeIds = {};
+        Object.entries(tagCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 60)
+            .forEach(([tagName, count]) => {
+                const tagId = `tag-${toSlug(tagName)}`;
+                tagNodeIds[tagName] = tagId;
+                addNode({
+                    id: tagId,
+                    name: `Hình tượng ${tagName}`,
+                    rawTagName: tagName,
+                    type: 'archetype',
+                    val: Math.min(26, 18 + count * 1.2),
+                    color: '#f59e0b',
+                    icon: 'Sparkles',
+                    summary: `Hình tượng nghệ thuật & cổ mẫu dân gian: "${tagName}". Xuất hiện trong ${count} tác phẩm và ngữ cảnh thi ca.`,
+                    details: `Mẫu thức nghệ thuật ước lệ hóa tư tưởng dân gian thành các hình tượng gần gũi, thiêng liêng trong đời sống người Việt.`,
+                    worksCount: count,
+                    bornEra: 2,
+                    isDatabaseDerived: true,
+                });
+            });
+
+        // -------------------------------------------------------------
+        // TẦNG 3: ĐỊA LINH VĂN HÓA & KHÔNG GIAN ĐỊA LÝ (Location Nodes từ DB)
+        // -------------------------------------------------------------
+        const locationNodeIds = {};
+        locations.forEach((loc) => {
+            const locId = `loc-${loc._id}`;
+            locationNodeIds[loc._id.toString()] = locId;
             addNode({
-                ...phil,
-                bornEra: PHILOSOPHY_ERA_MAP[phil.id] || 1,
+                id: locId,
+                name: loc.name,
+                type: 'region',
+                val: 18,
+                color: '#3b82f6',
+                icon: 'MapPin',
+                summary: loc.description || `Địa danh lịch sử & không gian văn hóa: ${loc.name}`,
+                details: `Vùng đất địa linh nhân kiệt, nơi khởi phát hoặc gắn liền với các truyền thuyết, ca dao và danh thắng Việt Nam.`,
+                region: loc.region,
+                coordinates: loc.coordinates,
+                bornEra: 1,
+                isDatabaseDerived: true,
             });
         });
 
-        // 3. Thêm các Node Vùng miền (Regions) có gắn bornEra
-        CULTURAL_REGIONS.forEach((reg) => {
-            addNode({
-                ...reg,
-                bornEra: REGION_ERA_MAP[reg.id] || 1,
-            });
-        });
-
-        // 4. Liên kết Cổ mẫu với Triết lý (Archetype <-> Philosophy)
-        ARCHETYPE_PHILOSOPHY_LINKS.forEach((l) => {
-            addLink(l.source, l.target, l.label, l.relation, l.strength);
-        });
-
-        // 5. Liên kết Cổ mẫu với Vùng miền (Archetype <-> Region)
-        ARCHETYPE_REGION_LINKS.forEach((l) => {
-            addLink(l.source, l.target, l.label, l.relation, l.strength);
-        });
-
-        // 6. Thêm các Node Tác phẩm & Phân tích liên kết tự động
+        // -------------------------------------------------------------
+        // TẦNG 4: TÁC PHẨM VĂN HỌC & CA DAO - TỤC NGỮ (Work Nodes từ DB)
+        // -------------------------------------------------------------
         works.forEach((work) => {
-            const workNodeId = `work-${work._id}`;
-            const categoryColor = CATEGORY_COLORS[work.category] || '#10b981';
-            const workEra = detectWorkEra(work);
-
+            const workId = `work-${work._id}`;
+            const detectedEra = detectWorkEra(work);
             addNode({
-                id: workNodeId,
+                id: workId,
                 name: work.title,
                 type: 'work',
+                val: 10,
+                color: CATEGORY_COLORS[work.category] || '#10b981',
                 category: work.category,
-                categoryName: work.categoryName || work.category,
-                slug: work.slug,
-                val: 14,
-                color: categoryColor,
-                author: work.author || 'Dân gian',
+                categoryName: work.categoryName,
+                author: work.author || 'Dân gian truyền tụng',
+                period: work.period || 'Lưu truyền dân gian',
                 region: work.region || 'Toàn quốc',
-                topic: work.topic || 'Văn hóa & Đạo lý',
-                period: work.period || 'Văn học Dân gian',
-                bornEra: workEra,
-                summary: work.summary || '',
-                quote: work.quote || '',
-                lesson: work.lesson || '',
-                tags: work.tags || [],
+                bornEra: detectedEra,
+                summary: work.summary || work.literalMeaning || '',
+                quote: work.quote || work.title,
+                figurativeMeaning: work.figurativeMeaning,
+                lesson: work.lesson,
+                isDatabaseDerived: true,
             });
 
-            const contentText = `${work.title} ${work.summary || ''} ${work.quote || ''} ${work.topic || ''} ${(work.tags || []).join(' ')} ${work.lesson || ''}`.toLowerCase();
+            // CẠNH 1: Tác phẩm ➔ Triết lý chủ đề (Work ➔ Philosophy)
+            const topicName = (work.topic || 'Văn hóa & Đạo lý').trim();
+            const topicNodeId = topicNodeIds[topicName];
+            if (topicNodeId) {
+                addLink(
+                    workId,
+                    topicNodeId,
+                    'kết tinh tư tưởng',
+                    'kết tinh tư tưởng',
+                    `Tác phẩm "${work.title}" là minh chứng tiêu biểu kết tinh nên triết lý "${topicName}".`,
+                    1.8
+                );
+            }
 
-            // A. Khớp tác phẩm với Cổ mẫu (Work -> Archetype)
-            CULTURAL_ARCHETYPES.forEach((arc) => {
-                const isMatched = arc.keywords.some((kw) => contentText.includes(kw.toLowerCase()));
-                if (isMatched) {
-                    addLink(workNodeId, arc.id, 'EMBODIES', `Khắc họa ${arc.name}`, 1.5);
+            // CẠNH 2: Tác phẩm ➔ Cổ mẫu / Hình tượng (Work ➔ Archetype)
+            if (Array.isArray(work.tags)) {
+                work.tags.forEach((rawTag) => {
+                    const tag = rawTag.trim();
+                    const tagNodeId = tagNodeIds[tag];
+                    if (tagNodeId) {
+                        addLink(
+                            workId,
+                            tagNodeId,
+                            'khắc họa hình tượng',
+                            'khắc họa hình tượng',
+                            `Tác phẩm "${work.title}" sử dụng thi pháp dân gian để khắc họa sâu sắc hình tượng "${tag}".`,
+                            1.2
+                        );
+                    }
+                });
+            }
+
+            // CẠNH 3: Tác phẩm ➔ Không gian văn hóa / Địa linh (Work ➔ Region)
+            if (Array.isArray(work.locationIds) && work.locationIds.length > 0) {
+                work.locationIds.forEach((loc) => {
+                    const locIdStr = loc._id ? loc._id.toString() : loc.toString();
+                    const locNodeId = locationNodeIds[locIdStr];
+                    if (locNodeId) {
+                        addLink(
+                            workId,
+                            locNodeId,
+                            'gắn liền vùng đất',
+                            'gắn liền vùng đất',
+                            `Tác phẩm "${work.title}" ra đời và gắn bó mật thiết với không gian địa linh "${loc.name || 'địa phương'}".`,
+                            1.5
+                        );
+                    }
+                });
+            } else if (work.region && locations.length > 0) {
+                // Heuristic kết nối theo vùng miền
+                const workRegion = work.region.toLowerCase();
+                const matchedLoc = locations.find((loc) => {
+                    const locName = loc.name.toLowerCase();
+                    const locSlug = (loc.slug || '').toLowerCase();
+                    const locRegion = (loc.region || '').toLowerCase();
+
+                    const geoKeywords = ['hà nội', 'thăng long', 'bắc ninh', 'kinh bắc', 'huế', 'sài gòn', 'đồng tháp', 'bến tre', 'hạ long', 'phú thọ', 'sơn tây'];
+                    for (const kw of geoKeywords) {
+                        if (workRegion.includes(kw) && (locName.includes(kw) || locSlug.includes(kw))) {
+                            return true;
+                        }
+                    }
+
+                    if ((workRegion.includes('bắc') || workRegion.includes('đồng bằng bắc')) && locRegion === 'bắc') return true;
+                    if ((workRegion.includes('trung') || workRegion.includes('miền trung')) && locRegion === 'trung') return true;
+                    if ((workRegion.includes('nam') || workRegion.includes('nam bộ') || workRegion.includes('sông nước')) && locRegion === 'nam') return true;
+                    return false;
+                });
+
+                if (matchedLoc) {
+                    const locNodeId = locationNodeIds[matchedLoc._id.toString()];
+                    if (locNodeId) {
+                        addLink(
+                            workId,
+                            locNodeId,
+                            'âm vang phong thổ',
+                            'âm vang phong thổ',
+                            `Tác phẩm mang đậm sắc thái phong thổ và tâm thức văn hóa của vùng "${matchedLoc.name}".`,
+                            1.0
+                        );
+                    }
+                }
+            }
+        });
+
+        // -------------------------------------------------------------
+        // CẠNH LIÊN KẾT BẮC CẦU TẦNG CAO (Archetype ➔ Philosophy Bridges)
+        // -------------------------------------------------------------
+        Object.entries(tagToWorks).forEach(([tag, workNodeIdList]) => {
+            const tagNodeId = tagNodeIds[tag];
+            if (!tagNodeId) return;
+
+            const associatedTopicCounts = {};
+            workNodeIdList.forEach((wNodeId) => {
+                const wId = wNodeId.replace('work-', '');
+                const w = works.find((item) => item._id.toString() === wId);
+                if (w && w.topic) {
+                    associatedTopicCounts[w.topic] = (associatedTopicCounts[w.topic] || 0) + 1;
                 }
             });
 
-            // B. Khớp tác phẩm với Triết lý (Work -> Philosophy)
-            if (contentText.includes('hiếu') || contentText.includes('cha') || contentText.includes('mẹ') || contentText.includes('gia đình')) {
-                addLink(workNodeId, 'phil-hieu-thao', 'TRANSMITS', 'Răn dạy đạo hiếu', 1.5);
-            }
-            if (contentText.includes('nhớ nguồn') || contentText.includes('trồng cây') || contentText.includes('biết ơn') || contentText.includes('tri ân') || contentText.includes('mồ hôi')) {
-                addLink(workNodeId, 'phil-biet-on', 'TRANSMITS', 'Đạo lý uống nước nhớ nguồn', 1.5);
-            }
-            if (contentText.includes('thương thân') || contentText.includes('bầu ơi') || contentText.includes('lá lành') || contentText.includes('giá gương') || contentText.includes('nhân ái') || contentText.includes('đoàn kết')) {
-                addLink(workNodeId, 'phil-nhan-ai', 'TRANSMITS', 'Tình đồng bào, tương thân tương ái', 1.5);
-            }
-            if (contentText.includes('yêu nước') || contentText.includes('nam quốc sơn hà') || contentText.includes('bình ngô') || contentText.includes('thánh gióng') || contentText.includes('vệ quốc') || contentText.includes('tây tiến') || contentText.includes('đồng chí') || contentText.includes('bác hồ')) {
-                addLink(workNodeId, 'phil-yeu-nuoc', 'TRANSMITS', 'Hào khí yêu nước và tự hào dân tộc', 1.5);
-            }
-            if (contentText.includes('thạch sanh') || contentText.includes('công lý') || contentText.includes('chính nghĩa') || contentText.includes('ở hiền')) {
-                addLink(workNodeId, 'phil-chinh-nghia', 'TRANSMITS', 'Ước vọng chính nghĩa thắng bạo tàn', 1.5);
-            }
-            if (contentText.includes('mài sắt') || contentText.includes('nên kim') || contentText.includes('kiên trì') || contentText.includes('nghị lực') || contentText.includes('sơn tinh')) {
-                addLink(workNodeId, 'phil-kien-tri', 'TRANSMITS', 'Ý chí rèn luyện kiên định', 1.5);
-            }
-            if (contentText.includes('học thầy') || contentText.includes('học bạn') || contentText.includes('tri thức') || contentText.includes('học tập')) {
-                addLink(workNodeId, 'phil-tri-thuc', 'TRANSMITS', 'Khát vọng học hỏi và tri thức', 1.5);
-            }
-            if (contentText.includes('lời nói') || contentText.includes('giao tiếp') || contentText.includes('gần mực') || contentText.includes('ứng xử')) {
-                addLink(workNodeId, 'phil-ung-xu', 'TRANSMITS', 'Văn hóa đối nhân xử thế', 1.5);
-            }
+            Object.entries(associatedTopicCounts).forEach(([topic, freq]) => {
+                const topicNodeId = topicNodeIds[topic];
+                if (topicNodeId && freq >= 1) {
+                    addLink(
+                        tagNodeId,
+                        topicNodeId,
+                        'biểu trưng hóa',
+                        'biểu trưng hóa',
+                        `Hình tượng "${tag}" là cổ mẫu nghệ thuật biểu trưng hóa cho đạo lý "${topic}".`,
+                        1.5
+                    );
+                }
+            });
+        });
 
-            // C. Khớp tác phẩm với Không gian văn hóa (Work -> Region)
-            const regionLower = (work.region || '').toLowerCase();
-            if (regionLower.includes('thăng long') || regionLower.includes('hà nội')) {
-                addLink(workNodeId, 'reg-thang-long', 'ORIGINATES_FROM', 'Bản sắc Thăng Long - Hà Nội', 1.2);
-            } else if (regionLower.includes('bắc bộ') || regionLower.includes('ba vì') || regionLower.includes('phú thọ') || regionLower.includes('hà nam')) {
-                addLink(workNodeId, 'reg-bac-bo', 'ORIGINATES_FROM', 'Cái nôi văn hóa Bắc Bộ', 1.2);
-            } else if (regionLower.includes('xứ nghệ') || regionLower.includes('đèo ngang') || regionLower.includes('nghệ an') || regionLower.includes('hà tĩnh') || regionLower.includes('quảng bình')) {
-                addLink(workNodeId, 'reg-xu-nghe', 'ORIGINATES_FROM', 'Không gian xứ Lam Hồng - Đèo Ngang', 1.2);
-            } else if (regionLower.includes('huế') || regionLower.includes('vĩ dạ')) {
-                addLink(workNodeId, 'reg-hue', 'ORIGINATES_FROM', 'Không gian cố đô Huế thơ mộng', 1.2);
-            } else if (regionLower.includes('nam bộ') || regionLower.includes('đồng tháp')) {
-                addLink(workNodeId, 'reg-nam-bo', 'ORIGINATES_FROM', 'Văn hóa đồng bằng Nam Bộ', 1.2);
-            } else if (regionLower.includes('tây bắc') || regionLower.includes('việt bắc')) {
-                addLink(workNodeId, 'reg-viet-bac', 'ORIGINATES_FROM', 'Chiến khu Tây Bắc - Việt Bắc', 1.2);
-            } else {
-                addLink(workNodeId, 'reg-toan-quoc', 'ORIGINATES_FROM', 'Văn hóa dân gian lưu truyền toàn quốc', 1);
+        // CẠNH LIÊN KẾT GIỮA CÁC TÁC PHẨM CÙNG CỔ MẪU
+        for (let i = 0; i < works.length; i++) {
+            for (let j = i + 1; j < works.length; j++) {
+                const w1 = works[i];
+                const w2 = works[j];
+                const tags1 = w1.tags || [];
+                const tags2 = w2.tags || [];
+                const sharedTags = tags1.filter((t) => tags2.includes(t));
+
+                if (sharedTags.length >= 2) {
+                    addLink(
+                        `work-${w1._id}`,
+                        `work-${w2._id}`,
+                        'đồng điệu thi pháp',
+                        'đồng điệu thi pháp',
+                        `Cùng chia sẻ các cổ mẫu thi pháp dân gian: ${sharedTags.join(', ')}.`,
+                        1.0
+                    );
+                }
+            }
+        }
+
+        // CẠNH CẦU NỐI ĐẠI TƯ TƯỞNG GIỮA CÁC TRỤ CỘT TRIẾT LÝ
+        const philosophyBridges = [
+            {
+                p1: 'yêu nước',
+                p2: 'chính nghĩa',
+                relation: 'đồng nguyên khí phách',
+                desc: 'Lòng yêu nước kiên trung luôn song hành cùng khát vọng chính nghĩa và hòa bình non sông.',
+            },
+            {
+                p1: 'tương thân',
+                p2: 'gia đình',
+                relation: 'nền tảng nhân sinh',
+                desc: 'Tình cảm gia đình hiếu thảo là cái nôi nuôi dưỡng tinh thần nhân ái, đùm bọc cộng đồng.',
+            },
+            {
+                p1: 'lao động',
+                p2: 'thiên nhiên',
+                relation: 'giao hòa sự sống',
+                desc: 'Cần cù lao động sản xuất luôn gắn liền với tình yêu thiên nhiên và sự gắn bó với đất mẹ quê hương.',
+            },
+            {
+                p1: 'trí tuệ',
+                p2: 'đạo đức',
+                relation: 'vẹn toàn nhân phẩm',
+                desc: 'Trí tuệ dân gian là ngọn đuốc soi sáng, hoàn thiện phẩm hạnh và đạo lý làm người.',
+            },
+            {
+                p1: 'gia đình',
+                p2: 'yêu nước',
+                relation: 'tình nhà nợ nước',
+                desc: 'Từ tình yêu nếp nhà ấm êm bồi đắp và thăng hoa thành tình yêu quê hương, đất nước thiêng liêng.',
+            },
+            {
+                p1: 'thiên nhiên',
+                p2: 'yêu nước',
+                relation: 'gấm vóc non sông',
+                desc: 'Thiên nhiên tươi đẹp bồi tụ niềm tự hào về dải đất hình chữ S gấm vóc ngàn năm.',
+            }
+        ];
+
+        philosophyBridges.forEach((bridge) => {
+            const topic1Entry = Object.entries(topicNodeIds).find(([name]) => name.toLowerCase().includes(bridge.p1));
+            const topic2Entry = Object.entries(topicNodeIds).find(([name]) => name.toLowerCase().includes(bridge.p2));
+            if (topic1Entry && topic2Entry && topic1Entry[1] !== topic2Entry[1]) {
+                addLink(
+                    topic1Entry[1],
+                    topic2Entry[1],
+                    bridge.relation,
+                    bridge.relation,
+                    bridge.desc,
+                    2.0
+                );
             }
         });
 
-        // Tính toán Degree Centrality (Bậc liên kết của mỗi Node) để xác định độ trung tâm
-        const degreeMap = {};
-        links.forEach((link) => {
-            degreeMap[link.source] = (degreeMap[link.source] || 0) + 1;
-            degreeMap[link.target] = (degreeMap[link.target] || 0) + 1;
-        });
+        // Tính toán Degree Centrality & xác định Tứ Trụ Cốt Lõi qua thuật toán chuyên biệt
+        const { majorHubs } = calculateDegreeCentrality(nodes, links, 4);
 
-        // Bổ sung degree vào node để làm kích thước hiển thị cân đối
-        nodes.forEach((node) => {
-            const degree = degreeMap[node.id] || 1;
-            node.degree = degree;
-            // Nếu là Archetype hoặc Philosophy, tăng kích thước dựa trên degree
-            if (node.type === 'archetype') {
-                node.val = Math.max(22, 16 + degree * 1.5);
-            } else if (node.type === 'philosophy') {
-                node.val = Math.max(20, 15 + degree * 1.4);
-            } else if (node.type === 'region') {
-                node.val = Math.max(18, 14 + degree * 1.2);
-            } else {
-                node.val = Math.max(12, 10 + degree * 0.8);
-            }
-        });
-
-        const tours = buildCulturalTours(works);
+        // Xây dựng 4 kịch bản tham quan tiến hóa thi pháp chuẩn hóa học thuật
+        const dynamicTours = buildDynamicTours(works, topicNodeIds, tagNodeIds);
 
         return {
             summary: {
                 totalNodes: nodes.length,
                 totalLinks: links.length,
-                archetypesCount: CULTURAL_ARCHETYPES.length,
-                philosophiesCount: PHILOSOPHIES.length,
-                regionsCount: CULTURAL_REGIONS.length,
+                philosophiesCount: Object.keys(topicNodeIds).length,
+                archetypesCount: Object.keys(tagNodeIds).length,
+                regionsCount: locations.length,
                 worksCount: works.length,
-                toursCount: tours.length,
                 erasCount: CULTURAL_ERAS.length,
             },
+            majorHubs,
             categories: [
-                { id: 'archetype', label: 'Cổ mẫu & Biểu tượng Dân gian', color: '#f59e0b', count: CULTURAL_ARCHETYPES.length },
-                { id: 'philosophy', label: 'Triết lý & Đạo lý Nhân sinh', color: '#ec4899', count: PHILOSOPHIES.length },
-                { id: 'region', label: 'Không gian Văn hóa Địa linh', color: '#3b82f6', count: CULTURAL_REGIONS.length },
-                { id: 'work', label: 'Tác phẩm Ca dao - Tục ngữ - Truyện', color: '#10b981', count: works.length },
+                { id: 'philosophy', label: 'Tầng 1: Triết Lý & Chủ Đề Đạo Đức', color: '#ec4899', count: Object.keys(topicNodeIds).length },
+                { id: 'archetype', label: 'Tầng 2: Cổ Mẫu & Hình Tượng Dân Gian', color: '#f59e0b', count: Object.keys(tagNodeIds).length },
+                { id: 'region', label: 'Tầng 3: Không Gian Văn Hóa & Địa Linh', color: '#3b82f6', count: locations.length },
+                { id: 'work', label: 'Tầng 4: Tác Phẩm Ca Dao - Tục Ngữ - Truyện', color: '#10b981', count: works.length },
             ],
             eras: CULTURAL_ERAS,
-            tours,
+            tours: dynamicTours,
             nodes,
             links,
         };
     }
 
     /**
-     * Tìm đường đi ngắn nhất giữa 2 thực thể tri thức (Shortest Cultural Path Algorithm - BFS)
-     * Thể hiện kỹ thuật thuật toán đồ thị nâng cao trong bài báo cáo đồ án
+     * Tìm đường đi ngắn nhất giữa 2 thực thể tri thức (BFS Graph Traversal)
      */
     async getShortestPath(sourceId, targetId) {
         const { nodes, links } = await this.getGraphData();
+        return findShortestPathBFS(nodes, links, sourceId, targetId);
+    }
 
-        // Tạo danh sách kề (Adjacency List)
-        const adj = {};
-        nodes.forEach((n) => (adj[n.id] = []));
-        links.forEach((l) => {
-            adj[l.source]?.push({ neighbor: l.target, relation: l.relation });
-            adj[l.target]?.push({ neighbor: l.source, relation: l.relation });
-        });
+    /**
+     * AI Real 100%: Phân tích & Luận giải Mạch Ngầm Văn Hóa Nối Liền 2 Thực Thể (Gemini AI)
+     */
+    async explainPathWithAI(sourceId, targetId) {
+        const pathResult = await this.getShortestPath(sourceId, targetId);
+        return knowledgeGraphAiService.explainPathWithAI(pathResult);
+    }
 
-        // Thuật toán BFS tìm đường đi ngắn nhất
-        const queue = [sourceId];
-        const visited = new Set([sourceId]);
-        const parentMap = {};
-
-        let found = false;
-        while (queue.length > 0) {
-            const current = queue.shift();
-            if (current === targetId) {
-                found = true;
-                break;
-            }
-
-            for (const edge of adj[current] || []) {
-                if (!visited.has(edge.neighbor)) {
-                    visited.add(edge.neighbor);
-                    parentMap[edge.neighbor] = { node: current, relation: edge.relation };
-                    queue.push(edge.neighbor);
-                }
-            }
+    /**
+     * AI Real 100%: Luận giải chuyên sâu một thực thể tri thức đơn lẻ
+     */
+    async inspectNodeWithAI(nodeId) {
+        const { nodes, links } = await this.getGraphData();
+        const targetNode = nodes.find((n) => n.id === nodeId);
+        if (!targetNode) {
+            return { success: false, message: 'Không tìm thấy thực thể trên đồ thị.' };
         }
+        const neighborLinks = links.filter((l) => l.source === nodeId || l.target === nodeId);
+        return knowledgeGraphAiService.inspectNodeWithAI(targetNode, neighborLinks, nodes);
+    }
 
-        if (!found) {
-            return { found: false, path: [], links: [] };
-        }
-
-        // Truy vết đường đi từ target về source
-        const pathNodes = [];
-        const pathLinks = [];
-        let curr = targetId;
-
-        while (curr !== sourceId) {
-            const p = parentMap[curr];
-            const currNode = nodes.find((n) => n.id === curr);
-            const parentNode = nodes.find((n) => n.id === p.node);
-            pathNodes.unshift(currNode);
-            pathLinks.unshift({
-                source: p.node,
-                target: curr,
-                relation: p.relation,
-                sourceName: parentNode?.name,
-                targetName: currNode?.name,
-            });
-            curr = p.node;
-        }
-        pathNodes.unshift(nodes.find((n) => n.id === sourceId));
-
-        return {
-            found: true,
-            length: pathNodes.length - 1,
-            path: pathNodes,
-            links: pathLinks,
-        };
+    /**
+     * AI Real 100%: Tạo Tour Tiến Hóa Thi Pháp Tùy Chỉnh Bằng Gemini AI
+     */
+    async generateCustomEvolutionTour(keyword) {
+        const { nodes } = await this.getGraphData();
+        return knowledgeGraphAiService.generateCustomEvolutionTour(keyword, nodes);
     }
 }
 

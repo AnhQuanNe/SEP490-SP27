@@ -2,17 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAiChat } from '../../context/AiChatContext';
-import { 
-    User, 
-    LogOut, 
-    ShieldCheck, 
-    ChevronDown, 
-    Menu, 
-    X, 
-    BookOpen, 
-    Sparkles, 
-    Heart, 
-    History, 
+import {
+    User,
+    LogOut,
+    ShieldCheck,
+    ChevronDown,
+    Menu,
+    X,
+    BookOpen,
+    Sparkles,
+    Heart,
+    History,
     Send,
     Compass,
     GraduationCap,
@@ -27,6 +27,7 @@ import {
     Share2,
     GitBranch
 } from 'lucide-react';
+import adminService from '../../services/admin.service';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout, getAvatarUrl } = useAuth();
@@ -37,6 +38,18 @@ const Navbar = () => {
     const sidebarRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Thông báo toàn hệ thống do Quản trị viên cấu hình (UC19)
+    const [systemNotice, setSystemNotice] = useState('');
+    const [noticeDismissed, setNoticeDismissed] = useState(false);
+
+    useEffect(() => {
+        adminService.getPublicSettings().then((settings) => {
+            if (settings?.systemNotice && settings.systemNotice.trim()) {
+                setSystemNotice(settings.systemNotice.trim());
+            }
+        }).catch(() => {});
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -51,7 +64,7 @@ const Navbar = () => {
     const primaryHeaderItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
-        { name: 'Triển lãm Ảo', path: '/trien-lam-3d', isRoute: true, icon: Layers },
+        { name: 'Triển lãm Ảo', path: '/trien-lam', isRoute: true, icon: Layers },
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map, visibility: 'hidden lg:inline-flex' },
         { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden lg:inline-flex' },
         { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden xl:inline-flex' },
@@ -66,7 +79,7 @@ const Navbar = () => {
                 { name: 'Trang chủ', path: '/', icon: BookOpen, desc: 'Tổng quan di sản & nổi bật' },
                 { name: 'Kho tàng Di sản', path: '/kham-pha', icon: Compass, desc: 'Ca dao, tục ngữ & văn học dân gian' },
                 { name: 'Dị bản Cổ tích Tương tác', path: '/di-ban-co-tich', icon: GitBranch, desc: 'Rẽ nhánh câu chuyện (If-Else) & kiến tạo hồi kết', badge: 'Tương tác AI', badgeColor: 'bg-rose-100 text-rose-800 border-rose-300' },
-                { name: 'Triển lãm Hiện vật 3D', path: '/trien-lam-3d', icon: Layers, desc: 'Bảo vật văn hóa & điển tích 3D tương tác', badge: '3D Mới', badgeColor: 'bg-red-100 text-red-800 border-red-300' },
+                { name: 'Triển lãm Hiện vật', path: '/trien-lam', icon: Layers, desc: 'Bảo vật văn hóa đa góc nhìn & Audio Guide', badge: 'Tương tác', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
                 { name: 'Bản đồ Văn hóa', path: '/ban-do', icon: Map, desc: 'Không gian văn hóa & địa danh 3 miền', badge: 'Mới', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
                 { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', icon: Share2, desc: 'Mạng lưới liên kết tác phẩm & nhân vật', badge: 'Graph', badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
                 { name: 'Gia sư AI Di sản', path: '/gia-su-ai', icon: GraduationCap, desc: 'Hỏi đáp văn hóa & điển tích xưa', badge: 'AI' },
@@ -168,6 +181,25 @@ const Navbar = () => {
     return (
         <>
             <header className="sticky top-0 z-40 bg-[#fffdf9]/95 backdrop-blur-md border-b border-amber-900/15 shadow-[0_2px_12px_rgba(139,24,24,0.04)] transition-all">
+                {/* Banner Thông báo vận hành do Admin cấu hình (UC19) */}
+                {systemNotice && !noticeDismissed && (
+                    <aside aria-label="Thông báo hệ thống" className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-amber-50 px-4 py-2 text-xs font-semibold text-center flex items-center justify-between gap-3 shadow-inner select-none animate-in fade-in">
+                        <div className="w-5 hidden sm:block" />
+                        <div className="flex items-center justify-center gap-2 flex-grow truncate">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-200 flex-shrink-0 animate-pulse" />
+                            <span className="truncate">{systemNotice}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setNoticeDismissed(true)}
+                            className="text-amber-200 hover:text-white p-1 rounded-md hover:bg-amber-800/50 transition-colors cursor-pointer"
+                            title="Đóng thông báo"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </aside>
+                )}
+
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 
@@ -245,15 +277,15 @@ const Navbar = () => {
                                             active
                                                 ? 'text-red-950 bg-amber-100/90 shadow-2xs border border-amber-300 font-bold'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
-                                        }`}
+                                            }`}
                                     >
                                         {IconComponent && (
-                                            <IconComponent 
-                                                className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-amber-700' : 'text-stone-400 group-hover:text-amber-700'}`} 
+                                            <IconComponent
+                                                className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-amber-700' : 'text-stone-400 group-hover:text-amber-700'}`}
                                             />
                                         )}
                                         <span>{item.name}</span>
-                                        
+
                                         {/* Chỉ báo active */}
                                         {active && (
                                             <span className="absolute -bottom-1 left-2 right-2 xl:left-2.5 xl:right-2.5 h-[2px] bg-red-800 rounded-full" />
@@ -388,7 +420,7 @@ const Navbar = () => {
                                             location.pathname === '/login'
                                                 ? 'text-red-950 bg-amber-100/80 border border-amber-300/80 font-bold shadow-2xs'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
-                                        }`}
+                                            }`}
                                     >
                                         Đăng nhập
                                     </Link>
@@ -398,7 +430,7 @@ const Navbar = () => {
                                             location.pathname === '/register'
                                                 ? 'text-amber-50 bg-gradient-to-r from-red-900 to-amber-700 border-amber-400 shadow-md ring-2 ring-amber-400/50'
                                                 : 'text-amber-50 bg-gradient-to-r from-red-800 via-red-800 to-amber-700 hover:from-red-700 hover:to-amber-600 border-amber-400/40 hover:shadow-md'
-                                        }`}
+                                            }`}
                                     >
                                         Đăng ký
                                     </Link>
@@ -412,10 +444,9 @@ const Navbar = () => {
 
             {/* THANH BÊN TRÁI (LEFT SIDEBAR DRAWER) & BACKDROP */}
             {/* Lớp nền mờ (Backdrop overlay) */}
-            <div 
-                className={`fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
-                    sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                }`}
+            <div
+                className={`fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    }`}
                 onClick={() => setSidebarOpen(false)}
                 aria-hidden="true"
             />
@@ -503,18 +534,16 @@ const Navbar = () => {
                                             key={item.name}
                                             type="button"
                                             onClick={() => handleNavClick(item)}
-                                            className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer group ${
-                                                active
+                                            className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer group ${active
                                                     ? 'bg-amber-100/90 text-red-950 font-bold border-l-4 border-red-800 shadow-2xs'
                                                     : 'text-stone-700 hover:text-red-950 hover:bg-amber-50/80'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center space-x-3 overflow-hidden">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
-                                                    active
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${active
                                                         ? 'bg-red-800 text-amber-200 shadow-xs'
                                                         : 'bg-stone-100 text-stone-600 group-hover:bg-amber-100 group-hover:text-amber-800'
-                                                }`}>
+                                                    }`}>
                                                     <ItemIcon className="w-4 h-4" />
                                                 </div>
                                                 <div className="truncate">
