@@ -196,6 +196,10 @@ const googleLogin = async ({ idToken }) => {
         if (!user.avatar && picture) {
             user.avatar = picture;
         }
+        // Tự động chuẩn hóa role nếu tài khoản cũ mang role không còn được hỗ trợ
+        if (!['customer', 'user', 'staff', 'admin'].includes(user.role)) {
+            user.role = 'customer';
+        }
         user.isVerified = true; // Tài khoản Google mặc định đã xác minh email
         await user.save();
     } else {

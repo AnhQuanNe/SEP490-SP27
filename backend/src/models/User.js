@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['customer', 'user', 'staff', 'admin'],
+            enum: ['customer', 'user', 'staff', 'admin', 'learner', 'deaf', 'educator'],
             default: 'customer',
         },
         status: {
@@ -80,8 +80,13 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-// Mã hoá mật khẩu trước khi lưu nếu trường password có thay đổi
+// Mã hoá mật khẩu và chuẩn hóa role trước khi lưu
 userSchema.pre('save', async function () {
+    // Tự động chuyển đổi các role cũ từ phiên bản trước sang 'customer'
+    if (['learner', 'deaf', 'educator'].includes(this.role)) {
+        this.role = 'customer';
+    }
+
     if (!this.isModified('password') || !this.password) {
         return;
     }

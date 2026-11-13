@@ -157,122 +157,289 @@ function tryRepairBatLine(rawLine, word6Luc) {
     return rawLine.trim();
 }
 
+// Kho từ điển thi pháp theo thanh điệu và ngữ cảnh (dùng cho gợi ý sửa lỗi chuẩn xác)
+const POETIC_THESAURUS = {
+    pos2_B: {
+        nature: ['trời', 'sông', 'thuyền', 'mây', 'chiều', 'non', 'hoa', 'cây', 'đêm', 'trăng'],
+        family: ['con', 'cha', 'mẹ', 'thầy', 'người', 'ơn', 'tình', 'lòng', 'đời'],
+        love: ['em', 'anh', 'người', 'ai', 'lòng', 'duyên', 'tình', 'trăng', 'mây'],
+        philosophy: ['đời', 'người', 'ai', 'năm', 'thời', 'nhân', 'tâm', 'phù', 'sự'],
+    },
+    pos4_T: {
+        nature: ['lặng', 'thoảng', 'cuốn', 'chảy', 'lướt', 'phủ', 'khuất', 'bóng', 'ánh', 'gió', 'nước', 'ngắm', 'lẽ'],
+        family: ['nhớ', 'dưỡng', 'khắc', 'tạc', 'giữ', 'thấu', 'vất', 'vả', 'nghĩa', 'sâu', 'nặng'],
+        love: ['nhớ', 'ngóng', 'gửi', 'thấu', 'vấn', 'dẫu', 'cách', 'trở', 'ấm', 'mãi', 'khắc'],
+        philosophy: ['biến', 'đổi', 'thoáng', 'chốc', 'mấy', 'bận', 'dẫu', 'kiếp', 'khéo', 'nắm', 'buông'],
+    },
+    pos8_B: {
+        ngang: ['xa', 'qua', 'bay', 'trôi', 'thay', 'sao', 'con', 'ai', 'năm', 'đâu', 'sau', 'nay', 'thương'],
+        huyen: ['trời', 'người', 'đời', 'nhà', 'chiều', 'dòng', 'ngày', 'mình', 'lòng', 'cùng', 'đường', 'nào'],
+    }
+};
+
 /**
- * Tạo 3 phương án câu Bát chuẩn 100% âm luật & vần theo tứ thơ câu Lục
+ * Tạo gợi ý thay từ chuẩn xác theo ngữ cảnh câu thơ và đúng âm luật (Bằng/Trắc)
  */
-function createCompliantTemplateBatLines(lucLine, word6Luc) {
-    const topic = detectPoemTopic(lucLine);
-    const rhymes = getSuggestedRhymes(word6Luc);
-    if (rhymes.length === 0) rhymes.push(word6Luc);
+function getContextualToneSuggestion({ rawLine, pos, expectedTone, originalWord, lineIndex }) {
+    const topic = detectPoemTopic(rawLine);
+    const lineWords = (rawLine || '').split(/\s+/).map((w) => w.toLowerCase());
 
-    const r1 = rhymes[0] || word6Luc;
-    const r2 = rhymes[1] || rhymes[0] || word6Luc;
-    const r3 = rhymes[2] || rhymes[0] || word6Luc;
+    if (pos === 2) {
+        const pool = POETIC_THESAURUS.pos2_B[topic] || POETIC_THESAURUS.pos2_B.nature;
+        const valid = pool.filter((w) => w.toLowerCase() !== originalWord.toLowerCase() && !lineWords.includes(w.toLowerCase()) && getToneType(w).toneType === 'B');
+        const picked = valid.slice(0, 2);
+        return picked.map((w) => ({
+            word: w,
+            reason: `Thay bằng danh từ/chủ thể "${w}" mang thanh Bằng để đúng niêm luật nhịp 2, giữ trọn vẹn mạch ý tự nhiên của câu thơ.`,
+            actualTone: 'B',
+            toneName: getToneType(w).toneName,
+            isToneValid: true,
+        }));
+    }
 
-    const tR1 = getToneType(r1);
-    const tR2 = getToneType(r2);
-    const tR3 = getToneType(r3);
+    if (pos === 4) {
+        const pool = POETIC_THESAURUS.pos4_T[topic] || POETIC_THESAURUS.pos4_T.nature;
+        const valid = pool.filter((w) => w.toLowerCase() !== originalWord.toLowerCase() && !lineWords.includes(w.toLowerCase()) && getToneType(w).toneType === 'T');
+        const picked = valid.slice(0, 2);
+        return picked.map((w) => ({
+            word: w,
+            reason: `Thay bằng động từ/tính từ miêu tả "${w}" mang thanh Trắc để chuẩn nhịp 4 và tăng sức biểu cảm cho câu thơ.`,
+            actualTone: 'T',
+            toneName: getToneType(w).toneName,
+            isToneValid: true,
+        }));
+    }
 
-    const end1 = tR1.isNgang ? 'nẻo đường' : 'tháng năm';
-    const end2 = tR2.isNgang ? 'muôn đời' : 'mai sau';
-    const end3 = tR3.isNgang ? 'mái nhà' : 'chốn này';
+    if (pos === 6) {
+        const pool = POETIC_THESAURUS.pos8_B.ngang.concat(POETIC_THESAURUS.pos8_B.huyen);
+        const valid = pool.filter((w) => w.toLowerCase() !== originalWord.toLowerCase() && getToneType(w).toneType === 'B');
+        return valid.slice(0, 2).map((w) => ({
+            word: w,
+            reason: `Đổi sang tiếng "${w}" mang thanh Bằng để chuẩn vần lưng và cân đối âm luật của câu.`,
+            actualTone: 'B',
+            toneName: getToneType(w).toneName,
+            isToneValid: true,
+        }));
+    }
 
-    const templatesByTopic = {
+    if (pos === 8) {
+        const pool = POETIC_THESAURUS.pos8_B.huyen.concat(POETIC_THESAURUS.pos8_B.ngang);
+        const valid = pool.filter((w) => w.toLowerCase() !== originalWord.toLowerCase() && getToneType(w).toneType === 'B');
+        return valid.slice(0, 2).map((w) => ({
+            word: w,
+            reason: `Thay bằng tiếng kết câu "${w}" mang thanh Bằng giúp câu thơ ngân nga tròn vành.`,
+            actualTone: 'B',
+            toneName: getToneType(w).toneName,
+            isToneValid: true,
+        }));
+    }
+
+    return [
+        {
+            word: expectedTone === 'B' ? (topic === 'family' ? 'ơn' : 'lòng') : (topic === 'family' ? 'nhớ' : 'lặng'),
+            reason: `Đổi sang tiếng mang thanh ${expectedTone === 'B' ? 'Bằng' : 'Trắc'} hài hòa với văn cảnh.`,
+            actualTone: expectedTone,
+            toneName: expectedTone === 'B' ? 'ngang' : 'sac',
+            isToneValid: true,
+        }
+    ];
+}
+
+// Kho thi pháp Lục Bát cổ truyền tuyển chọn (câu hoàn chỉnh 100% chuẩn 8 tiếng & B-T-B-B theo nhóm vần)
+const CURATED_CLASSICAL_COUPLETS = {
+    'ơn': {
         family: [
-            {
-                mood: 'Trữ tình',
-                batLine: `Tình thương khắc dạ dẫu ${r1} ${end1}`,
-                explanation: 'Khắc sâu ơn nghĩa sinh thành, thời gian dẫu trôi đi tình thương cha mẹ vẫn vẹn nguyên trong dạ con.',
-                rhymeWord: r1,
-                harmonyScore: 98,
-            },
-            {
-                mood: 'Triết lý',
-                batLine: `Đạo con giữ trọn chẳng ${r2} ${end2}`,
-                explanation: 'Nhắc nhở bổn phận đạo làm con, giữ trọn chữ hiếu trải qua muôn đời vững bền.',
-                rhymeWord: r2,
-                harmonyScore: 96,
-            },
-            {
-                mood: 'Dân dã',
-                batLine: `Mẹ thầy vất vả dẫu ${r3} ${end3}`,
-                explanation: 'Hình ảnh cha mẹ tảo tần sớm hôm nuôi con khôn lớn nơi mái ấm gia đình.',
-                rhymeWord: r3,
-                harmonyScore: 95,
-            }
+            { batLine: 'Khắc ghi đạo hiếu chẳng sờn dạ con', mood: 'Trữ tình', rhymeWord: 'sờn', explanation: 'Nối tiếp lòng hiếu thảo, khắc ghi ơn sâu không bao giờ phai nhạt.' },
+            { batLine: 'Lòng con ghi nhớ muôn ơn biển trời', mood: 'Triết lý', rhymeWord: 'ơn', explanation: 'Tôn vinh công lao dưỡng dục vô biên như trời biển của đấng sinh thành.' },
+            { batLine: 'Nghĩa tình sâu nặng nào hơn tháng ngày', mood: 'Dân dã', rhymeWord: 'hơn', explanation: 'Khẳng định tình cha mẹ là điều thiêng liêng nhất trên đời.' }
         ],
+        default: [
+            { batLine: 'Đường xa vạn dặm nào sờn chí trai', mood: 'Triết lý', rhymeWord: 'sờn', explanation: 'Ý chí kiên định vượt qua mọi thử thách trên đường đời.' },
+            { batLine: 'Thời gian thấm thoắt nào hơn nỗi niềm', mood: 'Trữ tình', rhymeWord: 'hơn', explanation: 'Lắng đọng cảm xúc trước dòng chảy thời gian.' },
+            { batLine: 'Bao năm cách biệt nguồn cơn ngậm ngùi', mood: 'Dân dã', rhymeWord: 'cơn', explanation: 'Nỗi niềm tương tư về cội nguồn chốn xưa.' }
+        ]
+    },
+    'ông': {
+        nature: [
+            { batLine: 'Thuyền ai lặng lẽ xuôi dòng về đâu', mood: 'Trữ tình', rhymeWord: 'dòng', explanation: 'Bức tranh sông nước hoàng hôn êm đềm, giàu cảm xúc.' },
+            { batLine: 'Thời gian lững thững mênh mông ráng chiều', mood: 'Triết lý', rhymeWord: 'mông', explanation: 'Không gian trời chiều mênh mông đối lập với sự hữu hạn của đời người.' },
+            { batLine: 'Bến xưa ngóng đợi người trông bóng đò', mood: 'Dân dã', rhymeWord: 'trông', explanation: 'Hình ảnh bến sông đợi chờ con đò quen thuộc nơi làng quê.' }
+        ],
+        family: [
+            { batLine: 'Ơn cha nghĩa mẹ trong lòng khắc ghi', mood: 'Trữ tình', rhymeWord: 'lòng', explanation: 'Khắc sâu hình bóng và ơn đức cha mẹ trong tâm khảm.' },
+            { batLine: 'Biển trời che chở mênh mông cõi đời', mood: 'Triết lý', rhymeWord: 'mông', explanation: 'Tình cảm gia đình bao la như biển rộng sông dài.' },
+            { batLine: 'Sớm hôm tần tảo đục trong quản gì', mood: 'Dân dã', rhymeWord: 'trong', explanation: 'Sự hy sinh không quản nắng mưa của cha mẹ vì đàn con.' }
+        ],
+        default: [
+            { batLine: 'Thuyền ai lặng lẽ xuôi dòng về đâu', mood: 'Trữ tình', rhymeWord: 'dòng', explanation: 'Hình tượng con thuyền trôi theo dòng nước bình yên.' },
+            { batLine: 'Bao năm dâu bể mênh mông tháng ngày', mood: 'Triết lý', rhymeWord: 'mông', explanation: 'Nhìn lại dòng đời mênh mông rộng lớn.' },
+            { batLine: 'Bến xưa lặng lẽ trông người phương xa', mood: 'Dân dã', rhymeWord: 'trông', explanation: 'Nỗi mong ngóng người phương xa trở về.' }
+        ]
+    },
+    'ong': {
+        nature: [
+            { batLine: 'Thuyền ai lặng lẽ xuôi dòng về đâu', mood: 'Trữ tình', rhymeWord: 'dòng', explanation: 'Bức tranh sông nước hoàng hôn êm đềm, giàu cảm xúc.' },
+            { batLine: 'Thời gian lững thững mênh mông ráng chiều', mood: 'Triết lý', rhymeWord: 'mông', explanation: 'Không gian trời chiều mênh mông đối lập với sự hữu hạn của đời người.' },
+            { batLine: 'Bến xưa ngóng đợi người trông bóng đò', mood: 'Dân dã', rhymeWord: 'trông', explanation: 'Hình ảnh bến sông đợi chờ con đò quen thuộc nơi làng quê.' }
+        ],
+        default: [
+            { batLine: 'Thuyền ai lặng lẽ xuôi dòng về đâu', mood: 'Trữ tình', rhymeWord: 'dòng', explanation: 'Hình tượng con thuyền trôi theo dòng nước bình yên.' },
+            { batLine: 'Bao năm dâu bể mênh mông tháng ngày', mood: 'Triết lý', rhymeWord: 'mông', explanation: 'Nhìn lại dòng đời mênh mông rộng lớn.' },
+            { batLine: 'Bến xưa lặng lẽ trông người phương xa', mood: 'Dân dã', rhymeWord: 'trông', explanation: 'Nỗi mong ngóng người phương xa trở về.' }
+        ]
+    },
+    'a': {
         philosophy: [
-            {
-                mood: 'Trữ tình',
-                batLine: `Trăm năm bến đỗ dẫu ${r1} ${end1}`,
-                explanation: 'Trầm tư về dấu ấn thời gian và sự lưu dấu của kỷ niệm trong dòng chảy kiếp nhân sinh.',
-                rhymeWord: r1,
-                harmonyScore: 98,
-            },
-            {
-                mood: 'Triết lý',
-                batLine: `Sự đời biến đổi khéo ${r2} ${end2}`,
-                explanation: 'Đúc kết quy luật biến thiên của cuộc đời và sự chuyển dời vô thường của tạo hóa.',
-                rhymeWord: r2,
-                harmonyScore: 96,
-            },
-            {
-                mood: 'Dân dã',
-                batLine: `Buồn vui mấy bận thoảng ${r3} ${end3}`,
-                explanation: 'Cái nhìn khoáng đạt, xem những hỷ nộ ái ố tựa như ngọn gió thoảng qua chốn này.',
-                rhymeWord: r3,
-                harmonyScore: 95,
-            }
-        ],
-        love: [
-            {
-                mood: 'Trữ tình',
-                batLine: `Thương nhau mấy núi dẫu ${r1} ${end1}`,
-                explanation: 'Lời thề hẹn son sắt vượt qua muôn trùng núi non cách trở trên nẻo đường tình.',
-                rhymeWord: r1,
-                harmonyScore: 98,
-            },
-            {
-                mood: 'Triết lý',
-                batLine: `Duyên nồng nghĩa nặng vẹn ${r2} ${end2}`,
-                explanation: 'Khẳng định tình cảm bền vững theo năm tháng, thủy chung trọn vẹn đến mai sau.',
-                rhymeWord: r2,
-                harmonyScore: 96,
-            },
-            {
-                mood: 'Dân dã',
-                batLine: `Trăng khuya soi bóng ngóng ${r3} ${end3}`,
-                explanation: 'Khung cảnh vầng trăng khuya soi sáng nỗi niềm mong ngóng bình dị, tha thiết.',
-                rhymeWord: r3,
-                harmonyScore: 95,
-            }
+            { batLine: 'Chữ tài chữ mệnh khéo là ghét nhau', mood: 'Triết lý', rhymeWord: 'là', explanation: 'Câu bát kinh điển về sự mâu thuẫn giữa tài năng và số phận.' },
+            { batLine: 'Mấy phen dâu bể phong ba cuộc đời', mood: 'Trữ tình', rhymeWord: 'ba', explanation: 'Nhìn lại những biến cố thăng trầm của kiếp người.' },
+            { batLine: 'Thương nhau dẫu có cách xa muôn trùng', mood: 'Dân dã', rhymeWord: 'xa', explanation: 'Tình cảm gắn bó keo sơn vượt qua khoảng cách không gian.' }
         ],
         nature: [
-            {
-                mood: 'Trữ tình',
-                batLine: `Thuyền ai lặng lẽ xuôi ${r1} ${end1}`,
-                explanation: 'Gợi tả con thuyền lướt nhẹ trong không gian êm đềm, hòa quyện với cảnh sắc tự nhiên.',
-                rhymeWord: r1,
-                harmonyScore: 98,
-            },
-            {
-                mood: 'Triết lý',
-                batLine: `Mây trời lững thững dẫu ${r2} ${end2}`,
-                explanation: 'Đối lập dòng chảy vô tận của thời gian với vẻ trầm mặc, bao la của mây trời muôn đời.',
-                rhymeWord: r2,
-                harmonyScore: 96,
-            },
-            {
-                mood: 'Dân dã',
-                batLine: `Khói lam nhẹ tỏa vướng ${r3} ${end3}`,
-                explanation: 'Bức tranh làng quê bình dị với làn khói lam chiều vấn vương ấm cúng nơi xóm nhỏ.',
-                rhymeWord: r3,
-                harmonyScore: 95,
-            }
+            { batLine: 'Khói lam nhẹ tỏa mái nhà ấm êm', mood: 'Trữ tình', rhymeWord: 'nhà', explanation: 'Bức tranh hoàng hôn thôn dã bình yên.' },
+            { batLine: 'Gió lay cành trúc la đà chốn xưa', mood: 'Triết lý', rhymeWord: 'đà', explanation: 'Cảnh thiên nhiên tĩnh mịch đượm vẻ hoài cổ.' },
+            { batLine: 'Đường trần muôn dặm bôn ba tháng ngày', mood: 'Dân dã', rhymeWord: 'ba', explanation: 'Bước chân người lữ thứ trên dặm trường phong sương.' }
+        ],
+        default: [
+            { batLine: 'Chữ tài chữ mệnh khéo là ghét nhau', mood: 'Triết lý', rhymeWord: 'là', explanation: 'Triết lý nhân sinh sâu sắc.' },
+            { batLine: 'Khói lam nhẹ tỏa mái nhà ấm êm', mood: 'Trữ tình', rhymeWord: 'nhà', explanation: 'Hình ảnh mái ấm bình dị chốn quê.' },
+            { batLine: 'Thương nhau dẫu có cách xa muôn trùng', mood: 'Dân dã', rhymeWord: 'xa', explanation: 'Tình người son sắt vượt qua gian khó.' }
         ]
-    };
+    },
+    'ương': {
+        love: [
+            { batLine: 'Trăng khuya soi bóng vấn vương mối tình', mood: 'Trữ tình', rhymeWord: 'vương', explanation: 'Tơ duyên vương vấn dưới ánh trăng khuya.' },
+            { batLine: 'Đò xưa cách trở tơ vương nỗi niềm', mood: 'Triết lý', rhymeWord: 'vương', explanation: 'Nỗi niềm hoài niệm về người thương năm cũ.' },
+            { batLine: 'Bao năm cách biệt quê hương nhớ về', mood: 'Dân dã', rhymeWord: 'hương', explanation: 'Nỗi nhớ da diết về mảnh đất quê hương người thương.' }
+        ],
+        default: [
+            { batLine: 'Trăng khuya soi bóng vấn vương mối tình', mood: 'Trữ tình', rhymeWord: 'vương', explanation: 'Nỗi niềm vương vấn trong đêm thanh vắng.' },
+            { batLine: 'Đò chiều lặng lẽ soi gương bóng người', mood: 'Triết lý', rhymeWord: 'gương', explanation: 'Hình ảnh dòng nước soi bóng người lữ khách.' },
+            { batLine: 'Bao năm cách biệt quê hương nhớ về', mood: 'Dân dã', rhymeWord: 'hương', explanation: 'Tình yêu quê hương nguồn cội sâu sắc.' }
+        ]
+    },
+    'ơi': {
+        default: [
+            { batLine: 'Thời gian lưu dấu muôn đời chẳng phai', mood: 'Triết lý', rhymeWord: 'đời', explanation: 'Khẳng định giá trị vững bền lưu lại với muôn đời.' },
+            { batLine: 'Chắt chiu năm tháng đầy vơi nghĩa tình', mood: 'Trữ tình', rhymeWord: 'vơi', explanation: 'Ân tình sâu nặng gom góp qua tháng năm.' },
+            { batLine: 'Mẹ hiền dạy dỗ từng lời sắt son', mood: 'Dân dã', rhymeWord: 'lời', explanation: 'Lời răn dạy quý giá của mẹ hiền theo suốt bước đường con.' }
+        ]
+    },
+    'iên': {
+        default: [
+            { batLine: 'Mẹ hiền tần tảo dịu hiền sớm hôm', mood: 'Trữ tình', rhymeWord: 'hiền', explanation: 'Hình ảnh mẹ hiền tần tảo dưỡng dục đàn con.' },
+            { batLine: 'Duyên nồng thắm đượm chữ duyên đá vàng', mood: 'Triết lý', rhymeWord: 'duyên', explanation: 'Tơ duyên bền chặt, son sắt theo năm tháng.' },
+            { batLine: 'Lòng trần thanh tịnh bình yên cõi lòng', mood: 'Dân dã', rhymeWord: 'yên', explanation: 'Tâm hồn thanh thản, an nhiên giữa cuộc sống.' }
+        ]
+    },
+    'au': {
+        default: [
+            { batLine: 'Đường xa vạn dặm trọn câu ước thề', mood: 'Trữ tình', rhymeWord: 'câu', explanation: 'Lời thề thủy chung dẫu cách trở vạn dặm đường dài.' },
+            { batLine: 'Trăm năm tạc dạ khắc sâu chữ tình', mood: 'Triết lý', rhymeWord: 'sâu', explanation: 'Khắc ghi ân tình sâu sắc trong suốt cuộc đời.' },
+            { batLine: 'Bao nhiêu cay đắng dãi dầu sớm hôm', mood: 'Dân dã', rhymeWord: 'dầu', explanation: 'Sự nhọc nhằn, chịu thương chịu khó sớm hôm.' }
+        ]
+    },
+    'âu': {
+        default: [
+            { batLine: 'Đường xa vạn dặm trọn câu ước thề', mood: 'Trữ tình', rhymeWord: 'câu', explanation: 'Lời thề thủy chung dẫu cách trở vạn dặm đường dài.' },
+            { batLine: 'Trăm năm tạc dạ khắc sâu chữ tình', mood: 'Triết lý', rhymeWord: 'sâu', explanation: 'Khắc ghi ân tình sâu sắc trong suốt cuộc đời.' },
+            { batLine: 'Bao nhiêu cay đắng dãi dầu sớm hôm', mood: 'Dân dã', rhymeWord: 'dầu', explanation: 'Sự nhọc nhằn, chịu thương chịu khó sớm hôm.' }
+        ]
+    },
+    'ay': {
+        default: [
+            { batLine: 'Thời gian thấm thoắt đổi thay ngỡ ngàng', mood: 'Triết lý', rhymeWord: 'thay', explanation: 'Sự biến chuyển nhanh chóng của thời gian và dòng đời.' },
+            { batLine: 'Trời cao lãng đãng tầng mây trắng ngần', mood: 'Trữ tình', rhymeWord: 'mây', explanation: 'Khung cảnh trời mây thanh thoát, bao la.' },
+            { batLine: 'Vòng tay ấm áp đong đầy nhớ thương', mood: 'Dân dã', rhymeWord: 'đầy', explanation: 'Cảm giác ấm cúng, chở che đầy thương nhớ.' }
+        ]
+    },
+    'ây': {
+        default: [
+            { batLine: 'Thời gian thấm thoắt đổi thay ngỡ ngàng', mood: 'Triết lý', rhymeWord: 'thay', explanation: 'Sự biến chuyển nhanh chóng của thời gian và dòng đời.' },
+            { batLine: 'Trời cao lãng đãng tầng mây trắng ngần', mood: 'Trữ tình', rhymeWord: 'mây', explanation: 'Khung cảnh trời mây thanh thoát, bao la.' },
+            { batLine: 'Vòng tay ấm áp đong đầy nhớ thương', mood: 'Dân dã', rhymeWord: 'đầy', explanation: 'Cảm giác ấm cúng, chở che đầy thương nhớ.' }
+        ]
+    },
+    'ai': {
+        default: [
+            { batLine: 'Thời gian dẫu chảy nguôi ngoai nỗi niềm', mood: 'Trữ tình', rhymeWord: 'ngoai', explanation: 'Nỗi niềm lắng dịu dần theo dòng chảy thời gian.' },
+            { batLine: 'Tình xưa nghĩa cũ hoài hoài nhớ nhung', mood: 'Triết lý', rhymeWord: 'hoài', explanation: 'Kỷ niệm xưa cũ vẫn luôn vương vấn khôn nguôi.' },
+            { batLine: 'Đường trần muôn dặm tương lai sáng ngời', mood: 'Dân dã', rhymeWord: 'lai', explanation: 'Niềm tin hướng về tương lai tươi sáng rộng mở.' }
+        ]
+    },
+    'an': {
+        default: [
+            { batLine: 'Ơn sâu biển rộng ngút ngàn chẳng phai', mood: 'Trữ tình', rhymeWord: 'ngàn', explanation: 'Công ơn cao sâu vời vợi chẳng bao giờ phai nhòa.' },
+            { batLine: 'Lời ru năm tháng chứa chan nghĩa tình', mood: 'Triết lý', rhymeWord: 'chan', explanation: 'Điệu ru dạt dào ân tình theo con suốt cuộc đời.' },
+            { batLine: 'Bình minh rạng rỡ thênh thang đất trời', mood: 'Dân dã', rhymeWord: 'thang', explanation: 'Ánh bình minh rực rỡ mở ra không gian khoáng đạt.' }
+        ]
+    },
+    'ang': {
+        default: [
+            { batLine: 'Ơn sâu biển rộng ngút ngàn chẳng phai', mood: 'Trữ tình', rhymeWord: 'ngàn', explanation: 'Công ơn cao sâu vời vợi chẳng bao giờ phai nhòa.' },
+            { batLine: 'Lời ru năm tháng chứa chan nghĩa tình', mood: 'Triết lý', rhymeWord: 'chan', explanation: 'Điệu ru dạt dào ân tình theo con suốt cuộc đời.' },
+            { batLine: 'Bình minh rạng rỡ thênh thang đất trời', mood: 'Dân dã', rhymeWord: 'thang', explanation: 'Ánh bình minh rực rỡ mở ra không gian khoáng đạt.' }
+        ]
+    },
+    'anh': {
+        default: [
+            { batLine: 'Khói lam nhẹ tỏa mái tranh chốn quê', mood: 'Trữ tình', rhymeWord: 'tranh', explanation: 'Cảnh chiều quê yên bình bên mái tranh đơn sơ.' },
+            { batLine: 'Cây cao tỏa bóng màu xanh ngút ngàn', mood: 'Triết lý', rhymeWord: 'xanh', explanation: 'Sức sống bền bỉ và tươi mát của thiên nhiên.' },
+            { batLine: 'Cầu cho gia đạo yên lành ấm êm', mood: 'Dân dã', rhymeWord: 'lành', explanation: 'Ước nguyện cuộc sống gia đình yên vui, thuận hòa.' }
+        ]
+    },
+    'iêu': {
+        default: [
+            { batLine: 'Cánh buồm thấp thoáng sớm chiều lướt trôi', mood: 'Trữ tình', rhymeWord: 'chiều', explanation: 'Cánh buồm nhấp nhô lướt sóng sớm chiều trên bến nước.' },
+            { batLine: 'Tình thương rộng lớn bao điều chở che', mood: 'Triết lý', rhymeWord: 'điều', explanation: 'Tình thương bao la luôn chở che qua mọi sóng gió.' },
+            { batLine: 'Tình cha ấm áp thương yêu ngút ngàn', mood: 'Dân dã', rhymeWord: 'yêu', explanation: 'Tình yêu thương vô bờ của cha nuôi con khôn lớn.' }
+        ]
+    },
+    'uôn': {
+        default: [
+            { batLine: 'Tiếng chuông thanh thản nhẹ buông mái chùa', mood: 'Trữ tình', rhymeWord: 'buông', explanation: 'Tiếng chuông chùa ngân vang mang lại sự thanh tịnh.' },
+            { batLine: 'Tình cha như suối đầu nguồn chảy ra', mood: 'Triết lý', rhymeWord: 'nguồn', explanation: 'Tình phụ tử dạt dào như dòng nước mát đầu nguồn.' },
+            { batLine: 'Lòng riêng gửi trọn nỗi buồn cách xa', mood: 'Dân dã', rhymeWord: 'buồn', explanation: 'Nỗi buồn chia xa gửi trọn trong lòng.' }
+        ]
+    },
+    'uông': {
+        default: [
+            { batLine: 'Tiếng chuông thanh thản nhẹ buông mái chùa', mood: 'Trữ tình', rhymeWord: 'buông', explanation: 'Tiếng chuông chùa ngân vang mang lại sự thanh tịnh.' },
+            { batLine: 'Tình cha như suối đầu nguồn chảy ra', mood: 'Triết lý', rhymeWord: 'nguồn', explanation: 'Tình phụ tử dạt dào như dòng nước mát đầu nguồn.' },
+            { batLine: 'Lòng riêng gửi trọn nỗi buồn cách xa', mood: 'Dân dã', rhymeWord: 'buồn', explanation: 'Nỗi buồn chia xa gửi trọn trong lòng.' }
+        ]
+    }
+};
 
-    return templatesByTopic[topic] || templatesByTopic.nature;
+/**
+ * Lấy các phương án câu Bát chuẩn 100% âm luật & vần từ Kho thi pháp cổ truyền tuyển chọn
+ */
+function getCuratedClassicalCouplets(lucLine, word6Luc) {
+    const topic = detectPoemTopic(lucLine);
+    const rime = extractRime(word6Luc);
+
+    let candidates = [];
+    const rimeGroup = CURATED_CLASSICAL_COUPLETS[rime];
+    if (rimeGroup) {
+        candidates = rimeGroup[topic] || rimeGroup.default || [];
+    }
+
+    // Nếu không tìm thấy nhóm vần trực tiếp, tìm trong các vần thông tương hợp
+    if (candidates.length === 0) {
+        for (const [rKey, rVal] of Object.entries(CURATED_CLASSICAL_COUPLETS)) {
+            const sampleWord = rVal.default?.[0]?.rhymeWord;
+            if (sampleWord && checkWordRhyme(word6Luc, sampleWord).isRhyme) {
+                candidates = rVal[topic] || rVal.default || [];
+                break;
+            }
+        }
+    }
+
+    // Mặc định an toàn nếu vần quá hiếm: chọn nhóm vần 'a' hoặc 'ơi'
+    if (candidates.length === 0) {
+        candidates = CURATED_CLASSICAL_COUPLETS['a'].default;
+    }
+
+    return candidates.slice(0, 3);
 }
 
 /**
@@ -436,18 +603,19 @@ function fallbackPoetryCritic(content, ruleAnalysis) {
     lines.forEach((l, lIdx) => {
         l.issues.forEach((iss) => {
             if (iss.type === 'tone') {
+                const smartSuggestions = getContextualToneSuggestion({
+                    rawLine: l.rawText,
+                    pos: iss.position,
+                    expectedTone: iss.expected,
+                    originalWord: iss.word,
+                    lineIndex: lIdx,
+                });
                 improvements.push({
                     lineIndex: lIdx,
                     syllablePosition: iss.position,
                     originalWord: iss.word,
                     issueDescription: iss.message,
-                    suggestions: [
-                        {
-                            word: iss.expected === 'B' ? 'thanh' : 'sắc',
-                            reason: `Cần đổi sang tiếng mang thanh ${iss.expected === 'B' ? 'Bằng' : 'Trắc'} để chuẩn luật nhịp.`,
-                            isToneValid: true,
-                        },
-                    ],
+                    suggestions: smartSuggestions,
                 });
             }
         });
@@ -477,8 +645,8 @@ async function critiquePoem({ content, title = 'Không đề', authorName = 'Tá
     const ruleAnalysis = analyzeLucBatPoem(content);
     const toneScore = ruleAnalysis.summary.toneScore; // 0 - 40
 
-    // 2. Gọi AI để đánh giá Nhịp điệu và Hồn thơ
-    const prompt = `Phân tích bài thơ Lục Bát sau:
+    // 2. Gọi AI để đánh giá Nhịp điệu và Hồn thơ với prompt chuyên sâu thi pháp
+    const prompt = `Phân tích và thẩm định bài thơ Lục Bát sau:
 Tựa đề: ${title}
 Tác giả: ${authorName}
 Nội dung bài thơ:
@@ -506,7 +674,7 @@ Yêu cầu trả về đúng định dạng JSON:
       "issueDescription": (mô tả lỗi hoặc lý do cần sửa),
       "suggestions": [
         {
-          "word": (từ thay thế gợi ý),
+          "word": (từ thay thế gợi ý - BẮT BUỘC hợp nghĩa câu thơ và chuẩn 100% thanh Bằng/Trắc),
           "reason": (giải thích tại sao từ này phù hợp cả ý thơ lẫn âm luật)
         }
       ]
@@ -517,7 +685,17 @@ Yêu cầu trả về đúng định dạng JSON:
 }`;
 
     const systemInstruction = `Bạn là Chuyên gia Thi pháp & Thẩm định Thơ Lục Bát Cổ truyền Việt Nam của nền tảng VietHeritage AI.
-Hãy chấm điểm công tâm, nhân văn, sâu sắc và chỉ ra các điểm cần sửa chữa một cách chuẩn xác theo niêm luật thi pháp học.
+QUY TẮC BẮT BUỘC VỀ THI PHÁP & GỢI Ý SỬA LỖI:
+1. Phân biệt Bằng - Trắc chuẩn xác:
+   - Thanh BẰNG: Tiếng không dấu (ngang) và tiếng có dấu Huyền.
+   - Thanh TRẮC: Tiếng có dấu Sắc, Hỏi, Ngã, Nặng.
+2. Quy tắc hiệp vần:
+   - YÊU VẬN: Tiếng 6 câu Lục hiệp vần với TIẾNG 6 CÂU BÁT (không phải tiếng 8). Cả 2 tiếng phải cùng thanh Bằng.
+3. QUY TẮC CỐT LÕI KHI GỢI Ý THAY TỪ (suggestions):
+   - Mọi từ gợi ý PHẢI đúng chuẩn 100% thanh điệu yêu cầu (Bằng hoặc Trắc).
+   - Mọi từ gợi ý PHẢI gắn liền hữu cơ với ngữ cảnh, đề tài và ngữ pháp của câu thơ.
+   - TUYỆT ĐỐI KHÔNG gợi ý từ bừa bãi, từ vô nghĩa, hoặc từ phá hỏng ngữ pháp câu thơ.
+   - TUYỆT ĐỐI KHÔNG lặp lại từ đã có sẵn trong câu đó.
 BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚNG SCHEMA TRÊN, TUYỆT ĐỐI KHÔNG GIẢI THÍCH THÊM VÀ KHÔNG CÓ BẤT KỲ VĂN BẢN NÀO NGOÀI JSON.`;
 
     const groqCriticRes = await callGroqPoetryApi({ prompt, systemInstruction });
@@ -532,21 +710,55 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
     const poeticScore = Math.min(30, Math.max(0, Math.round(aiCritic.poeticScore || 18)));
     const totalScore = Math.min(100, Math.max(0, toneScore + rhythmScore + poeticScore));
 
-    // Yêu cầu quan trọng: Chạy lại Rule Engine cho từng từ gợi ý thay thế để xác thực âm luật
+    // Yêu cầu quan trọng: Lọc và kiểm định nghiêm ngặt từng từ gợi ý thay thế qua Rule Engine
     if (Array.isArray(aiCritic.improvements)) {
         aiCritic.improvements.forEach((imp) => {
             const line = ruleAnalysis.lines[imp.lineIndex];
             const pos = imp.syllablePosition;
             const expectedTone = line?.tonePattern?.find((tp) => tp.position === pos)?.expectedTone;
+            const originalWord = imp.originalWord || line?.tonePattern?.find((tp) => tp.position === pos)?.word || '';
 
+            const validSuggestions = [];
             if (Array.isArray(imp.suggestions)) {
                 imp.suggestions.forEach((sug) => {
-                    const wordTone = getToneType(sug.word);
+                    const cleanWord = (sug.word || '').replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+$/g, '').trim();
+                    if (!cleanWord) return;
+                    const wordTone = getToneType(cleanWord);
+                    sug.word = cleanWord;
                     sug.actualTone = wordTone.toneType;
                     sug.toneName = wordTone.toneName;
                     sug.isToneValid = expectedTone ? wordTone.toneType === expectedTone : true;
+
+                    // Lọc bỏ nếu từ mang sai thanh điệu yêu cầu
+                    if (expectedTone && wordTone.toneType !== expectedTone) {
+                        return;
+                    }
+                    // Lọc bỏ nếu từ gợi ý trùng với từ gốc
+                    if (cleanWord.toLowerCase() === originalWord.toLowerCase()) {
+                        return;
+                    }
+                    // Lọc bỏ nếu lý do mang tính từ chối
+                    if (sug.reason && (sug.reason.toLowerCase().includes('không dùng được') || sug.reason.toLowerCase().includes('không phù hợp'))) {
+                        return;
+                    }
+
+                    validSuggestions.push(sug);
                 });
             }
+
+            // Nếu AI không trả về gợi ý nào chuẩn âm luật, bù đắp bằng Contextual Thesaurus thông minh
+            if (validSuggestions.length === 0) {
+                const smartFallbacks = getContextualToneSuggestion({
+                    rawLine: line?.rawText,
+                    pos,
+                    expectedTone: expectedTone || 'B',
+                    originalWord,
+                    lineIndex: imp.lineIndex,
+                });
+                validSuggestions.push(...smartFallbacks);
+            }
+
+            imp.suggestions = validSuggestions;
         });
     }
 
@@ -626,28 +838,46 @@ ${contextClause}
 QUY TẮC BẮT BUỘC CHO CÂU BÁT (8 TIẾNG):
 Mỗi câu Bát BẮT BUỘC gồm đúng 8 từ tách nhau bằng khoảng trắng:
 - Vị trí 1: Tự do
-- Vị trí 2: BẮT BUỘC THANH BẰNG (không dấu hoặc dấu huyền). Ví dụ: người, đời, lòng, thuyền, non, mây, trôi, nhà.
+- Vị trí 2: BẮT BUỘC THANH BẰNG (không dấu hoặc dấu huyền).
 - Vị trí 3: Tự do
-- Vị trí 4: BẮT BUỘC THANH TRẮC (sắc, hỏi, ngã, nặng). Ví dụ: nhớ, gửi, đọng, thấu, ngóng, dẫu, chảy, cuốn, vất.
+- Vị trí 4: BẮT BUỘC THANH TRẮC (sắc, hỏi, ngã, nặng).
 - Vị trí 5: Tự do
-- Vị trí 6: BẮT BUỘC THANH BẰNG VÀ PHẢI HIỆP VẦN VỚI "${word6Luc}". CHỌN 1 TỪ TRONG DANH SÁCH: [${suggestedWordsText}].
+- Vị trí 6: BẮT BUỘC THANH BẰNG VÀ PHẢI LÀ TỪ HIỆP VẦN VỚI "${word6Luc}". CHỌN 1 TỪ TRONG: [${suggestedWordsText}].
   CHÚ Ý CỰC KỲ QUAN TRỌNG: Từ hiệp vần nằm ở vị trí THỨ 6 (yêu vận), TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT Ở VỊ TRÍ THỨ 8 (cuối câu)!
 - Vị trí 7: Tự do
-- Vị trí 8: BẮT BUỘC THANH BẰNG (đối lập thanh Ngang/Huyền với từ vị trí 6 để câu thơ trầm bổng).
+- Vị trí 8: BẮT BUỘC THANH BẰNG (đối lập thanh Ngang/Huyền với từ vị trí 6 để câu thơ ngân nga tròn vành).
 
-VÍ DỤ ĐỐI XỨNG KINH ĐIỂN CHUẨN MỰC:
-- Câu Lục: "Trăm năm trong cõi người ta" (từ 6: "ta" - Bằng vần a)
-  Câu Bát mẫu: "Chữ tài chữ mệnh khéo là ghét nhau"
-  (Phân tích: [1:Chữ] [2:tài (B)] [3:chữ] [4:mệnh (T)] [5:khéo] [6:là (B, vần ta)] [7:ghét] [8:nhau (B)])
-- Câu Lục: "Chiều nay gió thổi bên sông" (từ 6: "sông" - Bằng vần ông)
-  Câu Bát mẫu: "Thuyền ai lặng lẽ xuôi dòng về đâu"
-  (Phân tích: [1:Thuyền] [2:ai (B)] [3:lặng] [4:lẽ (T)] [5:xuôi] [6:dòng (B, vần sông)] [7:về] [8:đâu (B)])
+VÍ DỤ ĐỐI XỨNG KINH ĐIỂN THEO TỪNG CHỦ ĐỀ:
+* Chủ đề Cha Mẹ / Hiếu thảo:
+  Câu Lục: "Công cha như núi Thái Sơn" (tiếng 6: "Sơn" - vần ơn, thanh Ngang)
+  -> "Khắc ghi đạo hiếu chẳng sờn dạ con" (tiếng 6: "sờn" [B, vần Sơn], tiếng 8: "con" [B])
+  -> "Lòng con ghi nhớ muôn ơn biển trời" (tiếng 6: "ơn" [B, vần Sơn], tiếng 8: "trời" [B])
+  -> "Nghĩa tình sâu nặng nào hơn tháng ngày" (tiếng 6: "hơn" [B, vần Sơn], tiếng 8: "ngày" [B])
 
-YÊU CẦU NGỮ NGHĨA:
-- Nối tiếp mạch cảm xúc và mở rộng ý nghĩa từ câu Lục "${cleanLuc}" của người dùng (chủ đề: ${detectedTopic}).
-- TUYỆT ĐỐI KHÔNG lặp lại nguyên văn câu Lục của người dùng.
-- BẮT BUỘC ĐÚNG 8 TỪ CHO MỖI CÂU BÁT (không được dừng ở 6 từ, không được 7 hoặc 9 từ).
-- Phần "explanation" viết ngắn gọn 1 câu duy nhất (dưới 20 từ).
+* Chủ đề Sông Nước / Hoàng Hôn / Thiên Nhiên:
+  Câu Lục: "Chiều nay gió thổi bên sông" (tiếng 6: "sông" - vần ông, thanh Ngang)
+  -> "Thuyền ai lặng lẽ xuôi dòng về đâu" (tiếng 6: "dòng" [B, vần sông], tiếng 8: "đâu" [B])
+  -> "Thời gian lững thững mênh mông ráng chiều" (tiếng 6: "mông" [B, vần sông], tiếng 8: "chiều" [B])
+  -> "Bến xưa ngóng đợi người trông bóng đò" (tiếng 6: "trông" [B, vần sông], tiếng 8: "đò" [B])
+
+* Chủ đề Tình Yêu / Thương Nhớ:
+  Câu Lục: "Đêm nay ngồi nhớ người thương" (tiếng 6: "thương" - vần ương, thanh Ngang)
+  -> "Trăng khuya soi bóng vấn vương mối tình" (tiếng 6: "vương" [B, vần thương], tiếng 8: "tình" [B])
+  -> "Đò xưa cách trở tơ vương nỗi niềm" (tiếng 6: "vương" [B, vần thương], tiếng 8: "niềm" [B])
+  -> "Bao năm cách biệt quê hương nhớ về" (tiếng 6: "hương" [B, vần thương], tiếng 8: "về" [B])
+
+* Chủ đề Nhân Sinh / Triết Lý:
+  Câu Lục: "Trăm năm trong cõi người ta" (tiếng 6: "ta" - vần a, thanh Ngang)
+  -> "Chữ tài chữ mệnh khéo là ghét nhau" (tiếng 6: "là" [B, vần ta], tiếng 8: "nhau" [B])
+  -> "Mấy phen dâu bể phong ba cuộc đời" (tiếng 6: "ba" [B, vần ta], tiếng 8: "đời" [B])
+  -> "Thương nhau dẫu có cách xa muôn trùng" (tiếng 6: "xa" [B, vần ta], tiếng 8: "trùng" [B])
+
+YÊU CẦU NGỮ NGHĨA & TỪ LOẠI:
+- Bắt buộc gắn liền với chủ đề "${detectedTopic}" và câu Lục "${cleanLuc}".
+- Từ vần ở vị trí 6 phải sử dụng tự nhiên, đúng từ loại và ngữ pháp (danh từ, động từ, tính từ phù hợp câu văn).
+- TUYỆT ĐỐI KHÔNG chắp vá từ ngữ gượng gạo, không lặp lại nguyên văn câu Lục của người dùng.
+- BẮT BUỘC ĐÚNG 8 TỪ CHO MỖI CÂU BÁT.
+- Phần "explanation" viết ngắn gọn 1 câu dưới 20 từ.
 
 CHỈ TRẢ VỀ DUY NHẤT 1 OBJECT JSON HỢP LỆ THEO SCHEMA:
 {
@@ -750,10 +980,10 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
         }
     }
 
-    // 4. Nếu AI chưa sinh đủ 3 phương án chuẩn 100% âm luật, tự động kích hoạt Kho tứ thơ Lục Bát cổ truyền để bổ sung
+    // 4. Nếu AI chưa sinh đủ 3 phương án chuẩn 100% âm luật, tự động kích hoạt Kho thi pháp Lục Bát cổ truyền tuyển chọn
     if (validCandidates.length < 3) {
-        const fallbackTemplates = createCompliantTemplateBatLines(cleanLuc, word6Luc);
-        for (const fb of fallbackTemplates) {
+        const classicalCouplets = getCuratedClassicalCouplets(cleanLuc, word6Luc);
+        for (const fb of classicalCouplets) {
             if (validCandidates.length >= 3) break;
             if (!seenBatLines.has(fb.batLine)) {
                 seenBatLines.add(fb.batLine);
@@ -767,7 +997,7 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
                     explanation: fb.explanation,
                     mood: fb.mood,
                     rhymeWord: fb.rhymeWord,
-                    harmonyScore: fb.harmonyScore || 95,
+                    harmonyScore: fb.harmonyScore || 96,
                     syllableCount: fbBatLine?.syllableCount || 8,
                     isValidStructure: true,
                     toneScore: fbAnalysis.summary.toneScore || 40,
