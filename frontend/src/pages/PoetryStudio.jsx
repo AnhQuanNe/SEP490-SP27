@@ -27,6 +27,15 @@ import { poetryService } from '../services/poetry.service';
 import { useAuth } from '../context/AuthContext';
 
 
+const countVietnameseSyllables = (text = '') => {
+    const stripPunct = (w) => w.replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+$/g, '');
+    return String(text)
+        .trim()
+        .split(/\s+/)
+        .map((w) => stripPunct(w.trim()))
+        .filter(Boolean).length;
+};
+
 const QUICK_LUC_SAMPLES = [
     'Công cha như núi Thái Sơn',
     'Thuyền về bến cũ đò xưa',
@@ -205,23 +214,44 @@ const PoetryStudio = () => {
         setAiCriticResult(null);
     };
 
+    // Mở modal đối thơ (tự động lấy câu Lục 6 tiếng cuối cùng từ khung soạn thảo nếu hợp lệ)
+    const handleOpenCoWriteModal = () => {
+        setCoWriteError(null);
+        if (!inputLucLine.trim() && content.trim()) {
+            const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+            const lastLine = lines[lines.length - 1] || '';
+            if (countVietnameseSyllables(lastLine) === 6) {
+                setInputLucLine(lastLine);
+            }
+        }
+        setCoWriteModalOpen(true);
+    };
+
     // Chạy đối thơ cùng AI
     const handleCoWrite = async () => {
-        if (!inputLucLine.trim()) return;
+        const cleanInput = inputLucLine.trim();
+        if (!cleanInput) return;
 
         try {
             setIsCoWriting(true);
             setCoWriteError(null);
             setCoWriteResult(null);
             setCoWriteCandidates([]);
-        setCoWriteResult(null);
-            const contextText = [
-                title.trim() ? `Tựa đề bài thơ: ${title.trim()}` : null,
-                content.trim() ? `Các câu thơ trước đó:\n${content.trim()}` : null,
-            ].filter(Boolean).join('\n');
+
+            const priorLines = content
+                .split('\n')
+                .map((l) => l.trim())
+                .filter(Boolean);
+            const hasAdditionalContext = priorLines.some((line) => line !== cleanInput);
+            const contextText = hasAdditionalContext
+                ? [
+                    title.trim() ? `Tựa đề bài thơ: ${title.trim()}` : null,
+                    `Các câu thơ hiện có:\n${priorLines.join('\n')}`,
+                ].filter(Boolean).join('\n')
+                : '';
 
             const res = await poetryService.coWrite({
-                lucLine: inputLucLine,
+                lucLine: cleanInput,
                 context: contextText,
             });
             const resultData = res?.data || res;
@@ -240,11 +270,19 @@ const PoetryStudio = () => {
 
     // Chèn cặp câu đối vào trình soạn thảo
     const handleInsertCouplet = (batLine) => {
-        const couplet = `${inputLucLine.trim()}\n${batLine.trim()}`;
-        const newContent = content.trim() ? `${content.trim()}\n${couplet}` : couplet;
+        const submittedLuc = (coWriteResult?.inputLucLine || inputLucLine).trim();
+        const trimmedBat = batLine.trim();
+        const existingLines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+        const lastExistingLine = existingLines[existingLines.length - 1] || '';
+
+        const newContent = lastExistingLine === submittedLuc
+            ? `${content.trimEnd()}\n${trimmedBat}`
+            : (content.trim() ? `${content.trim()}\n${submittedLuc}\n${trimmedBat}` : `${submittedLuc}\n${trimmedBat}`);
+
         setContent(newContent);
         setCoWriteModalOpen(false);
         setInputLucLine('');
+        setCoWriteResult(null);
         setCoWriteCandidates([]);
         runRuleCheck(newContent);
     };
@@ -415,7 +453,7 @@ const PoetryStudio = () => {
                                     <div className="flex items-center gap-2">
                                         <button
                                             type="button"
-                                            onClick={() => setCoWriteModalOpen(true)}
+                                            onClick={handleOpenCoWriteModal}
                                             className="px-3.5 py-2 bg-amber-100/90 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-300/80 shadow-2xs"
                                         >
                                             <Bot className="w-3.5 h-3.5 text-amber-800" />
@@ -916,8 +954,8 @@ const PoetryStudio = () => {
                                         Nhập câu Lục của bạn (đúng 6 tiếng):
                                     </label>
                                     <span className="text-[11px] font-semibold text-stone-500">
-                                        Số tiếng: <strong className={inputLucLine.trim().split(/\s+/).filter(Boolean).length === 6 ? 'text-emerald-700' : 'text-amber-700'}>
-                                            {inputLucLine.trim().split(/\s+/).filter(Boolean).length} / 6
+                                        Số tiếng: <strong className={countVietnameseSyllables(inputLucLine) === 6 ? 'text-emerald-700' : 'text-amber-700'}>
+                                            {countVietnameseSyllables(inputLucLine)} / 6
                                         </strong>
                                     </span>
                                 </div>
@@ -926,7 +964,10 @@ const PoetryStudio = () => {
                                     <input
                                         type="text"
                                         value={inputLucLine}
-                                        onChange={(e) => setInputLucLine(e.target.value)}
+                                        onChange={(e) => {
+                                            setInputLucLine(e.target.value);
+                                            if (coWriteError) setCoWriteError(null);
+                                        }}
                                         placeholder="Ví dụ: Công cha như núi Thái Sơn..."
                                         className="w-full px-4 py-3 text-sm sm:text-base bg-amber-50/40 border border-amber-200/90 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 font-serif text-stone-900 shadow-inner"
                                     />
@@ -940,7 +981,10 @@ const PoetryStudio = () => {
                                             <button
                                                 key={sIdx}
                                                 type="button"
-                                                onClick={() => setInputLucLine(sample)}
+                                                onClick={() => {
+                                                    setInputLucLine(sample);
+                                                    setCoWriteError(null);
+                                                }}
                                                 className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-amber-100 text-stone-700 hover:text-amber-900 transition font-serif border border-stone-200"
                                             >
                                                 {sample}
@@ -960,7 +1004,7 @@ const PoetryStudio = () => {
                             <button
                                 type="button"
                                 onClick={handleCoWrite}
-                                disabled={isCoWriting || inputLucLine.trim().split(/\s+/).filter(Boolean).length !== 6}
+                                disabled={isCoWriting || countVietnameseSyllables(inputLucLine) !== 6}
                                 className="w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {isCoWriting ? (
@@ -987,9 +1031,27 @@ const PoetryStudio = () => {
                                             </h4>
                                         </div>
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 border border-amber-300/80">
-                                            {coWriteResult.isGemini ? '✨ Google Gemini AI' : '📜 Thi Pháp Cổ Truyền'}
+                                            {coWriteResult.isGemini ? `✨ ${coWriteResult.source || 'Google Gemini AI'}` : '📜 Thi Pháp Cổ Truyền'}
                                         </span>
                                     </div>
+
+                                    {coWriteResult.inputLucLine && (
+                                        <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                            <div>
+                                                <span className="text-[10px] uppercase tracking-wider font-bold text-amber-800 block">
+                                                    Câu Lục của bạn
+                                                </span>
+                                                <p className="font-serif font-bold text-stone-900 text-sm">
+                                                    &ldquo;{coWriteResult.inputLucLine}&rdquo;
+                                                </p>
+                                            </div>
+                                            {coWriteResult.rhymeTargetWord && (
+                                                <span className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 font-semibold">
+                                                    Chữ gieo vần: <strong>{coWriteResult.rhymeTargetWord}</strong>
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                         {/* Phân tích tứ thơ */}
@@ -1084,6 +1146,11 @@ const PoetryStudio = () => {
                                                         )}
                                                     </div>
 
+                                                    {coWriteResult?.inputLucLine && (
+                                                        <p className="text-xs font-serif text-stone-500 italic">
+                                                            {coWriteResult.inputLucLine}
+                                                        </p>
+                                                    )}
                                                     <p className="text-base sm:text-lg font-serif font-bold text-stone-900 group-hover:text-amber-950 transition">
                                                         {cand.batLine}
                                                     </p>

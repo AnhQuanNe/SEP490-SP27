@@ -117,7 +117,12 @@ function extractRime(syllable) {
     }
 
     if (firstVowelIdx === -1) return baseStr;
-    return baseStr.slice(firstVowelIdx);
+    let rime = baseStr.slice(firstVowelIdx);
+    // Chuẩn hóa biến thể y <-> i ở đầu phần vần (yêu -> iêu, yên -> iên, ya -> ia, yêm -> iêm, yêng -> iêng)
+    if (rime.startsWith('y') && rime.length > 1) {
+        rime = 'i' + rime.slice(1);
+    }
+    return rime;
 }
 
 /**
@@ -143,7 +148,7 @@ function checkWordRhyme(wordA, wordB) {
         };
     }
 
-    // 1. Vần chính (hoàn toàn trùng phần vần, ví dụ: "nguồn" - "tuôn", "nhà" - "xa")
+    // 1. Vần chính (hoàn toàn trùng phần vần, ví dụ: "nguồn" - "tuôn", "nhà" - "xa", "chiều" - "yêu")
     if (rimeA === rimeB) {
         return {
             isRhyme: true,
@@ -152,18 +157,20 @@ function checkWordRhyme(wordA, wordB) {
         };
     }
 
-    // 2. Vần thông (gần vần theo quy ước thi pháp cổ truyền)
-    // Các nhóm vần thông phổ biến:
+    // 2. Vần thông (gần vần theo quy ước thi pháp cổ truyền Việt Nam)
     const RHYME_FAMILIES = [
-        ['anh', 'xanh', 'cang', 'ang'],
-        ['ông', 'ung', 'ong'],
-        ['ôi', 'ơi', 'ui'],
+        ['anh', 'ang', 'ăng', 'âng'],
+        ['ông', 'ong', 'ung', 'uông'],
+        ['ôi', 'ơi', 'ui', 'ươi'],
         ['ưa', 'ơ', 'a'],
-        ['âu', 'âu', 'au', 'ao'],
-        ['uon', 'uong', 'on'],
+        ['âu', 'au', 'ao', 'êu'],
+        ['uôn', 'uông', 'on', 'ơn', 'ôn'],
         ['iên', 'yên', 'en', 'ên'],
-        ['ai', 'ay'],
-        ['e', 'e', 'ia', 'ie'],
+        ['ai', 'ay', 'ây'],
+        ['iêu', 'yêu', 'êu', 'eo'],
+        ['an', 'ang', 'am'],
+        ['êm', 'em', 'im'],
+        ['ương', 'ưng', 'ơng'],
     ];
 
     for (const fam of RHYME_FAMILIES) {

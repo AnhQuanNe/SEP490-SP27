@@ -391,3 +391,58 @@
     overflow: hidden;
     border: 1px solid #e7e5e4;
 }
+
+/* Mobile-first polish (< 640px) */
+@media (max-width: 639px) {
+    .home-hero {
+        padding-top: 2rem;
+        padding-bottom: 2.75rem;
+    }
+
+    .home-hero-title {
+        font-size: 1.75rem;
+        line-height: 1.3;
+    }
+
+    .home-hero-desc {
+        font-size: 0.9375rem;
+    }
+
+    .home-search-form {
+        padding: 0.75rem;
+    }
+
+    .home-search-input {
+        padding-left: 2.5rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.9375rem;
+    }
+
+    .home-search-submit-btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .home-category-btn {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    .home-user-card {
+        padding: 1rem 1.125rem;
+    }
+
+    .home-pillar-box,
+    .home-work-card {
+        padding: 1.125rem;
+    }
+
+    .home-ai-banner {
+        padding: 1.375rem;
+    }
+
+    .home-metrics-grid {
+        gap: 1rem;
+    }
+}

@@ -1,13 +1,6 @@
 const { removeVietnameseTones } = require('../utils/vietnamese.utils');
 
-const GEMINI_MODELS = [
-    'gemini-2.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-];
+const { GEMINI_MODELS } = require('../constants/geminiModels');
 
 /**
  * Danh mục các câu chuyện rẽ nhánh kinh điển có sẵn
@@ -455,7 +448,7 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
                             responseMimeType: 'application/json',
                         },
                     }),
-                    signal: AbortSignal.timeout(9000),
+                    signal: AbortSignal.timeout(15000),
                 });
 
                 if (response.ok) {

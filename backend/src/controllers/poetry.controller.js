@@ -94,7 +94,7 @@ const coWrite = async (req, res) => {
         });
     } catch (error) {
         console.error('[Poetry Controller] Lỗi đối thơ AI:', error);
-        res.status(400).json({
+        res.status(error.statusCode || 400).json({
             success: false,
             message: error.message || 'Không thể đối thơ lúc này',
         });
