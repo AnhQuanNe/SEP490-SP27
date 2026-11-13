@@ -1,4 +1,4 @@
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+const { GEMINI_MODELS } = require('../constants/geminiModels');
 
 /**
  * Thuật toán tính độ tương đồng chuỗi ký tự (Bigram Dice Coefficient)
@@ -865,7 +865,7 @@ BẮT BUỘC TRẢ VỀ JSON HỢP LỆ:
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4500);
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
 
                 const response = await fetch(url, {
                     method: 'POST',
