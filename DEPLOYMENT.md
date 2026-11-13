@@ -144,3 +144,4 @@ Sau khi deploy thành công, thực hiện checklist kiểm tra sau:
 
 > [!TIP]
 > Nếu bạn hoặc bạn của bạn cần hỗ trợ thêm trong quá trình triển khai, toàn bộ mã nguồn đã được clean gọn gàng, không còn dữ liệu giả lập (mock/fake), và các script build/seed đều chạy độc lập 100%. Chúc các bạn deploy thuận lợi và thành công!
+

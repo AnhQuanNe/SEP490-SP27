@@ -46,3 +46,4 @@ console.log('  - Email:    admin@vietheritage.vn');
 console.log('  - Mật khẩu: Admin@123456');
 console.log('===============================================================\n');
 process.exit(0);
+
