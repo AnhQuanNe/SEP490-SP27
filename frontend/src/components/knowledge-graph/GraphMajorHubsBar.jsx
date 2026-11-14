@@ -57,11 +57,14 @@ const GraphMajorHubsBar = ({
                         <Crown className="w-3.5 h-3.5 fill-stone-950" />
                     </div>
                     <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] font-black text-amber-300 tracking-wider uppercase">
-                            TRỤ CỘT CỐT LÕI
-                        </span>
-                        <span className="text-[9px] text-stone-400 font-light">
-                            Khám phá khởi điểm
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black text-amber-300 tracking-wider uppercase">
+                                TRỤ CỘT CỐT LÕI
+                            </span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                        </div>
+                        <span className="text-[9px] text-amber-300/90 font-medium">
+                            Bắt đầu từ đây 👇
                         </span>
                     </div>
                 </div>
