@@ -66,6 +66,38 @@ textarea {
   font-family: 'Lora', 'Be Vietnam Pro', serif !important;
 }
 
+/* ========================================================
+   LEAFLET MAP - KHẮC PHỤC TRIỆT ĐỂ LỖI FONT TIẾNG VIỆT
+   Loại bỏ font "Helvetica Neue" từ leaflet.css gây bể dấu Ư, Ờ trên Windows
+   ======================================================== */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-popup,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content,
+.leaflet-tooltip,
+.leaflet-control,
+.custom-marker-wrapper,
+.ancient-landmark-marker,
+.sovereignty-pin-container,
+.sovereignty-custom-icon,
+.cultural-pin-icon,
+.ancient-custom-icon {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.leaflet-popup-content h1,
+.leaflet-popup-content h2,
+.leaflet-popup-content h3,
+.leaflet-popup-content h4,
+.leaflet-popup-content h5,
+.leaflet-popup-content h6,
+.leaflet-popup-content p,
+.leaflet-popup-content span,
+.leaflet-popup-content div {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 9px;
