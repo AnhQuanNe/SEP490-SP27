@@ -310,11 +310,11 @@ const PoetryStudio = () => {
                             <span>Văn Uyên Thi Xã — Trụ Cột Số 4</span>
                         </div>
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-heritage tracking-tight flex items-center gap-2.5">
-                            <span>AI Poetry Studio — Sáng Tác & Thẩm Định Thơ Lục Bát</span>
+                            <span>Phòng Thơ Lục Bát — Sáng Tác & Thẩm Bình Thi Ca</span>
                             <Sparkles className="w-6 h-6 text-amber-600 animate-pulse" />
                         </h1>
                         <p className="text-xs sm:text-sm text-stone-600 mt-1 max-w-2xl leading-relaxed">
-                            Không gian trau chuốt vần điệu dân tộc: Soát luật Bằng – Trắc chuẩn mực, kiểm tra vần lưng vần chân và nhận điểm số phân tích từ AI Critic.
+                            Không gian trau chuốt vần điệu dân tộc: Soát luật Bằng – Trắc chuẩn mực, kiểm tra vần lưng vần chân và nhận bình giải thi pháp chuyên sâu.
                         </p>
                     </div>
 
@@ -457,7 +457,7 @@ const PoetryStudio = () => {
                                             className="px-3.5 py-2 bg-amber-100/90 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-300/80 shadow-2xs"
                                         >
                                             <Bot className="w-3.5 h-3.5 text-amber-800" />
-                                            <span>Đối thơ cùng AI</span>
+                                            <span>Xướng họa thi ca</span>
                                         </button>
                                         <button
                                             type="button"
@@ -496,7 +496,7 @@ const PoetryStudio = () => {
                                             ) : (
                                                 <>
                                                     <Sparkles className="w-4 h-4 text-amber-300" />
-                                                    <span>AI Thẩm Định Thơ</span>
+                                                    <span>Thẩm bình thi ca</span>
                                                 </>
                                             )}
                                         </button>
@@ -685,7 +685,7 @@ const PoetryStudio = () => {
                                     <div className="space-y-2">
                                         <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
                                             <Feather className="w-3.5 h-3.5 text-amber-800" />
-                                            <span>Lời Bình Từ AI Critic:</span>
+                                            <span>Lời bình thi pháp:</span>
                                         </h4>
                                         <p className="text-xs sm:text-sm text-stone-700 bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/70 leading-relaxed font-serif italic">
                                             &quot;{aiCriticResult.aiCritic.overallComment}&quot;
@@ -755,7 +755,7 @@ const PoetryStudio = () => {
                                         <div className="space-y-2 pt-2 border-t border-amber-200/60">
                                             <div className="flex items-center justify-between">
                                                 <h4 className="text-xs font-bold text-stone-900">
-                                                    Bản thơ trau chuốt (AI Preview):
+                                                    Bản thơ trau chuốt gợi ý:
                                                 </h4>
                                                 <button
                                                     type="button"
@@ -784,7 +784,7 @@ const PoetryStudio = () => {
                                             Chưa Có Báo Cáo Thẩm Định
                                         </h3>
                                         <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
-                                            Hãy gõ câu thơ Lục Bát bên trái và bấm nút <strong>AI Thẩm Định Thơ</strong> để nhận thang điểm 100, phân tích vần điệu và gợi ý sửa từ tinh tế.
+                                            Hãy gõ câu thơ Lục Bát bên trái và bấm nút <strong>Thẩm bình thi ca</strong> để nhận thang điểm 100, phân tích vần điệu và gợi ý sửa từ tinh tế.
                                         </p>
                                     </div>
                                 </div>
@@ -931,10 +931,10 @@ const PoetryStudio = () => {
                             <div className="space-y-0.5">
                                 <h3 className="font-heritage font-bold text-lg text-stone-900 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5 text-amber-600" />
-                                    <span>Gemini AI — Đối Thơ & Thấu Cảm Ngữ Cảnh</span>
+                                    <span>Xướng Họa Thi Ca — Thấu Cảm Tứ Thơ & Đối Đáp</span>
                                 </h3>
                                 <p className="text-[11px] text-stone-500">
-                                    AI phân tích tứ thơ, giải mã không gian ngữ cảnh và ứng khẩu câu đối hòa điệu âm luật
+                                    Thấu cảm tứ thơ, giải mã không gian ngữ cảnh và ứng khẩu câu đối hòa điệu âm luật
                                 </p>
                             </div>
                             <button
@@ -1010,17 +1010,17 @@ const PoetryStudio = () => {
                                 {isCoWriting ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-                                        <span>Gemini AI đang thấu cảm tứ thơ & tức cảnh sinh tình...</span>
+                                        <span>Đang thấu cảm tứ thơ & tức cảnh sinh tình...</span>
                                     </>
                                 ) : (
                                     <>
                                         <Sparkles className="w-4 h-4 text-amber-300" />
-                                        <span>Gemini AI Phân Tích & Đối Câu Bát</span>
+                                        <span>Ứng Khẩu Câu Bát</span>
                                     </>
                                 )}
                             </button>
 
-                            {/* KHỐI PHÂN TÍCH CÂU THƠ & NGỮ CẢNH TỪ GEMINI AI */}
+                            {/* KHỐI PHÂN TÍCH CÂU THƠ & NGỮ CẢNH */}
                             {coWriteResult && (coWriteResult.analysis || coWriteResult.context) && (
                                 <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3 animate-in fade-in">
                                     <div className="flex items-center justify-between border-b border-amber-200/60 pb-2.5">
@@ -1031,7 +1031,7 @@ const PoetryStudio = () => {
                                             </h4>
                                         </div>
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 border border-amber-300/80">
-                                            {coWriteResult.isGemini ? `✨ ${coWriteResult.source || 'Google Gemini AI'}` : '📜 Thi Pháp Cổ Truyền'}
+                                            {coWriteResult.isGemini ? '✨ Đối đáp tức cảnh sinh tình' : '📜 Thi Pháp Cổ Truyền'}
                                         </span>
                                     </div>
 

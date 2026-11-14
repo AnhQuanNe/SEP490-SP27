@@ -145,6 +145,12 @@ const login = async ({ email, password }) => {
         throw new Error('Email hoặc mật khẩu không chính xác');
     }
 
+    // Tự động chuẩn hóa role nếu tài khoản cũ mang role không còn được hỗ trợ
+    if (!['customer', 'user', 'staff', 'admin'].includes(user.role)) {
+        user.role = 'customer';
+        await user.save();
+    }
+
     // Cho phép đăng nhập ngay không cần kích hoạt OTP
     const token = generateToken(user._id);
 

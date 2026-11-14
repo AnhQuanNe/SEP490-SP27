@@ -85,7 +85,7 @@ const Login = () => {
                         Đăng Nhập
                     </h2>
                     <p className="text-sm text-stone-600 font-vietnam">
-                        Tiếp tục hành trình khám phá di sản văn hóa cùng AI
+                        Tiếp tục hành trình khám phá và kết nối tinh hoa di sản văn hóa dân tộc
                     </p>
                 </div>
 

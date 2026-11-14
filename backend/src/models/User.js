@@ -80,6 +80,13 @@ const userSchema = new mongoose.Schema(
     }
 );
 
+// Tự động chuẩn hóa role trước khi kiểm tra validation
+userSchema.pre('validate', function () {
+    if (['learner', 'deaf', 'educator'].includes(this.role)) {
+        this.role = 'customer';
+    }
+});
+
 // Mã hoá mật khẩu và chuẩn hóa role trước khi lưu
 userSchema.pre('save', async function () {
     // Tự động chuyển đổi các role cũ từ phiên bản trước sang 'customer'

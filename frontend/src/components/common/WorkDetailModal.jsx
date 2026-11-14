@@ -192,13 +192,13 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
         const src = item?.source || 'Kho tàng Văn học Dân gian Việt Nam';
         const year = '2024';
         if (fmt === 'apa') {
-            return `${author}. (${year}). ${title}. Trong ${src}. Hệ thống Số hóa Di sản VietHeritage AI.`;
+            return `${author}. (${year}). ${title}. Trong ${src}. Hệ thống Số hóa Di sản VietHeritage.`;
         }
         if (fmt === 'mla') {
-            return `"${title}." ${src}, VietHeritage AI, ${year}.`;
+            return `"${title}." ${src}, VietHeritage, ${year}.`;
         }
         // TCVN (Tiêu chuẩn Việt Nam)
-        return `${author} (${year}), "${title}", ${src}, Tra cứu trên Nền tảng VietHeritage AI.`;
+        return `${author} (${year}), "${title}", ${src}, Tra cứu trên Nền tảng VietHeritage.`;
     };
 
     const handleCopyCitation = (fmt) => {
@@ -221,7 +221,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
             console.error('Lỗi yêu cầu AI giải thích:', err);
             if (err.code === 'GUEST_QUOTA_EXCEEDED' || err.status === 429) {
                 setShowQuotaModal(true);
-                setAiExplanation('⚠️ Bạn đã sử dụng hết 5 lượt trải nghiệm AI miễn phí hôm nay. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục!');
+                setAiExplanation('⚠️ Bạn đã sử dụng hết 5 lượt bình giải miễn phí hôm nay. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục!');
             } else {
                 setAiExplanation('Rất tiếc, hiện tại không thể phân tích nội dung này. Vui lòng thử lại sau.');
             }
@@ -368,7 +368,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                             )}
                         </button>
 
-                        {/* Tab 4: 🤖 TRỢ LÝ AI & LIÊN KẾT */}
+                        {/* Tab 4: 📜 BÌNH GIẢI & LIÊN KẾT */}
                         <button
                             type="button"
                             onClick={() => handleTabChange('tro-ly-ai')}
@@ -379,7 +379,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                             }`}
                         >
                             <Compass className="w-3.5 h-3.5" />
-                            <span>Trợ lý AI & Liên kết</span>
+                            <span>Bình giải & Liên kết</span>
                         </button>
                     </div>
 
@@ -1057,7 +1057,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                                                     className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
                                                                 >
                                                                     <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-                                                                    <span>Hỏi Gia sư AI phân tích sâu dị bản này</span>
+                                                                    <span>Bình giải chuyên sâu dị bản này</span>
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1091,7 +1091,7 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-bold text-slate-900">
-                                                        Yêu cầu Trợ lý AI Phân tích Chuyên sâu (4 Tầng nghĩa)
+                                                        Bình Giải Văn Học Chuyên Sâu (4 Tầng Nghĩa)
                                                     </h3>
                                                     <p className="text-xs text-slate-500">
                                                         Phân tích tự động nghĩa đen, nghĩa bóng, bối cảnh văn hóa và bài học nhân sinh
@@ -1108,12 +1108,12 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                                 {aiLoading ? (
                                                     <>
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                        <span>AI đang đối chiếu dữ liệu...</span>
+                                                        <span>Đang đối chiếu dữ liệu văn học...</span>
                                                     </>
                                                 ) : (
                                                     <>
                                                         <Sparkles className="w-3.5 h-3.5" />
-                                                        <span>{aiExplanation ? 'Phân tích lại' : 'Yêu cầu AI Phân Tích'}</span>
+                                                        <span>{aiExplanation ? 'Bình giải lại' : 'Yêu cầu Bình Giải'}</span>
                                                     </>
                                                 )}
                                             </button>

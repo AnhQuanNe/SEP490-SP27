@@ -184,7 +184,7 @@ const Explore = () => {
         return (
             <span
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border shadow-2xs ${badgeClass}`}
-                title={`Độ tương đồng Cosine Similarity: ${score}% (Không gian vector 768 chiều)`}
+                title={`Độ tương đồng nội dung: ${score}%`}
             >
                 <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />
                 <span>Khớp {score}%</span>
@@ -544,7 +544,7 @@ const Explore = () => {
                                 className={`explore-mode-btn ${searchMode === 'semantic' ? 'active-semantic' : 'inactive'}`}
                             >
                                 <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                                <span>Tìm kiếm theo ý nghĩa (AI Ngữ nghĩa)</span>
+                                <span>Tìm kiếm theo ý nghĩa & Tứ thơ</span>
                                 {!isAuthenticated && guestQuota.remaining !== null && (
                                     <span className="ml-1.5 text-[10px] font-semibold bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center gap-1">
                                         <Lock className="w-2.5 h-2.5" />
@@ -753,7 +753,7 @@ const Explore = () => {
                                 )}
                                 {aiInsight?.source && (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-200">
-                                        {aiInsight.source?.includes('gemini') ? 'Mô hình Gemini Flash AI' : 'Động cơ Tri thức'}
+                                        Bình giải văn hóa & Tứ thơ
                                     </span>
                                 )}
                             </div>
@@ -773,14 +773,14 @@ const Explore = () => {
                             </div>
                         </div>
 
-                        {/* Panel Body: Gemini Flash Real-Time Insight */}
+                        {/* Panel Body: Real-Time Cultural Insight */}
                         {aiInsight && (
                             <div className="explore-ai-panel-body">
                                 <div className="space-y-2.5">
                                     <div className="flex items-center justify-between flex-wrap gap-2">
                                         <span className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
                                             <Quote className="w-3.5 h-3.5 text-amber-600" />
-                                            VietHeritage AI • Luận Giải Triết Lý & Đạo Đức
+                                            Bình Giải Triết Lý & Giá Trị Đạo Đức
                                         </span>
                                         {aiInsight.highlightWork && (
                                             <span className="text-xs font-semibold text-amber-800">
@@ -798,12 +798,12 @@ const Explore = () => {
                             </div>
                         )}
 
-                        {/* Panel Footer: Cosine AI Scale Legend */}
+                        {/* Panel Footer: Relevance Scale Legend */}
                         <div className="explore-ai-panel-footer">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-stone-700">
                                 <span className="font-bold text-amber-950 flex items-center gap-1">
                                     <HelpCircle className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
-                                    Thang đo Cosine AI:
+                                    Mức độ tương đồng nội dung:
                                 </span>
                                 <span className="inline-flex items-center gap-1">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -818,7 +818,7 @@ const Explore = () => {
                                     <strong>60% - 61%:</strong> Phù hợp
                                 </span>
                                 <span className="text-stone-500 italic hidden sm:inline">
-                                    (&lt; 60% được coi là nhiễu và AI đã tự động loại bỏ)
+                                    (&lt; 60% được coi là độ tương đồng thấp và đã tự động loại bỏ)
                                 </span>
                             </div>
                         </div>

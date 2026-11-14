@@ -159,6 +159,7 @@ function checkWordRhyme(wordA, wordB) {
 
     // 2. Vần thông (gần vần theo quy ước thi pháp cổ truyền Việt Nam)
     const RHYME_FAMILIES = [
+        ['uân', 'ân', 'ơn', 'uôn'],
         ['anh', 'ang', 'ăng', 'âng'],
         ['ông', 'ong', 'ung', 'uông'],
         ['ôi', 'ơi', 'ui', 'ươi'],
