@@ -378,6 +378,7 @@ const AdminDashboard = () => {
                     onOpenMobile={() => setMobileOpen(true)}
                     onRefresh={handleRefresh}
                     refreshing={refreshing}
+                    aiEnabled={settingsList.find((s) => s.key === 'aiExplanationEnabled')?.value !== false}
                 />
 
                 {/* Toast Notification Banner */}
@@ -603,7 +604,7 @@ const AdminDashboard = () => {
                                                                 {sub.title}
                                                             </h4>
                                                             <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                                                                <span>Bởi: <strong className="text-slate-300">{sub.contributorId?.name || 'Sĩ tử'}</strong></span>
+                                                                <span>Bởi: <strong className="text-slate-300">{sub.user?.name || sub.contributorId?.name || 'Sĩ tử'}</strong></span>
                                                                 <span>•</span>
                                                                 <span>{new Date(sub.createdAt).toLocaleDateString('vi-VN')}</span>
                                                             </div>
@@ -670,21 +671,30 @@ const AdminDashboard = () => {
                                         <Filter className="w-3.5 h-3.5" /> Lọc:
                                     </span>
                                     {[
-                                        { id: 'pending', label: 'Chờ thẩm định' },
-                                        { id: 'approved', label: 'Đã xuất bản' },
-                                        { id: 'rejected', label: 'Đã từ chối' },
-                                        { id: 'all', label: 'Tất cả' },
+                                        { id: 'pending', label: 'Chờ thẩm định', count: stats?.submissions?.pending },
+                                        { id: 'approved', label: 'Đã xuất bản', count: stats?.submissions?.approved },
+                                        { id: 'rejected', label: 'Đã từ chối', count: stats?.submissions?.rejected },
+                                        { id: 'all', label: 'Tất cả', count: stats?.submissions?.total },
                                     ].map((tab) => (
                                         <button
                                             key={tab.id}
                                             onClick={() => setSubStatusFilter(tab.id)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                                                 subStatusFilter === tab.id
                                                     ? 'bg-amber-500 text-slate-950 shadow-sm'
                                                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
                                             }`}
                                         >
-                                            {tab.label}
+                                            <span>{tab.label}</span>
+                                            {typeof tab.count === 'number' && (
+                                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                                    subStatusFilter === tab.id
+                                                        ? 'bg-slate-950/20 text-slate-950 font-extrabold'
+                                                        : 'bg-slate-700/80 text-slate-300'
+                                                }`}>
+                                                    {tab.count}
+                                                </span>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
@@ -701,10 +711,21 @@ const AdminDashboard = () => {
                                     <p className="text-xs text-slate-400">Đang tải danh sách bài đóng góp...</p>
                                 </div>
                             ) : submissions.length === 0 ? (
-                                <div className="p-12 text-center rounded-2xl bg-slate-900/60 border border-slate-800">
-                                    <FileCheck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                                    <p className="text-sm font-semibold text-slate-300">Không có bài đóng góp nào trong mục này</p>
-                                    <p className="text-xs text-slate-500 mt-1">Các bài sĩ tử gửi lên sẽ xuất hiện tại đây để hội đồng thẩm định duyệt.</p>
+                                <div className="p-12 text-center rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+                                    <FileCheck className="w-12 h-12 text-slate-600 mx-auto" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-300">Không có bài đóng góp nào trong mục này</p>
+                                        <p className="text-xs text-slate-500 mt-1">Các bài sĩ tử gửi lên sẽ xuất hiện tại đây để hội đồng thẩm định duyệt.</p>
+                                    </div>
+                                    {subStatusFilter !== 'all' && (stats?.submissions?.total || 0) > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSubStatusFilter('all')}
+                                            className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                                        >
+                                            Xem tất cả ({stats?.submissions?.total} bài nộp)
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -729,6 +750,9 @@ const AdminDashboard = () => {
                                                     </span>
                                                     <span className="text-[11px] text-slate-500">
                                                         Gửi ngày: {new Date(sub.createdAt).toLocaleDateString('vi-VN')}
+                                                    </span>
+                                                    <span className="text-[11px] text-slate-400">
+                                                        • Bởi: <strong className="text-slate-300">{sub.user?.name || 'Sĩ tử'}</strong> {sub.user?.email ? `(${sub.user.email})` : ''}
                                                     </span>
                                                 </div>
 
@@ -776,13 +800,18 @@ const AdminDashboard = () => {
                                             <X className="w-5 h-5" />
                                         </button>
 
-                                        <div className="flex items-center gap-2">
-                                            <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                {selectedSub.category || 'Ca dao'}
-                                            </span>
-                                            <span className="text-xs text-slate-400">
-                                                Mã: <code className="font-mono text-slate-300">{selectedSub._id?.slice(-6)}</code>
-                                            </span>
+                                        <div className="flex items-center justify-between flex-wrap gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                                    {selectedSub.category || 'Ca dao'}
+                                                </span>
+                                                <span className="text-xs text-slate-400">
+                                                    Mã: <code className="font-mono text-slate-300">{selectedSub._id?.slice(-6)}</code>
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-slate-400">
+                                                Người nộp: <strong className="text-slate-200">{selectedSub.user?.name || 'Sĩ tử'}</strong> {selectedSub.user?.email ? `(${selectedSub.user.email})` : ''}
+                                            </div>
                                         </div>
 
                                         <h3 className="text-xl font-bold font-heritage text-amber-200">
@@ -1101,6 +1130,10 @@ const AdminDashboard = () => {
                                         <option value="tuc-ngu">Tục ngữ</option>
                                         <option value="co-tich">Cổ tích</option>
                                         <option value="truyen-thuyet">Truyền thuyết</option>
+                                        <option value="than-thoai">Thần thoại</option>
+                                        <option value="trung-dai">Văn học Trung đại</option>
+                                        <option value="hien-dai">Văn học Hiện đại</option>
+                                        <option value="khac">Khác</option>
                                     </select>
 
                                     <button
@@ -1154,6 +1187,9 @@ const AdminDashboard = () => {
                                                         <option value="co-tich">Cổ tích</option>
                                                         <option value="truyen-thuyet">Truyền thuyết</option>
                                                         <option value="than-thoai">Thần thoại</option>
+                                                        <option value="trung-dai">Văn học Trung đại</option>
+                                                        <option value="hien-dai">Văn học Hiện đại</option>
+                                                        <option value="khac">Khác</option>
                                                     </select>
                                                 </div>
                                             </div>

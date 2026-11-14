@@ -27,6 +27,7 @@ import {
     Share2,
     GitBranch
 } from 'lucide-react';
+import adminService from '../../services/admin.service';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout, getAvatarUrl } = useAuth();
@@ -38,6 +39,18 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Thông báo toàn hệ thống do Quản trị viên cấu hình (UC19)
+    const [systemNotice, setSystemNotice] = useState('');
+    const [noticeDismissed, setNoticeDismissed] = useState(false);
+
+    useEffect(() => {
+        adminService.getPublicSettings().then((settings) => {
+            if (settings?.systemNotice && settings.systemNotice.trim()) {
+                setSystemNotice(settings.systemNotice.trim());
+            }
+        }).catch(() => {});
+    }, []);
+
     const handleLogout = () => {
         logout();
         setDropdownOpen(false);
@@ -47,7 +60,7 @@ const Navbar = () => {
 
     const avatarSrc = user ? getAvatarUrl(user.avatar) : null;
 
-    // Các mục chính giữ lại trên Header (tập trung khám phá & học tập)
+    // Các mục chính giữ lại trên Header (cân đối 6 mục khám phá & học tập cốt lõi)
     const primaryHeaderItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
@@ -55,7 +68,6 @@ const Navbar = () => {
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map, visibility: 'hidden lg:inline-flex' },
         { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden lg:inline-flex' },
         { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden xl:inline-flex' },
-        { name: 'Đố vui', path: '/do-vui', isRoute: true, icon: Trophy, visibility: 'hidden xl:inline-flex' },
     ];
 
     // Cấu trúc danh mục toàn diện được chuyển vào Thanh bên trái (Left Sidebar)
@@ -169,19 +181,38 @@ const Navbar = () => {
     return (
         <>
             <header className="sticky top-0 z-40 bg-[#fffdf9]/95 backdrop-blur-md border-b border-amber-900/15 shadow-[0_2px_12px_rgba(139,24,24,0.04)] transition-all">
+                {/* Banner Thông báo vận hành do Admin cấu hình (UC19) */}
+                {systemNotice && !noticeDismissed && (
+                    <aside aria-label="Thông báo hệ thống" className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-amber-50 px-4 py-2 text-xs font-semibold text-center flex items-center justify-between gap-3 shadow-inner select-none animate-in fade-in">
+                        <div className="w-5 hidden sm:block" />
+                        <div className="flex items-center justify-center gap-2 flex-grow truncate">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-200 flex-shrink-0 animate-pulse" />
+                            <span className="truncate">{systemNotice}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setNoticeDismissed(true)}
+                            className="text-amber-200 hover:text-white p-1 rounded-md hover:bg-amber-800/50 transition-colors cursor-pointer"
+                            title="Đóng thông báo"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </aside>
+                )}
+
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 
-                <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-5 lg:px-8">
-                    <div className="flex md:grid md:grid-cols-[auto_1fr_auto] items-center justify-between h-18 sm:h-20 gap-3 lg:gap-4 xl:gap-6">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-3 lg:gap-4">
                         
                         {/* CỤM BÊN TRÁI: NÚT MỞ THANH DANH MỤC + LOGO THƯƠNG HIỆU */}
-                        <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 min-w-0 md:min-w-[210px] xl:min-w-[240px] justify-start">
+                        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-1 md:flex-initial md:flex-shrink-0">
                             {/* Nút bật Thanh bên trái (Menu Drawer Trigger) - Thiết kế cao cấp, thanh lịch */}
                             <button
                                 type="button"
                                 onClick={() => setSidebarOpen(true)}
-                                className="group relative flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl bg-white/70 hover:bg-amber-50/80 active:scale-[0.98] border border-stone-200/90 hover:border-amber-400/70 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 flex-shrink-0"
+                                className="group relative flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2 sm:px-3 rounded-xl bg-white/70 hover:bg-amber-50/80 active:scale-[0.98] border border-stone-200/90 hover:border-amber-400/70 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 flex-shrink-0"
                                 title="Mở danh mục di sản & công cụ văn hóa"
                                 aria-label="Mở thanh danh mục di sản bên trái"
                             >
@@ -198,39 +229,40 @@ const Navbar = () => {
                             </button>
 
                             {/* Cụm Logo & Tiêu đề */}
-                            <Link
-                                to="/"
-                                className="flex items-center space-x-2 sm:space-x-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 rounded-xl p-1 flex-shrink-0"
+                            <Link 
+                                to="/" 
+                                className="flex items-center space-x-1.5 sm:space-x-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 rounded-xl p-0.5 sm:p-1 min-w-0"
                                 title="VietHeritage AI — Về trang chủ"
                             >
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 shadow-md shadow-red-950/20 group-hover:scale-105 transition-transform border border-amber-400/50 relative flex-shrink-0">
-                                    <span className="absolute -top-1 -right-1 text-[8px] text-amber-300 font-bold select-none">❖</span>
-                                    <BookOpen className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-amber-200" />
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-red-950 via-red-800 to-amber-600 flex items-center justify-center text-amber-300 shadow-md shadow-red-950/20 group-hover:scale-105 transition-transform border border-amber-400/50 relative flex-shrink-0">
+                                    <span className="hidden sm:inline absolute -top-1 -right-1 text-[8px] text-amber-300 font-bold select-none">❖</span>
+                                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200" />
                                 </div>
 
-                                <div className="flex flex-col justify-center">
-                                    <div className="flex items-center space-x-1.5 leading-none">
-                                        <span className="text-base sm:text-xl xl:text-2xl font-black text-red-950 tracking-tight font-heritage whitespace-nowrap">
+                                <div className="flex flex-col justify-center min-w-0">
+                                    <div className="flex items-center space-x-1 sm:space-x-1.5 leading-none">
+                                        <span className="text-[15px] sm:text-lg xl:text-xl 2xl:text-2xl font-black text-red-950 tracking-tight font-heritage whitespace-nowrap truncate">
                                             VietHeritage
                                         </span>
-                                        <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold tracking-wider uppercase bg-amber-100 text-red-950 rounded border border-amber-300/90 flex items-center gap-1 shadow-2xs flex-shrink-0">
+                                        <span className="px-1 sm:px-1.5 py-0.5 text-[8px] sm:text-[10px] font-extrabold tracking-wider uppercase bg-amber-100 text-red-950 rounded border border-amber-300/90 flex items-center gap-0.5 sm:gap-1 shadow-2xs flex-shrink-0">
                                             <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                                             AI
                                         </span>
                                     </div>
-                                    <span className="text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-0.5 flex items-center gap-1 whitespace-nowrap">
+                                    <span className="hidden sm:flex text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-0.5 items-center gap-1 whitespace-nowrap">
                                         <span className="text-amber-700 font-bold text-[9px]">❖</span> 
-                                        <span className="hidden 2xl:inline">Kho Tàng Di Sản Dân Gian</span>
-                                        <span className="2xl:hidden hidden sm:inline">Di Sản Văn Hóa</span>
+                                        <span className="hidden 2xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
+                                        <span className="2xl:hidden hidden xl:inline">Di Sản Văn Hóa</span>
+                                        <span className="xl:hidden">Di Sản Việt</span>
                                     </span>
                                 </div>
                             </Link>
                         </div>
 
-                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (CHỈ GIỮ LẠI CÁC MỤC CỐT LÕI) */}
+                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (6 MỤC CÂN ĐỐI Ở GIỮA) */}
                         <nav
                             aria-label="Menu điều hướng chính"
-                            className="hidden md:flex items-center justify-center space-x-0.5 lg:space-x-1 xl:space-x-1.5 w-full min-w-0"
+                            className="hidden md:flex items-center justify-center gap-0.5 lg:gap-1 xl:gap-1.5 flex-1 min-w-0 px-2 lg:px-4"
                         >
                             {primaryHeaderItems.map((item) => {
                                 const active = isItemActive(item.path, item.isAction);
@@ -241,7 +273,7 @@ const Navbar = () => {
                                         key={item.name}
                                         type="button"
                                         onClick={(e) => handleNavClick(item, e)}
-                                        className={`relative px-2 py-1.5 lg:px-2.5 xl:px-3 text-xs xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
+                                        className={`relative px-2.5 py-1.5 xl:px-3 xl:py-2 text-xs xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
                                             active
                                                 ? 'text-red-950 bg-amber-100/90 shadow-2xs border border-amber-300 font-bold'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
@@ -264,12 +296,12 @@ const Navbar = () => {
                         </nav>
 
                         {/* KHU VỰC HÀNH ĐỘNG BÊN PHẢI (TÀI KHOẢN & ĐĂNG NHẬP) */}
-                        <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0 min-w-0 md:min-w-[210px] xl:min-w-[240px] justify-end ml-auto md:ml-0">
+                        <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
                             {isAuthenticated ? (
                                 <div className="relative" ref={dropdownRef}>
                                     <button
                                         onClick={() => setDropdownOpen(!dropdownOpen)}
-                                        className="flex items-center space-x-2.5 p-1.5 pl-3 rounded-full hover:bg-amber-100/50 transition-all border border-amber-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 cursor-pointer bg-white/70"
+                                        className="flex items-center space-x-1.5 sm:space-x-2.5 p-1 sm:p-1.5 sm:pl-3 rounded-full hover:bg-amber-100/50 transition-all border border-amber-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 cursor-pointer bg-white/70"
                                         aria-haspopup="true"
                                         aria-expanded={dropdownOpen}
                                         title="Tùy chọn tài khoản"
@@ -290,21 +322,21 @@ const Navbar = () => {
                                         </div>
 
                                         {/* Avatar */}
-                                        <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-amber-500/80 bg-amber-50 flex items-center justify-center flex-shrink-0 shadow-xs">
+                                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border-2 border-amber-500/80 bg-amber-50 flex items-center justify-center flex-shrink-0 shadow-xs">
                                             {avatarSrc ? (
                                                 <img src={avatarSrc} alt={user?.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <span className="text-sm font-bold text-red-900">
+                                                <span className="text-xs sm:text-sm font-bold text-red-900">
                                                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                                                 </span>
                                             )}
                                         </div>
-                                        <ChevronDown className={`w-4 h-4 text-stone-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     {/* Dropdown Menu chi tiết */}
                                     {dropdownOpen && (
-                                        <div className="absolute right-0 mt-2 w-64 bg-[#fffdfa] rounded-2xl shadow-xl border border-amber-200/80 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                        <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-[16rem] sm:w-64 bg-[#fffdfa] rounded-2xl shadow-xl border border-amber-200/80 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                                             <div className="px-4 py-3 border-b border-amber-100 bg-[#fdf9f0] rounded-t-2xl">
                                                 <p className="text-[11px] text-amber-800 font-bold uppercase tracking-wider">Đang đăng nhập</p>
                                                 <p className="text-xs font-semibold text-stone-900 truncate mt-0.5">{user?.email}</p>
@@ -381,10 +413,11 @@ const Navbar = () => {
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
+                                <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
                                     <Link
                                         to="/login"
-                                        className={`px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${location.pathname === '/login'
+                                        className={`px-2 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-sm font-semibold rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${
+                                            location.pathname === '/login'
                                                 ? 'text-red-950 bg-amber-100/80 border border-amber-300/80 font-bold shadow-2xs'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
                                             }`}
@@ -393,7 +426,8 @@ const Navbar = () => {
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl shadow-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 active:scale-[0.98] ${location.pathname === '/register'
+                                        className={`px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-sm font-bold rounded-xl shadow-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 active:scale-[0.98] ${
+                                            location.pathname === '/register'
                                                 ? 'text-amber-50 bg-gradient-to-r from-red-900 to-amber-700 border-amber-400 shadow-md ring-2 ring-amber-400/50'
                                                 : 'text-amber-50 bg-gradient-to-r from-red-800 via-red-800 to-amber-700 hover:from-red-700 hover:to-amber-600 border-amber-400/40 hover:shadow-md'
                                             }`}
@@ -420,8 +454,9 @@ const Navbar = () => {
             {/* Khung trượt thanh bên trái (Slide-over Navigation Rail / Drawer) */}
             <aside
                 ref={sidebarRef}
-                className={`fixed top-0 bottom-0 left-0 z-50 w-80 sm:w-92 bg-[#fffdf9] shadow-2xl border-r border-amber-900/15 flex flex-col transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
+                className={`fixed top-0 bottom-0 left-0 z-50 w-[86vw] max-w-[340px] sm:w-92 bg-[#fffdf9] shadow-2xl border-r border-amber-900/15 flex flex-col transform transition-transform duration-300 ease-in-out ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
                 aria-label="Thanh điều hướng danh mục di sản bên trái"
             >
                 {/* Header thanh bên trái */}

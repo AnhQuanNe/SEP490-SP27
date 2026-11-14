@@ -1,4 +1,5 @@
 const locationService = require('../services/location.service');
+const aiMapService = require('../services/aiMap.service');
 
 class LocationController {
     /**
@@ -115,6 +116,44 @@ class LocationController {
                 success: true,
                 message: 'Đã cập nhật thông tin địa phương thành công',
                 data: location,
+            });
+        } catch (error) {
+            res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    /**
+     * @route   GET /api/locations/ancient-landmarks
+     * @desc    Lấy danh mục các địa danh cổ & cửa ải lịch sử
+     * @access  Public
+     */
+    async getAncientLandmarks(req, res, next) {
+        try {
+            res.status(200).json({
+                success: true,
+                count: aiMapService.ANCIENT_LANDMARKS_CATALOG.length,
+                data: aiMapService.ANCIENT_LANDMARKS_CATALOG,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @route   POST /api/locations/ancient-landmarks/resolve
+     * @desc    AI định vị & giải mã địa danh cổ sang GPS
+     * @access  Public
+     */
+    async resolveAncientLandmark(req, res, next) {
+        try {
+            const { query } = req.body;
+            const result = await aiMapService.resolveAncientToponym({ query });
+            res.status(200).json({
+                success: true,
+                data: result,
             });
         } catch (error) {
             res.status(400).json({

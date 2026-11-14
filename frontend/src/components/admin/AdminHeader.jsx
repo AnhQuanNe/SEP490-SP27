@@ -8,7 +8,7 @@ const TAB_TITLES = {
     settings: 'Cấu hình & Thiết lập Tham số',
 };
 
-const AdminHeader = ({ activeTab, onOpenMobile, onRefresh, refreshing }) => {
+const AdminHeader = ({ activeTab, onOpenMobile, onRefresh, refreshing, aiEnabled = true }) => {
     const todayStr = new Intl.DateTimeFormat('vi-VN', {
         weekday: 'long',
         year: 'numeric',
@@ -44,7 +44,7 @@ const AdminHeader = ({ activeTab, onOpenMobile, onRefresh, refreshing }) => {
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>Máy chủ: <strong className="text-emerald-400 font-semibold">Trực tuyến</strong></span>
                     <span className="text-slate-600">|</span>
-                    <span>AI Engine: <strong className="text-amber-400 font-semibold">Hoạt động</strong></span>
+                    <span>AI Engine: <strong className={aiEnabled ? "text-amber-400 font-semibold" : "text-rose-400 font-semibold"}>{aiEnabled ? "Hoạt động" : "Tạm tắt"}</strong></span>
                 </div>
 
                 {/* Date */}

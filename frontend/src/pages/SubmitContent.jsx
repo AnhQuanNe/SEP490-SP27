@@ -21,6 +21,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import submissionService from '../services/submission.service';
+import adminService from '../services/admin.service';
 import aiService from '../services/ai.service';
 import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
 
@@ -49,6 +50,15 @@ const SubmitContent = () => {
     // My submissions state
     const [mySubmissions, setMySubmissions] = useState([]);
     const [loadingMy, setLoadingMy] = useState(false);
+    const [submissionsAllowed, setSubmissionsAllowed] = useState(true);
+
+    useEffect(() => {
+        adminService.getPublicSettings().then((settings) => {
+            if (typeof settings?.allowUserSubmissions === 'boolean') {
+                setSubmissionsAllowed(settings.allowUserSubmissions);
+            }
+        }).catch(() => {});
+    }, []);
 
     const loadMySubmissions = async () => {
         setLoadingMy(true);
@@ -290,6 +300,16 @@ const SubmitContent = () => {
                             </div>
                         )}
 
+                        {!submissionsAllowed && (
+                            <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-3 shadow-sm">
+                                <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                                <div className="text-xs leading-relaxed">
+                                    <strong className="block text-sm font-heritage font-bold text-amber-900">Ban Quản Trị Đang Tạm Dừng Tiếp Nhận Bài Đóng Góp</strong>
+                                    Hệ thống hiện đang tạm đóng cổng tiếp nhận tư liệu mới theo cấu hình vận hành của Ban Quản trị. Quý sĩ tử có thể xem lại các bài đã gửi tại tab "Bài Đã Đóng Góp".
+                                </div>
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-8">
                             {/* KHỐI 1: CÂU CA DAO / TỤC NGỮ VÀ NÚT AI CO-PILOT */}
                             <div className="p-5 sm:p-6 rounded-2xl bg-stone-50 border border-stone-200 space-y-4">
@@ -504,7 +524,7 @@ const SubmitContent = () => {
                             {/* NÚT GỬI ĐÓNG GÓP HOÀNG GIA */}
                             <button
                                 type="submit"
-                                disabled={submitting}
+                                disabled={submitting || !submissionsAllowed}
                                 className="w-full py-4 px-6 rounded-2xl font-bold text-base text-[#fef3c7] bg-gradient-to-r from-[#991b1b] via-[#b91c1c] to-[#b45309] hover:from-[#b91c1c] hover:to-[#d97706] border border-amber-400/50 shadow-xl shadow-red-950/40 hover:shadow-red-950/60 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer font-heritage"
                             >
                                 {submitting ? (

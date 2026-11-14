@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Compass, ShieldCheck } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Compass, ShieldCheck, Flag, Landmark } from 'lucide-react';
 
 // Tọa độ trung tâm và giới hạn hiển thị bao quát toàn bộ lãnh thổ Việt Nam (gồm đất liền và 2 quần đảo Hoàng Sa, Trường Sa)
 const VIETNAM_CENTER = [15.8, 109.0];
@@ -74,11 +74,16 @@ const CulturalMap = ({
     selectedLocation = null,
     onSelectLocation = () => {},
     isLoading = false,
+    mapMode = 'places', // 'places' | 'ancient'
+    ancientLandmarks = [],
+    selectedAncientLandmark = null,
+    onSelectAncientLandmark = () => {},
 }) => {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markersLayerRef = useRef(null);
     const sovereigntyLayerRef = useRef(null);
+    const ancientLayerRef = useRef(null);
     const tileLayerRef = useRef(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [currentBasemapIndex, setCurrentBasemapIndex] = useState(0);
@@ -110,6 +115,10 @@ const CulturalMap = ({
         // Tạo layer group cho các địa danh văn hóa
         const markersGroup = L.layerGroup().addTo(map);
         markersLayerRef.current = markersGroup;
+
+        // Tạo layer group cho Địa danh Cổ & Cửa ải Lịch sử
+        const ancientGroup = L.layerGroup().addTo(map);
+        ancientLayerRef.current = ancientGroup;
 
         // Tạo layer group vĩnh cửu cho Chủ quyền Biển đảo Hoàng Sa - Trường Sa
         const sovereigntyGroup = L.layerGroup().addTo(map);
@@ -206,7 +215,6 @@ const CulturalMap = ({
             marker.bindPopup(popupContent, { offset: [0, -10] });
 
             marker.on('click', () => {
-                // Nếu danh sách locations từ database có địa phương này, kích hoạt chọn luôn
                 const matched = locations.find(
                     (l) => l.slug === item.slug || l.name?.toLowerCase().includes(item.id.replace('quan-dao-', ''))
                 );
@@ -244,11 +252,18 @@ const CulturalMap = ({
     const selectedLocationId = selectedLocation?._id || selectedLocation?.slug || null;
     const lastAnimatedIdRef = useRef(null);
 
-    // 2. Cập nhật markers khi danh sách locations hoặc selectedLocation thay đổi
+    // =========================================================================
+    // LAYER 1: RENDER CÁC ĐỊA PHƯƠNG VĂN HÓA THÔNG THƯỜNG (MAP MODE: 'places')
+    // =========================================================================
     useEffect(() => {
         const map = mapInstanceRef.current;
         const markersGroup = markersLayerRef.current;
         if (!map || !markersGroup) return;
+
+        if (mapMode !== 'places') {
+            markersGroup.clearLayers();
+            return;
+        }
 
         markersGroup.clearLayers();
 
@@ -257,89 +272,249 @@ const CulturalMap = ({
                 return;
             }
 
-            // Nếu là Hoàng Sa hoặc Trường Sa đã được render ở sovereigntyLayer, vẫn hiển thị badge số tác phẩm nếu có
-            const isHoangSaOrTruongSa = loc.slug === 'quan-dao-hoang-sa' || loc.slug === 'quan-dao-truong-sa';
-            const isSelected = selectedLocationId && (selectedLocationId === loc._id || selectedLocationId === loc.slug);
+            const isSelected = selectedLocationId && (loc._id === selectedLocationId || loc.slug === selectedLocationId);
             const count = loc.totalWorks || loc.worksCount || 0;
 
-            // Nếu không phải Hoàng Sa/Trường Sa thì render marker địa phương thông thường
-            if (!isHoangSaOrTruongSa) {
-                const markerHtml = `
-                    <div class="cultural-map-marker ${isSelected ? 'marker-selected' : ''}" style="position: relative;">
-                        <div class="marker-pin ${isSelected ? 'bg-amber-600 scale-125 ring-4 ring-amber-300 ring-offset-2' : 'bg-slate-900 hover:bg-amber-700 hover:scale-110'} 
-                            transition-all duration-200 w-9 h-9 rounded-full shadow-xl flex items-center justify-center text-white border-2 border-white cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                                <circle cx="12" cy="10" r="3"/>
-                            </svg>
-                            ${
-                                count > 0
-                                    ? `<span class="absolute -top-1.5 -right-1.5 bg-amber-500 text-slate-950 text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow">
-                                        ${count > 99 ? '99+' : count}
-                                       </span>`
-                                    : ''
-                            }
-                        </div>
-                        ${
-                            isSelected
-                                ? `<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/90 text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-md pointer-events-none">
-                                    ${loc.name}
-                                   </span>`
-                                : ''
-                        }
+            const iconHtml = `
+                <div class="custom-marker-wrapper" style="cursor: pointer; display: flex; flex-direction: column; align-items: center;">
+                    <div style="
+                        width: ${isSelected ? '36px' : '28px'};
+                        height: ${isSelected ? '36px' : '28px'};
+                        border-radius: 9999px;
+                        background: ${isSelected ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' : '#0f172a'};
+                        border: ${isSelected ? '3px solid #fef08a' : '2px solid #ffffff'};
+                        box-shadow: ${isSelected ? '0 10px 15px -3px rgba(217, 119, 6, 0.5)' : '0 4px 6px -1px rgba(0, 0, 0, 0.2)'};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #ffffff;
+                        font-weight: 800;
+                        font-size: ${isSelected ? '12px' : '10px'};
+                        transition: all 0.2s ease;
+                    ">
+                        ${count > 0 ? count : '•'}
                     </div>
-                `;
-
-                const customIcon = L.divIcon({
-                    html: markerHtml,
-                    className: 'custom-div-icon',
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18],
-                    popupAnchor: [0, -20],
-                });
-
-                const marker = L.marker([loc.coordinates.lat, loc.coordinates.lng], { icon: customIcon });
-
-                const popupContent = `
-                    <div style="min-width: 180px; font-family: inherit;">
-                        <h4 style="font-weight: 700; font-size: 13px; color: #0f172a; margin: 0 0 4px 0;">${loc.name}</h4>
-                        <p style="font-size: 11px; color: #475569; margin: 0 0 6px 0; line-height: 1.4;">
-                            ${loc.description ? loc.description.substring(0, 75) + '...' : 'Địa danh văn hóa tiêu biểu.'}
-                        </p>
-                        <div style="font-size: 11px; font-weight: 600; color: #d97706;">
-                            ${count} tác phẩm gắn liền
-                        </div>
+                    <div style="
+                        margin-top: 2px;
+                        white-space: nowrap;
+                        background: ${isSelected ? '#92400e' : 'rgba(15, 23, 42, 0.9)'};
+                        color: ${isSelected ? '#fef08a' : '#ffffff'};
+                        font-size: 10px;
+                        font-weight: 700;
+                        padding: 1px 6px;
+                        border-radius: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                    ">
+                        ${loc.name}
                     </div>
-                `;
-                marker.bindPopup(popupContent, { offset: [0, -10] });
+                </div>
+            `;
 
-                marker.on('click', () => {
-                    onSelectLocation(loc);
-                });
+            const customIcon = L.divIcon({
+                html: iconHtml,
+                className: 'cultural-pin-icon',
+                iconSize: [60, 48],
+                iconAnchor: [30, 20],
+                popupAnchor: [0, -20],
+            });
 
-                marker.addTo(markersGroup);
-            }
+            const marker = L.marker([loc.coordinates.lat, loc.coordinates.lng], { icon: customIcon });
+
+            const popupContent = `
+                <div style="min-width: 180px; font-family: inherit;">
+                    <h4 style="font-weight: 700; font-size: 13px; color: #0f172a; margin: 0 0 4px 0;">${loc.name}</h4>
+                    <p style="font-size: 11px; color: #475569; margin: 0 0 6px 0; line-height: 1.4;">
+                        ${loc.description ? loc.description.substring(0, 75) + '...' : 'Địa danh văn hóa tiêu biểu.'}
+                    </p>
+                    <div style="font-size: 11px; font-weight: 600; color: #d97706;">
+                        ${count} tác phẩm gắn liền
+                    </div>
+                </div>
+            `;
+            marker.bindPopup(popupContent, { offset: [0, -10] });
+
+            marker.on('click', () => {
+                onSelectLocation(loc);
+            });
+
+            marker.addTo(markersGroup);
         });
-    }, [locations, selectedLocationId, onSelectLocation]);
+    }, [locations, selectedLocationId, mapMode, onSelectLocation]);
 
-    // 3. Zoom tới địa phương được chọn một cách mượt mà
+    // =========================================================================
+    // LAYER 2: RENDER ĐỊA DANH CỔ & CỬA ẢI LỊCH SỬ (MAP MODE: 'ancient')
+    // =========================================================================
     useEffect(() => {
         const map = mapInstanceRef.current;
-        if (!map || !selectedLocation?.coordinates) return;
+        const ancientGroup = ancientLayerRef.current;
+        if (!map || !ancientGroup) return;
 
-        const locId = selectedLocation._id || selectedLocation.slug;
-        if (locId === lastAnimatedIdRef.current) return;
-        lastAnimatedIdRef.current = locId;
-
-        const { lat, lng } = selectedLocation.coordinates;
-        if (typeof lat === 'number' && typeof lng === 'number') {
-            const isTruongSa = selectedLocation.slug === 'quan-dao-truong-sa';
-            const targetZoom = isTruongSa ? 7.8 : Math.max(map.getZoom(), 8.5);
-            map.flyTo([lat, lng], targetZoom, {
-                duration: 0.7,
-            });
+        if (mapMode !== 'ancient') {
+            ancientGroup.clearLayers();
+            return;
         }
-    }, [selectedLocation]);
+
+        ancientGroup.clearLayers();
+
+        ancientLandmarks.forEach((item) => {
+            const { lat, lng } = item.coordinates || {};
+            if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+            const isSelected = selectedAncientLandmark && (selectedAncientLandmark.id === item.id || selectedAncientLandmark.slug === item.slug);
+            const landmarkPhoto = item.imagery?.modern?.url || item.imagery?.ancient?.url;
+            const shortName = item.ancientName?.split('(')[0]?.trim();
+
+            // Icon Huy hiệu Ảnh thực cảnh Di tích / Cửa ải Lịch sử
+            const iconHtml = `
+                <div class="ancient-landmark-pin group" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; position: relative;">
+                    <!-- Vòng sáng hào quang khi được chọn -->
+                    ${isSelected ? '<span style="position: absolute; top: -4px; width: 52px; height: 52px; border-radius: 9999px; background-color: rgba(217, 119, 6, 0.45); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; pointer-events: none;"></span>' : ''}
+                    
+                    <!-- Khung ảnh thực tế di tích với viền hoàng gia -->
+                    <div style="
+                        position: relative;
+                        width: ${isSelected ? '46px' : '38px'};
+                        height: ${isSelected ? '46px' : '38px'};
+                        border-radius: 9999px;
+                        background: #78350f;
+                        border: ${isSelected ? '3px solid #fbbf24' : '2.5px solid #fde68a'};
+                        box-shadow: ${isSelected ? '0 0 16px rgba(245, 158, 11, 0.85), 0 8px 16px rgba(0,0,0,0.45)' : '0 4px 10px rgba(120, 53, 15, 0.35)'};
+                        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: transform 0.2s ease;
+                    ">
+                        ${landmarkPhoto ? `
+                            <img 
+                                src="${landmarkPhoto}" 
+                                alt="${item.ancientName}" 
+                                referrerpolicy="no-referrer"
+                                style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            />
+                            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: #78350f; color: #fde68a; font-size: ${isSelected ? '18px' : '15px'};">
+                                🏯
+                            </div>
+                        ` : `
+                            <span style="font-size: ${isSelected ? '18px' : '15px'}; color: #fef08a;">🏯</span>
+                        `}
+                    </div>
+
+                    <!-- Mũi nhọn đính vị bên dưới avatar ảnh -->
+                    <div style="
+                        width: 0;
+                        height: 0;
+                        border-left: 5px solid transparent;
+                        border-right: 5px solid transparent;
+                        border-top: 6px solid ${isSelected ? '#fbbf24' : '#fde68a'};
+                        margin-top: -1px;
+                        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+                    "></div>
+
+                    <!-- Thẻ tên cổ danh / cửa ải -->
+                    <div style="
+                        margin-top: 3px;
+                        white-space: nowrap;
+                        max-width: 120px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        background: ${isSelected ? 'linear-gradient(135deg, #7c2d12 0%, #991b1b 100%)' : 'rgba(24, 24, 27, 0.94)'};
+                        color: ${isSelected ? '#fef08a' : '#fef3c7'};
+                        font-size: ${isSelected ? '10px' : '9.5px'};
+                        font-weight: 800;
+                        padding: 1.5px 7px;
+                        border-radius: 9999px;
+                        border: 1px solid ${isSelected ? '#f59e0b' : 'rgba(217, 119, 6, 0.55)'};
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+                        letter-spacing: 0.2px;
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                    ">
+                        ${shortName}
+                    </div>
+                </div>
+            `;
+
+            const icon = L.divIcon({
+                html: iconHtml,
+                className: 'ancient-custom-icon',
+                iconSize: [120, 68],
+                iconAnchor: [60, isSelected ? 26 : 22],
+                popupAnchor: [0, isSelected ? -28 : -24],
+            });
+
+            const marker = L.marker([lat, lng], { icon, zIndexOffset: isSelected ? 900 : 500 });
+
+            const popupContent = `
+                <div style="min-width: 240px; max-width: 280px; font-family: inherit; border-radius: 10px; overflow: hidden;">
+                    ${landmarkPhoto ? `
+                        <div style="width: 100%; height: 110px; overflow: hidden; position: relative; margin-bottom: 8px; border-radius: 8px; background: #1c1917;">
+                            <img 
+                                src="${landmarkPhoto}" 
+                                alt="${item.ancientName}" 
+                                referrerpolicy="no-referrer"
+                                style="width: 100%; height: 100%; object-fit: cover;" 
+                            />
+                            <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fde68a; font-size: 9px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px;">
+                                ${item.imagery?.modern?.era || 'Di tích hôm nay'}
+                            </span>
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                        <span style="font-size: 15px;">🏛️</span>
+                        <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #9a3412;">${item.ancientName}</h4>
+                    </div>
+                    <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 4px;">
+                        ${item.dynasty}
+                    </div>
+                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 3px 6px; font-size: 10.5px; color: #78350f; margin-bottom: 6px;">
+                        <strong>📍 Hiện nay:</strong> ${item.modernLocation}
+                    </div>
+                    <p style="font-size: 10.5px; color: #334155; margin: 0 0 6px 0; line-height: 1.45;">
+                        ${item.historicalEvent ? (item.historicalEvent.length > 100 ? item.historicalEvent.substring(0, 100) + '...' : item.historicalEvent) : ''}
+                    </p>
+                    <div style="font-size: 10px; color: #d97706; font-weight: 700; text-align: right; border-top: 1px solid #f1f5f9; padding-top: 4px;">
+                        Xem đối chiếu ảnh Xưa - Nay →
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent, { offset: [0, -10] });
+
+            marker.on('click', () => {
+                onSelectAncientLandmark(item);
+            });
+
+            marker.addTo(ancientGroup);
+        });
+    }, [ancientLandmarks, selectedAncientLandmark, mapMode, onSelectAncientLandmark]);
+
+    // 3. Smooth flyTo khi chọn địa danh hoặc cổ danh
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        // Nếu ở Ancient mode và có selectedAncientLandmark
+        if (mapMode === 'ancient' && selectedAncientLandmark?.coordinates) {
+            const { lat, lng } = selectedAncientLandmark.coordinates;
+            map.flyTo([lat, lng], 10, { duration: 0.9 });
+            return;
+        }
+
+        // Nếu ở Places mode và có selectedLocation
+        if (mapMode === 'places' && selectedLocation?.coordinates) {
+            const locId = selectedLocation._id || selectedLocation.slug;
+            if (locId === lastAnimatedIdRef.current) return;
+            lastAnimatedIdRef.current = locId;
+
+            const { lat, lng } = selectedLocation.coordinates;
+            if (typeof lat === 'number' && typeof lng === 'number') {
+                const isTruongSa = selectedLocation.slug === 'quan-dao-truong-sa';
+                const targetZoom = isTruongSa ? 7.8 : Math.max(map.getZoom(), 8.5);
+                map.flyTo([lat, lng], targetZoom, { duration: 0.7 });
+            }
+        }
+    }, [selectedLocation, selectedAncientLandmark, mapMode]);
 
     // Điều khiển bản đồ tùy biến
     const handleZoomIn = () => mapInstanceRef.current?.zoomIn();
@@ -383,9 +558,9 @@ const CulturalMap = ({
             }`}
         >
             {/* Dải băng Khẳng định Chủ quyền Biển đảo Việt Nam trên bản đồ */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-gradient-to-r from-red-950/90 via-slate-900/90 to-red-950/90 text-amber-300 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl backdrop-blur-md text-xs font-bold pointer-events-auto">
-                <span className="text-sm">🇻🇳</span>
-                <span className="font-heritage tracking-wide">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-red-950/90 via-slate-900/90 to-red-950/90 text-amber-300 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-amber-500/40 shadow-xl backdrop-blur-md text-[10px] sm:text-xs font-bold pointer-events-auto max-w-[calc(100%-120px)] sm:max-w-none">
+                <span className="text-xs sm:text-sm flex-shrink-0">🇻🇳</span>
+                <span className="font-heritage tracking-wide truncate">
                     Hoàng Sa & Trường Sa là của Việt Nam
                 </span>
             </div>
@@ -399,15 +574,15 @@ const CulturalMap = ({
             )}
 
             {/* Container bản đồ Leaflet */}
-            <div ref={mapContainerRef} className="w-full h-full min-h-[500px] z-10" />
+            <div ref={mapContainerRef} className="w-full h-full min-h-[360px] sm:min-h-[500px] z-10" />
 
             {/* Cụm nút điều hướng & Phóng to / Bay tới Biển Đảo */}
-            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex flex-col gap-1.5 sm:gap-2">
                 {/* Nút bay nhanh tới Hoàng Sa */}
                 <button
                     type="button"
                     onClick={handleFlyToHoangSa}
-                    className="h-9 px-2.5 rounded-xl bg-red-900/90 hover:bg-red-800 text-amber-200 shadow-md border border-amber-400/50 flex items-center gap-1.5 text-[11px] font-bold transition active:scale-95"
+                    className="h-9 px-2.5 rounded-xl bg-red-900/90 hover:bg-red-800 text-amber-200 shadow-md border border-amber-400/50 flex items-center gap-1.5 text-[11px] font-bold transition active:scale-95 cursor-pointer"
                     title="Bay tới Quần đảo Hoàng Sa (TP. Đà Nẵng)"
                 >
                     <span>🇻🇳</span>
@@ -418,7 +593,7 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={handleFlyToTruongSa}
-                    className="h-9 px-2.5 rounded-xl bg-red-900/90 hover:bg-red-800 text-amber-200 shadow-md border border-amber-400/50 flex items-center gap-1.5 text-[11px] font-bold transition active:scale-95"
+                    className="h-9 px-2.5 rounded-xl bg-red-900/90 hover:bg-red-800 text-amber-200 shadow-md border border-amber-400/50 flex items-center gap-1.5 text-[11px] font-bold transition active:scale-95 cursor-pointer"
                     title="Bay tới Quần đảo Trường Sa (Tỉnh Khánh Hòa)"
                 >
                     <span>🇻🇳</span>
@@ -430,7 +605,7 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={handleZoomIn}
-                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95"
+                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 cursor-pointer"
                     title="Phóng to"
                 >
                     <ZoomIn className="w-4 h-4" />
@@ -438,7 +613,7 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={handleZoomOut}
-                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95"
+                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 cursor-pointer"
                     title="Thu nhỏ"
                 >
                     <ZoomOut className="w-4 h-4" />
@@ -446,7 +621,7 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={handleResetView}
-                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95"
+                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 cursor-pointer"
                     title="Về toàn cảnh Việt Nam & 2 Quần đảo"
                 >
                     <RotateCcw className="w-4 h-4" />
@@ -454,7 +629,7 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={handleChangeBasemap}
-                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 group relative"
+                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 cursor-pointer"
                     title={`Đổi kiểu bản đồ (Hiện tại: ${currentPreset.name})`}
                 >
                     <Layers className="w-4 h-4" />
@@ -462,29 +637,39 @@ const CulturalMap = ({
                 <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95"
+                    className="w-10 h-10 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-amber-700 shadow-md border border-slate-200/80 flex items-center justify-center transition active:scale-95 cursor-pointer"
                     title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Toàn màn hình'}
                 >
                     <Maximize2 className="w-4 h-4" />
                 </button>
             </div>
 
-            {/* Chú giải góc bản đồ (Map Legend) */}
+            {/* Chú giải góc bản đồ (Map Legend) tùy theo Mode */}
             <div className="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-lg border border-slate-200/80 text-[11px] font-medium text-slate-700 hidden sm:flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                     <span className="text-xs">🇻🇳</span>
                     <span className="font-bold text-red-900">Hoàng Sa & Trường Sa</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-slate-900 border border-white shadow-xs"></span>
-                    <span>Địa phương văn hóa</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-amber-600 ring-2 ring-amber-300"></span>
-                    <span>Đang chọn</span>
-                </div>
+                {mapMode === 'places' && (
+                    <>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full bg-slate-900 border border-white shadow-xs"></span>
+                            <span>Địa phương</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full bg-amber-600 ring-2 ring-amber-300"></span>
+                            <span>Đang chọn</span>
+                        </div>
+                    </>
+                )}
+                {mapMode === 'ancient' && (
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs">🏯</span>
+                        <span className="font-bold text-amber-800">Cổ danh & Cửa ải Lịch sử</span>
+                    </div>
+                )}
                 <div className="pl-2 border-l border-slate-300 text-slate-500 text-[10px]">
-                    Kiểu nền: <strong className="text-amber-700">{currentPreset.name}</strong>
+                    Nền: <strong className="text-amber-700">{currentPreset.name}</strong>
                 </div>
             </div>
         </div>

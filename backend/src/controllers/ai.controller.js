@@ -1,10 +1,27 @@
 const aiService = require('../services/ai.service');
+const SystemSetting = require('../models/SystemSetting');
+
+const checkAiEnabled = async () => {
+    try {
+        const setting = await SystemSetting.findOne({ key: 'aiExplanationEnabled' }).lean();
+        return setting ? setting.value !== false : true;
+    } catch (e) {
+        return true;
+    }
+};
 
 /**
  * Trả lời câu hỏi thông minh kèm trích dẫn nguồn học thuật (UC09)
  */
 const ask = async (req, res) => {
     try {
+        if (!(await checkAiEnabled())) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tính năng Trợ lý AI hiện đang tạm tắt theo cấu hình hệ thống.',
+            });
+        }
+
         const { question, contextSlug, history } = req.body;
 
         if (!question || typeof question !== 'string' || question.trim() === '') {
@@ -57,6 +74,12 @@ const getSuggestions = async (req, res) => {
  */
 const explain = async (req, res) => {
     try {
+        if (!(await checkAiEnabled())) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tính năng Trợ lý AI hiện đang tạm tắt theo cấu hình hệ thống.',
+            });
+        }
         const { workId, slug } = req.body;
         if (!workId && !slug) {
             return res.status(400).json({
@@ -104,6 +127,12 @@ const getTutorTopics = async (req, res) => {
  */
 const tutorChat = async (req, res) => {
     try {
+        if (!(await checkAiEnabled())) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tính năng Trợ lý AI hiện đang tạm tắt theo cấu hình hệ thống.',
+            });
+        }
         const { message, topic, history, selectedWorkSlug } = req.body;
 
         if (!message || typeof message !== 'string' || message.trim() === '') {

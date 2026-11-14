@@ -13,7 +13,7 @@ export const poetryService = {
      * Thẩm định thơ toàn diện (Rule Engine + AI Critic)
      */
     async critiquePoem({ content, title, authorName }) {
-        const response = await api.post('/poetry/critique', { content, title, authorName });
+        const response = await api.post('/poetry/critique', { content, title, authorName }, { timeout: 120000 });
         return response.data;
     },
 
@@ -21,7 +21,7 @@ export const poetryService = {
      * Ứng khẩu câu Bát cùng AI
      */
     async coWrite({ lucLine, context }) {
-        const response = await api.post('/poetry/co-write', { lucLine, context });
+        const response = await api.post('/poetry/co-write', { lucLine, context }, { timeout: 120000 });
         return response.data;
     },
 

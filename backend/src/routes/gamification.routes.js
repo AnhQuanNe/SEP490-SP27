@@ -13,6 +13,8 @@ router.post('/track-activity', protect, gamificationController.trackActivity);
 // Đấu trường Thi Đình 1v1
 router.post('/duel/matchmake', protect, gamificationController.matchmakeDuel);
 router.post('/duel/match-bot', protect, gamificationController.matchmakeBotDuel);
+router.post('/duel/create-room', protect, gamificationController.createPrivateRoom);
+router.post('/duel/join-room', protect, gamificationController.joinPrivateRoom);
 router.post('/duel/leave-queue', protect, gamificationController.leaveDuelQueue);
 router.get('/duel/history', protect, gamificationController.getDuelHistory);
 router.get('/duel/:matchId', protect, gamificationController.getDuelMatchStatus);

@@ -1,6 +1,5 @@
 import api from './api';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_URL as API_BASE } from '../config/env';
 
 // Cache Blob URLs ở client để chuyển đổi qua lại giọng đọc/chế độ tức thì không cần gọi lại API
 const clientBlobCache = new Map();

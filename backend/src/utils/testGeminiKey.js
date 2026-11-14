@@ -7,13 +7,7 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
-const GEMINI_MODELS = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-];
+const { GEMINI_MODELS } = require('../constants/geminiModels');
 
 async function testGeminiKey() {
     const apiKey = process.env.GEMINI_API_KEY;

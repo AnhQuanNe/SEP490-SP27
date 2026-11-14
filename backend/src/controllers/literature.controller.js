@@ -101,6 +101,15 @@ class LiteratureController {
      */
     async semanticSearch(req, res, next) {
         try {
+            const SystemSetting = require('../models/SystemSetting');
+            const semSetting = await SystemSetting.findOne({ key: 'semanticSearchEnabled' }).lean();
+            if (semSetting && semSetting.value === false) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Tính năng Tìm kiếm Ngữ nghĩa hiện đang tạm tắt theo cấu hình hệ thống.',
+                });
+            }
+
             const { q, page, limit } = req.query;
             const result = await literatureService.semanticSearch({
                 query: q,

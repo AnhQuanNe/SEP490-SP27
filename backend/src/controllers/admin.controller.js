@@ -643,7 +643,7 @@ const getDashboardStats = async (req, res) => {
             ContentSubmission.find()
                 .sort({ createdAt: -1 })
                 .limit(5)
-                .populate('contributorId', 'name email avatar')
+                .populate('user', 'name email avatar')
                 .lean(),
             User.aggregate([
                 { $match: { createdAt: { $gte: sevenDaysAgo } } },

@@ -44,6 +44,15 @@ const duelMatchSchema = new mongoose.Schema(
             unique: true,
             index: true,
         },
+        roomCode: {
+            type: String,
+            default: null,
+            index: true,
+        },
+        isPrivate: {
+            type: Boolean,
+            default: false,
+        },
         player1: {
             type: playerMatchSchema,
             required: true,
@@ -92,6 +101,16 @@ const duelMatchSchema = new mongoose.Schema(
         isBotMatch: {
             type: Boolean,
             default: false,
+        },
+        botDifficulty: {
+            type: String,
+            enum: ['easy', 'medium', 'hard'],
+            default: 'medium',
+        },
+        questionCount: {
+            type: Number,
+            enum: [5, 10, 15],
+            default: 5,
         },
     },
     {

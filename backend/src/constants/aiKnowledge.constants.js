@@ -41,13 +41,7 @@ const DEFAULT_SUGGESTIONS = [
     },
 ];
 
-const GEMINI_MODELS = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-];
+const { GEMINI_MODELS } = require('./geminiModels');
 
 /**
  * KHO TRI THỨC NHÂN VẬT DI SẢN CHUYÊN SÂU (CURATED CHARACTERS)

@@ -285,3 +285,23 @@
     overflow: hidden;
     border: 1px solid #f1f5f9;
 }
+
+/* Mobile Responsive (< 640px) */
+@media (max-width: 639px) {
+    .folk-page {
+        padding-bottom: 4rem;
+    }
+
+    .folk-hero {
+        padding-top: 1.75rem;
+        padding-bottom: 3rem;
+    }
+
+    .folk-hero-title {
+        font-size: 1.625rem;
+    }
+
+    .folk-wisdom-card {
+        padding: 1.125rem;
+    }
+}

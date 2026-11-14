@@ -5,76 +5,91 @@ import { Bot, Sparkles, X } from 'lucide-react';
 const AiChatContext = createContext(null);
 
 const BUTTON_SIZE = 56; // 56px (w-14 h-14)
+const EDGE_MARGIN = 12;
+const LEGACY_POS_KEY = 'vietheritage_ai_btn_pos';
+const OFFSET_STORAGE_KEY = 'vietheritage_ai_btn_offset_v2';
+
+const getDefaultOffset = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const margin = isMobile ? 16 : 24;
+    return { right: margin, bottom: margin };
+};
+
+const clampOffset = (offset) => {
+    if (typeof window === 'undefined') return offset;
+    const maxRight = Math.max(EDGE_MARGIN, window.innerWidth - BUTTON_SIZE - EDGE_MARGIN);
+    const maxBottom = Math.max(EDGE_MARGIN, window.innerHeight - BUTTON_SIZE - EDGE_MARGIN);
+    return {
+        right: Math.min(Math.max(EDGE_MARGIN, offset.right), maxRight),
+        bottom: Math.min(Math.max(EDGE_MARGIN, offset.bottom), maxBottom),
+    };
+};
 
 export const AiChatProvider = ({ children }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [contextWork, setContextWork] = useState(null);
     const [initialQuestion, setInitialQuestion] = useState(null);
 
-    // Vị trí của nút tròn Robot trên màn hình (Hỗ trợ Kéo - Thả)
-    const [position, setPosition] = useState(() => {
+    // Neo vị trí theo khoảng cách từ góc dưới-phải (bottom/right) để không bao giờ bị trôi ra giữa trang khi đổi trang hay resize
+    const [customOffset, setCustomOffset] = useState(() => {
         try {
-            const saved = localStorage.getItem('vietheritage_ai_btn_pos');
+            localStorage.removeItem(LEGACY_POS_KEY);
+            const saved = localStorage.getItem(OFFSET_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (
-                    typeof parsed.x === 'number' &&
-                    typeof parsed.y === 'number' &&
-                    parsed.x >= 0 &&
-                    parsed.x < window.innerWidth &&
-                    parsed.y >= 0 &&
-                    parsed.y < window.innerHeight
-                ) {
-                    return parsed;
+                if (typeof parsed.right === 'number' && typeof parsed.bottom === 'number') {
+                    return clampOffset(parsed);
                 }
             }
-        } catch (e) {}
-
-        return {
-            x: typeof window !== 'undefined' ? Math.max(12, window.innerWidth - BUTTON_SIZE - 24) : 100,
-            y: typeof window !== 'undefined' ? Math.max(12, window.innerHeight - BUTTON_SIZE - 24) : 100,
-        };
+        } catch {
+            // Bỏ qua lỗi đọc localStorage ở chế độ ẩn danh
+        }
+        return null;
     });
 
+    const [viewportTick, setViewportTick] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
+
+    const activeOffset = customOffset ? clampOffset(customOffset) : getDefaultOffset();
+    const latestOffsetRef = useRef(activeOffset);
 
     // Ref lưu trữ trạng thái kéo thả để phân biệt giữa Click và Drag
     const dragDataRef = useRef({
         isDragging: false,
         startX: 0,
         startY: 0,
-        initialX: 0,
-        initialY: 0,
+        initialRight: 24,
+        initialBottom: 24,
         hasMoved: false,
     });
 
-    // Cập nhật vị trí nếu kích thước màn hình thay đổi để nút không bị rơi ra ngoài
+    // Cập nhật lại giới hạn theo viewport khi đổi kích thước màn hình
     useEffect(() => {
         const handleResize = () => {
-            setPosition((prev) => ({
-                x: Math.min(Math.max(12, prev.x), window.innerWidth - BUTTON_SIZE - 12),
-                y: Math.min(Math.max(12, prev.y), window.innerHeight - BUTTON_SIZE - 12),
-            }));
+            setCustomOffset((prev) => (prev ? clampOffset(prev) : null));
+            setViewportTick((t) => t + 1);
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Xử lý kéo thả bằng chuột (Mouse Drag)
-    const handleMouseDown = (e) => {
-        if (e.button !== 0) return; // Chỉ nhận chuột trái
+    // Xử lý kéo thả thống nhất cho cả chuột và cảm ứng (Pointer Events)
+    const handlePointerDown = (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+        const current = activeOffset;
+        latestOffsetRef.current = current;
         dragDataRef.current = {
             isDragging: true,
             startX: e.clientX,
             startY: e.clientY,
-            initialX: position.x,
-            initialY: position.y,
+            initialRight: current.right,
+            initialBottom: current.bottom,
             hasMoved: false,
         };
         setIsDragging(true);
 
-        const handleMouseMove = (moveEvent) => {
+        const handlePointerMove = (moveEvent) => {
             if (!dragDataRef.current.isDragging) return;
             const dx = moveEvent.clientX - dragDataRef.current.startX;
             const dy = moveEvent.clientY - dragDataRef.current.startY;
@@ -83,77 +98,49 @@ export const AiChatProvider = ({ children }) => {
                 dragDataRef.current.hasMoved = true;
             }
 
-            const newX = Math.max(12, Math.min(window.innerWidth - BUTTON_SIZE - 12, dragDataRef.current.initialX + dx));
-            const newY = Math.max(12, Math.min(window.innerHeight - BUTTON_SIZE - 12, dragDataRef.current.initialY + dy));
-
-            setPosition({ x: newX, y: newY });
+            const nextOffset = clampOffset({
+                right: dragDataRef.current.initialRight - dx,
+                bottom: dragDataRef.current.initialBottom - dy,
+            });
+            latestOffsetRef.current = nextOffset;
+            setCustomOffset(nextOffset);
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = () => {
             if (dragDataRef.current.isDragging) {
                 dragDataRef.current.isDragging = false;
                 setIsDragging(false);
-                try {
-                    localStorage.setItem('vietheritage_ai_btn_pos', JSON.stringify(position));
-                } catch (err) {}
+                if (dragDataRef.current.hasMoved) {
+                    try {
+                        localStorage.setItem(OFFSET_STORAGE_KEY, JSON.stringify(latestOffsetRef.current));
+                    } catch {
+                        // Bỏ qua nếu trình duyệt chặn localStorage
+                    }
+                }
             }
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
         };
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-    };
-
-    // Xử lý kéo thả bằng ngón tay trên màn hình cảm ứng (Touch Drag)
-    const handleTouchStart = (e) => {
-        const touch = e.touches[0];
-        dragDataRef.current = {
-            isDragging: true,
-            startX: touch.clientX,
-            startY: touch.clientY,
-            initialX: position.x,
-            initialY: position.y,
-            hasMoved: false,
-        };
-        setIsDragging(true);
-
-        const handleTouchMove = (moveEvent) => {
-            if (!dragDataRef.current.isDragging) return;
-            const moveTouch = moveEvent.touches[0];
-            const dx = moveTouch.clientX - dragDataRef.current.startX;
-            const dy = moveTouch.clientY - dragDataRef.current.startY;
-
-            if (Math.hypot(dx, dy) > 4) {
-                dragDataRef.current.hasMoved = true;
-            }
-
-            const newX = Math.max(12, Math.min(window.innerWidth - BUTTON_SIZE - 12, dragDataRef.current.initialX + dx));
-            const newY = Math.max(12, Math.min(window.innerHeight - BUTTON_SIZE - 12, dragDataRef.current.initialY + dy));
-
-            setPosition({ x: newX, y: newY });
-        };
-
-        const handleTouchEnd = () => {
-            if (dragDataRef.current.isDragging) {
-                dragDataRef.current.isDragging = false;
-                setIsDragging(false);
-                try {
-                    localStorage.setItem('vietheritage_ai_btn_pos', JSON.stringify(position));
-                } catch (err) {}
-            }
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
-        };
-
-        window.addEventListener('touchmove', handleTouchMove);
-        window.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
     };
 
     // Bấm vào nút: chỉ mở chatbox nếu người dùng KHÔNG kéo đi
     const handleClick = () => {
         if (!dragDataRef.current.hasMoved) {
             toggleAiChat();
+        }
+    };
+
+    const handleResetPosition = () => {
+        setCustomOffset(null);
+        try {
+            localStorage.removeItem(OFFSET_STORAGE_KEY);
+        } catch {
+            // Bỏ qua nếu trình duyệt chặn localStorage
         }
     };
 
@@ -196,10 +183,11 @@ export const AiChatProvider = ({ children }) => {
 
             {/* Nút Tròn Robot AI Thu Nhỏ & Kéo Thả (Draggable Floating Robot Ball) */}
             <div
+                data-viewport-tick={viewportTick}
                 style={{
                     position: 'fixed',
-                    left: `${position.x}px`,
-                    top: `${position.y}px`,
+                    right: `${activeOffset.right}px`,
+                    bottom: `${activeOffset.bottom}px`,
                     zIndex: 50,
                     touchAction: 'none',
                 }}
@@ -207,11 +195,12 @@ export const AiChatProvider = ({ children }) => {
             >
                 <div className="relative group">
                     <button
-                        onMouseDown={handleMouseDown}
-                        onTouchStart={handleTouchStart}
+                        type="button"
+                        onPointerDown={handlePointerDown}
                         onClick={handleClick}
-                        title={isOpen ? "Thu nhỏ cửa sổ chat" : "Trò chuyện cùng VietHeritage AI (Kéo thả để di chuyển)"}
-                        className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-150 ${
+                        onDoubleClick={handleResetPosition}
+                        title={isOpen ? "Thu nhỏ cửa sổ chat" : "Trò chuyện cùng VietHeritage AI (Kéo thả để di chuyển, nhấp đúp để về góc phải)"}
+                        className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-150 ${
                             isDragging ? 'cursor-grabbing scale-110 shadow-amber-500/40 ring-4 ring-amber-500/30' : 'cursor-grab hover:scale-105 active:scale-95'
                         } ${
                             isOpen
@@ -242,9 +231,15 @@ export const AiChatProvider = ({ children }) => {
                         )}
                     </button>
 
-                    {/* Tooltip hiển thị khi hover (Tự động ẩn khi đang kéo) */}
+                    {/* Tooltip hiển thị khi hover (Tự động ẩn khi đang kéo, tự đổi bên nếu kéo sát cạnh trái) */}
                     {!isDragging && (
-                        <div className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap hidden sm:block">
+                        <div
+                            className={`pointer-events-none absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap hidden sm:block ${
+                                typeof window !== 'undefined' && activeOffset.right > window.innerWidth / 2
+                                    ? 'left-full ml-3'
+                                    : 'right-full mr-3'
+                            }`}
+                        >
                             <div className="px-3 py-1.5 rounded-xl bg-slate-950/95 border border-amber-500/40 shadow-xl shadow-black/80 text-center">
                                 <p className="text-xs font-bold text-amber-200 font-heritage flex items-center gap-1">
                                     <span>VietHeritage AI</span>
