@@ -203,11 +203,11 @@ const Navbar = () => {
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 
-                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-3 lg:gap-4">
+                <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+                    <div className="flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-4 lg:gap-6 xl:gap-8">
                         
                         {/* CỤM BÊN TRÁI: NÚT MỞ THANH DANH MỤC + LOGO THƯƠNG HIỆU */}
-                        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-1 md:flex-initial md:flex-shrink-0">
+                        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-shrink-0">
                             {/* Nút bật Thanh bên trái (Menu Drawer Trigger) - Thiết kế cao cấp, thanh lịch */}
                             <button
                                 type="button"
@@ -259,10 +259,10 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (6 MỤC CÂN ĐỐI Ở GIỮA) */}
+                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (CÁC Ô ĐƯỢC PHÂN BỔ KHOẢNG CÁCH ĐỀU NHAU) */}
                         <nav
                             aria-label="Menu điều hướng chính"
-                            className="hidden md:flex items-center justify-center gap-0.5 lg:gap-1 xl:gap-1.5 flex-1 min-w-0 px-2 lg:px-4"
+                            className="hidden md:flex items-center justify-center gap-1.5 lg:gap-2.5 xl:gap-3.5 2xl:gap-5 flex-1 min-w-0 px-2 lg:px-6"
                         >
                             {primaryHeaderItems.map((item) => {
                                 const active = isItemActive(item.path, item.isAction);
@@ -273,10 +273,10 @@ const Navbar = () => {
                                         key={item.name}
                                         type="button"
                                         onClick={(e) => handleNavClick(item, e)}
-                                        className={`relative px-2.5 py-1.5 xl:px-3 xl:py-2 text-xs xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
+                                        className={`relative px-2.5 py-1.5 lg:px-3 lg:py-2 xl:px-3.5 xl:py-2 text-xs xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
                                             active
                                                 ? 'text-red-950 bg-amber-100/90 shadow-2xs border border-amber-300 font-bold'
-                                                : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
+                                                : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/50 border border-transparent hover:border-amber-200/70'
                                             }`}
                                     >
                                         {IconComponent && (
@@ -288,7 +288,7 @@ const Navbar = () => {
 
                                         {/* Chỉ báo active */}
                                         {active && (
-                                            <span className="absolute -bottom-1 left-2 right-2 xl:left-2.5 xl:right-2.5 h-[2px] bg-red-800 rounded-full" />
+                                            <span className="absolute -bottom-1 left-2.5 right-2.5 h-[2px] bg-red-800 rounded-full" />
                                         )}
                                     </button>
                                 );
@@ -296,7 +296,7 @@ const Navbar = () => {
                         </nav>
 
                         {/* KHU VỰC HÀNH ĐỘNG BÊN PHẢI (TÀI KHOẢN & ĐĂNG NHẬP) */}
-                        <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                             {isAuthenticated ? (
                                 <div className="relative" ref={dropdownRef}>
                                     <button
@@ -413,20 +413,20 @@ const Navbar = () => {
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
+                                <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                                     <Link
                                         to="/login"
-                                        className={`px-2 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-sm font-semibold rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${
+                                        className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-sm font-semibold rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${
                                             location.pathname === '/login'
                                                 ? 'text-red-950 bg-amber-100/80 border border-amber-300/80 font-bold shadow-2xs'
-                                                : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
+                                                : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/50 border border-stone-200/80 hover:border-amber-300/80 bg-white/70 shadow-2xs'
                                             }`}
                                     >
                                         Đăng nhập
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className={`px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-sm font-bold rounded-xl shadow-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 active:scale-[0.98] ${
+                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-sm font-bold rounded-xl shadow-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 active:scale-[0.98] ${
                                             location.pathname === '/register'
                                                 ? 'text-amber-50 bg-gradient-to-r from-red-900 to-amber-700 border-amber-400 shadow-md ring-2 ring-amber-400/50'
                                                 : 'text-amber-50 bg-gradient-to-r from-red-800 via-red-800 to-amber-700 hover:from-red-700 hover:to-amber-600 border-amber-400/40 hover:shadow-md'
