@@ -38,6 +38,32 @@ const uploadAvatar = multer({
     fileFilter,
 });
 
+// =========================================================================
+// Cấu hình tải file âm thanh (.mp3, .m4a, .wav) lưu vào RAM để đẩy Cloudinary
+// =========================================================================
+const audioStorage = multer.memoryStorage();
+
+const audioFileFilter = (req, file, cb) => {
+    const allowedExts = /\.(mp3|m4a|wav|aac|ogg|webm|flac)$/i;
+    const isExtValid = allowedExts.test(path.extname(file.originalname).toLowerCase());
+    const isMimeValid =
+        file.mimetype.startsWith('audio/') ||
+        file.mimetype === 'video/mp4' ||
+        file.mimetype === 'application/octet-stream';
+
+    if (isExtValid || isMimeValid) {
+        return cb(null, true);
+    }
+    cb(new Error('Chỉ chấp nhận các file âm thanh định dạng MP3, M4A, WAV, AAC, OGG!'));
+};
+
+const uploadAudio = multer({
+    storage: audioStorage,
+    limits: { fileSize: 25 * 1024 * 1024 }, // 25MB cho tác phẩm văn học dài
+    fileFilter: audioFileFilter,
+});
+
 module.exports = {
     uploadAvatar,
+    uploadAudio,
 };

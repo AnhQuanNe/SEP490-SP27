@@ -91,6 +91,8 @@ export const heritageAudioManager = new HeritageAudioManager();
  */
 const HeritageAudioPlayer = ({
     text,
+    audioUrl = '',
+    performer = '',
     title = '',
     variant = 'button',
     className = '',
@@ -209,16 +211,20 @@ const HeritageAudioPlayer = ({
         setIsLoading(true);
 
         try {
-            // Lấy URL âm thanh (dùng Blob POST an toàn, hỗ trợ AbortSignal & client cache)
+            // Lấy URL âm thanh: Ưu tiên file âm thanh người thật nếu có
             let audioSrc = '';
-            try {
-                audioSrc = await ttsService.getAudioBlobUrl(text, voice, mode, abortController.signal);
-            } catch (fetchErr) {
-                if (abortController.signal.aborted || sessionRef.current !== currentSessionId) {
-                    return; // Đã bị hủy bởi người dùng hoặc phiên mới
+            if (audioUrl) {
+                audioSrc = audioUrl;
+            } else {
+                try {
+                    audioSrc = await ttsService.getAudioBlobUrl(text, voice, mode, abortController.signal);
+                } catch (fetchErr) {
+                    if (abortController.signal.aborted || sessionRef.current !== currentSessionId) {
+                        return; // Đã bị hủy bởi người dùng hoặc phiên mới
+                    }
+                    console.warn('[AudioPlayer] Blob POST failed, trying Direct GET fallback...', fetchErr);
+                    audioSrc = ttsService.getDirectAudioUrl(text, voice, mode);
                 }
-                console.warn('[AudioPlayer] Blob POST failed, trying Direct GET fallback...', fetchErr);
-                audioSrc = ttsService.getDirectAudioUrl(text, voice, mode);
             }
 
             // Kiểm tra session còn hợp lệ không
@@ -358,13 +364,22 @@ const HeritageAudioPlayer = ({
                             </div>
 
                             <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                <span className="font-medium text-amber-800 dark:text-amber-300">
-                                    {voice === 'hoaimy' ? 'Hoài My (Nữ - Bắc Bộ)' : 'Nam Minh (Nam - Bắc Bộ)'}
-                                </span>
-                                <span>•</span>
-                                <span>
-                                    {mode === 'recite' ? 'Diễn ngâm truyền cảm' : mode === 'slow' ? 'Đọc chậm học tập' : 'Đọc diễn cảm'}
-                                </span>
+                                {audioUrl ? (
+                                    <span className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                                        <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        {performer ? `${performer} (Giọng người thật)` : 'Bản thu âm nghệ sĩ (Giọng người thật)'}
+                                    </span>
+                                ) : (
+                                    <>
+                                        <span className="font-medium text-amber-800 dark:text-amber-300">
+                                            {voice === 'hoaimy' ? 'Hoài My (Nữ - Bắc Bộ)' : 'Nam Minh (Nam - Bắc Bộ)'}
+                                        </span>
+                                        <span>•</span>
+                                        <span>
+                                            {mode === 'recite' ? 'Diễn ngâm truyền cảm' : mode === 'slow' ? 'Đọc chậm học tập' : 'Đọc diễn cảm'}
+                                        </span>
+                                    </>
+                                )}
                                 {isLoading ? (
                                     <>
                                         <span>•</span>
@@ -398,85 +413,94 @@ const HeritageAudioPlayer = ({
 
                 {/* Hàng 2: Bộ chọn Nút bấm tiện lợi */}
                 <div className="mt-3.5 pt-3 border-t border-amber-200/70 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-                    {/* Chọn giọng đọc */}
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                            <Mic2 className="w-3 h-3 text-amber-700 dark:text-amber-400" />
-                            Giọng:
-                        </span>
-                        <div className="inline-flex rounded-xl p-0.5 bg-white/80 dark:bg-zinc-800 border border-amber-200/80 dark:border-zinc-700 shadow-xs">
-                            <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => handleVoiceChange('hoaimy')}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                                    voice === 'hoaimy'
-                                        ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                                        : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
-                                }`}
-                            >
-                                👩 Hoài My (Nữ)
-                            </button>
-                            <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => handleVoiceChange('namminh')}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                                    voice === 'namminh'
-                                        ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                                        : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
-                                }`}
-                            >
-                                👨 Nam Minh (Nam)
-                            </button>
+                    {audioUrl ? (
+                        <div className="flex items-center gap-2 text-[11px] text-emerald-800 dark:text-emerald-300 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Bản thu âm nghệ sĩ chất lượng cao</span>
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            {/* Chọn giọng đọc */}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                                    <Mic2 className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                                    Giọng:
+                                </span>
+                                <div className="inline-flex rounded-xl p-0.5 bg-white/80 dark:bg-zinc-800 border border-amber-200/80 dark:border-zinc-700 shadow-xs">
+                                    <button
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => handleVoiceChange('hoaimy')}
+                                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                                            voice === 'hoaimy'
+                                                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        👩 Hoài My (Nữ)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => handleVoiceChange('namminh')}
+                                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                                            voice === 'namminh'
+                                                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        👨 Nam Minh (Nam)
+                                    </button>
+                                </div>
+                            </div>
 
-                    {/* Chọn phong cách ngâm */}
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                            <Music className="w-3 h-3 text-amber-700 dark:text-amber-400" />
-                            Điệu:
-                        </span>
-                        <div className="inline-flex rounded-xl p-0.5 bg-white/80 dark:bg-zinc-800 border border-amber-200/80 dark:border-zinc-700 shadow-xs">
-                            <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => handleModeChange('recite')}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                                    mode === 'recite'
-                                        ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                                        : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
-                                }`}
-                            >
-                                🎵 Diễn ngâm
-                            </button>
-                            <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => handleModeChange('standard')}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                                    mode === 'standard'
-                                        ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                                        : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
-                                }`}
-                            >
-                                📖 Đọc chuẩn
-                            </button>
-                            <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => handleModeChange('slow')}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                                    mode === 'slow'
-                                        ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                                        : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
-                                }`}
-                            >
-                                🐢 Đọc chậm
-                            </button>
-                        </div>
-                    </div>
+                            {/* Chọn phong cách ngâm */}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                                    <Music className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                                    Điệu:
+                                </span>
+                                <div className="inline-flex rounded-xl p-0.5 bg-white/80 dark:bg-zinc-800 border border-amber-200/80 dark:border-zinc-700 shadow-xs">
+                                    <button
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => handleModeChange('recite')}
+                                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                                            mode === 'recite'
+                                                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        🎵 Diễn ngâm
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => handleModeChange('standard')}
+                                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                                            mode === 'standard'
+                                                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        📖 Đọc chuẩn
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => handleModeChange('slow')}
+                                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                                            mode === 'slow'
+                                                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-300 hover:text-amber-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        🐢 Đọc chậm
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         );

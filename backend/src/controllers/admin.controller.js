@@ -3,6 +3,7 @@ const ContentSubmission = require('../models/ContentSubmission');
 const Work = require('../models/Work');
 const SystemSetting = require('../models/SystemSetting');
 const { removeVietnameseTones } = require('../utils/vietnamese.utils');
+const { uploadAudioBuffer } = require('../services/cloudinary.service');
 
 // ==========================================
 // UC15: VIEW AND UPDATE USER ACCOUNTS
@@ -419,6 +420,8 @@ const createWork = async (req, res) => {
             region: region || 'Toàn quốc',
             author: author || 'Dân gian',
             coverImage: req.body.coverImage?.trim() || '',
+            audioUrl: req.body.audioUrl?.trim() || '',
+            audioPerformer: req.body.audioPerformer?.trim() || '',
             topic: topic || 'Văn hóa & Đạo lý',
             summary: summary.trim(),
             quote: quote?.trim() || title.trim(),
@@ -512,6 +515,47 @@ const updateWork = async (req, res) => {
     }
 };
 
+const updateWorkStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['published', 'draft', 'archived'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Trạng thái không hợp lệ. Chỉ chấp nhận: published, draft, archived',
+            });
+        }
+
+        const work = await Work.findByIdAndUpdate(
+            id,
+            { status },
+            { returnDocument: 'after' }
+        );
+
+        if (!work) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy tác phẩm để cập nhật trạng thái',
+            });
+        }
+
+        const isPublished = status === 'published';
+        res.status(200).json({
+            success: true,
+            message: isPublished
+                ? `Đã công khai tác phẩm: "${work.title}"`
+                : `Đã tạm ẩn tác phẩm: "${work.title}"`,
+            data: work,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 const deleteWork = async (req, res) => {
     try {
         const { id } = req.params;
@@ -531,6 +575,38 @@ const deleteWork = async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message,
+        });
+    }
+};
+
+const uploadAudioWork = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn file âm thanh (.mp3, .m4a, .wav, .aac, .ogg) để tải lên',
+            });
+        }
+
+        const originalName = req.file.originalname;
+        const uploadResult = await uploadAudioBuffer(req.file.buffer, originalName);
+
+        res.status(200).json({
+            success: true,
+            message: 'Tải file âm thanh thành công',
+            data: {
+                audioUrl: uploadResult.secure_url,
+                duration: uploadResult.duration || 0,
+                format: uploadResult.format,
+                publicId: uploadResult.public_id,
+                bytes: uploadResult.bytes,
+            },
+        });
+    } catch (error) {
+        console.error('[Admin] Lỗi upload audio:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Không thể tải file âm thanh lên hệ thống',
         });
     }
 };
@@ -718,7 +794,9 @@ module.exports = {
     getWorks,
     createWork,
     updateWork,
+    updateWorkStatus,
     deleteWork,
+    uploadAudioWork,
     getSettings,
     updateSetting,
     getDashboardStats,
