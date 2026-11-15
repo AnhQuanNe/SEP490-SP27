@@ -16,7 +16,9 @@ import {
     ChevronUp,
     ChevronDown,
     SlidersHorizontal,
-    Maximize2
+    Maximize2,
+    LayoutGrid,
+    HelpCircle
 } from 'lucide-react';
 
 /**
@@ -43,7 +45,10 @@ const GraphHeaderToolbar = ({
     onZoomIn,
     onZoomOut,
     onResetView,
-    graphData
+    graphData,
+    viewMode = 'graph',
+    setViewMode,
+    onOpenQuickGuide
 }) => {
     // Chế độ Zen Mode: Thu gọn toàn bộ thanh công cụ để mở rộng không gian vô cực
     const [isZenMode, setIsZenMode] = useState(false);
@@ -228,6 +233,33 @@ const GraphHeaderToolbar = ({
                     <BookOpen className="w-4 h-4 text-amber-400" />
                     <span className="hidden lg:inline">4 Tầng Tri Thức</span>
                 </button>
+
+                {/* Nút chuyển đổi góc nhìn: Vũ Trụ Đồ Thị vs Thư Viện Thẻ Bento */}
+                {setViewMode && (
+                    <button
+                        onClick={() => setViewMode(viewMode === 'graph' ? 'grid' : 'graph')}
+                        className={`kg-interactive-panel px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            viewMode === 'grid'
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+                                : 'text-stone-300 hover:text-white border-white/10 hover:border-amber-400/50'
+                        }`}
+                        title={viewMode === 'graph' ? 'Chuyển sang Chế Độ Thư Viện Thẻ Bento (dễ đọc hơn)' : 'Quay lại Chế Độ Vũ Trụ Đồ Thị'}
+                    >
+                        <LayoutGrid className="w-4 h-4 text-amber-400" />
+                        <span className="hidden sm:inline">{viewMode === 'graph' ? 'Thư Viện Thẻ' : 'Vũ Trụ Đồ Thị'}</span>
+                    </button>
+                )}
+
+                {/* Nút mở hướng dẫn nhanh 15s */}
+                {onOpenQuickGuide && (
+                    <button
+                        onClick={onOpenQuickGuide}
+                        className="kg-interactive-panel p-2 rounded-xl text-stone-300 hover:text-amber-300 hover:border-amber-400/50 transition-all cursor-pointer"
+                        title="Hướng dẫn nhanh cách khám phá"
+                    >
+                        <HelpCircle className="w-4 h-4 text-amber-400" />
+                    </button>
+                )}
 
                 {/* Cụm nút điều khiển Zoom canvas */}
                 <div className="kg-interactive-panel flex items-center rounded-xl p-1 gap-0.5 border border-white/10">

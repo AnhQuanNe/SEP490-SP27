@@ -13,6 +13,9 @@ import GraphTourModal from '../components/knowledge-graph/GraphTourModal';
 import GraphTourPlayerHUD from '../components/knowledge-graph/GraphTourPlayerHUD';
 import GraphTimeMachineHUD from '../components/knowledge-graph/GraphTimeMachineHUD';
 import GraphMajorHubsBar from '../components/knowledge-graph/GraphMajorHubsBar';
+import GraphQuickGuideBanner from '../components/knowledge-graph/GraphQuickGuideBanner';
+import GraphBreadcrumbTrail from '../components/knowledge-graph/GraphBreadcrumbTrail';
+import GraphBentoGridView from '../components/knowledge-graph/GraphBentoGridView';
 import { Loader2, AlertCircle } from 'lucide-react';
 import './KnowledgeGraph.css';
 
@@ -37,6 +40,13 @@ const KnowledgeGraph = () => {
     const [hoveredNode, setHoveredNode] = useState(null);
     const [isSoundEnabled, setIsSoundEnabled] = useState(true);
     const [isOntologyModalOpen, setIsOntologyModalOpen] = useState(false);
+
+    // Chế độ xem: 'graph' (Vũ trụ đồ thị) hoặc 'grid' (Thư viện thẻ Bento)
+    const [viewMode, setViewMode] = useState('graph');
+    // Dấu chân khám phá (Breadcrumbs trail)
+    const [explorationTrail, setExplorationTrail] = useState([]);
+    // Banner hướng dẫn nhanh 15 giây cho người dùng mới
+    const [isQuickGuideOpen, setIsQuickGuideOpen] = useState(() => !sessionStorage.getItem('kg_quick_guide_seen'));
 
     // Cỗ Máy Thời Gian Di Sản (Cultural Time-Lapse Evolution)
     const [isTimeMachineActive, setIsTimeMachineActive] = useState(false);
@@ -300,7 +310,8 @@ const KnowledgeGraph = () => {
                 const isHighlighted =
                     highlightedElementsRef.current.links.has(`${sourceId}-${targetId}`) ||
                     highlightedElementsRef.current.links.has(`${targetId}-${sourceId}`);
-                return isHighlighted ? 3 : 1;
+                // Chỉ chạy hạt năng lượng trên đường đi được tiêu điểm (Spotlight), dẹp bỏ hiện tượng rối mắt "kiến bò chằng chịt"
+                return isHighlighted ? 3 : 0;
             })
             .linkDirectionalParticleSpeed((d) => (d.strength || 1) * 0.005)
             .linkDirectionalParticleWidth((d) => {
@@ -319,9 +330,15 @@ const KnowledgeGraph = () => {
                     highlightedElementsRef.current.links.has(`${sourceId}-${targetId}`) ||
                     highlightedElementsRef.current.links.has(`${targetId}-${sourceId}`);
                 if (isHighlighted) return 'rgba(251, 191, 36, 0.95)';
-                const hasFocus = activeNodeRef.current || hoveredNodeRef.current || activeTourRef.current;
-                if (hasFocus) return 'rgba(255, 255, 255, 0.02)';
-                return 'rgba(255, 255, 255, 0.08)';
+                const hasFocus = activeNodeRef.current || hoveredNodeRef.current || activeTourRef.current || pathResult?.path?.length;
+                if (hasFocus) return 'rgba(255, 255, 255, 0.015)';
+
+                // Ở góc nhìn toàn cảnh: Đường liên kết nối tới các Trụ Cột lớn sáng nhẹ như dải thiên hà
+                const isMajorLink = (typeof link.source === 'object' && Boolean(link.source?.isMajorHub || link.source?.isPillar)) ||
+                                    (typeof link.target === 'object' && Boolean(link.target?.isMajorHub || link.target?.isPillar));
+                if (isMajorLink) return 'rgba(245, 158, 11, 0.12)';
+                // Các đường nối thông thường được làm mờ tinh tế, xóa bỏ cảm giác mạng nhện
+                return 'rgba(255, 255, 255, 0.025)';
             })
             .linkWidth((link) => {
                 const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
@@ -329,7 +346,10 @@ const KnowledgeGraph = () => {
                 const isHighlighted =
                     highlightedElementsRef.current.links.has(`${sourceId}-${targetId}`) ||
                     highlightedElementsRef.current.links.has(`${targetId}-${sourceId}`);
-                return isHighlighted ? 2.5 : 0.8;
+                if (isHighlighted) return 2.6;
+                const isMajorLink = (typeof link.source === 'object' && Boolean(link.source?.isMajorHub || link.source?.isPillar)) ||
+                                    (typeof link.target === 'object' && Boolean(link.target?.isMajorHub || link.target?.isPillar));
+                return isMajorLink ? 0.9 : 0.45;
             })
             .linkCanvasObjectMode(() => 'after')
             .linkCanvasObject((link, ctx, globalScale) => {
@@ -420,19 +440,23 @@ const KnowledgeGraph = () => {
                 const hasFocus = currentActiveNode || currentHoveredNode || activeTourRef.current || pathResult?.path?.length;
                 const isHighlighted = !hasFocus || highlightedElementsRef.current.nodes.has(node.id);
 
-                // Tính toán bán kính phân tầng rõ rệt: Major Hub lớn vượt trội, Work lá non nhỏ gọn tinh tế
-                const baseVal = node.val || 12;
-                const r = Math.sqrt(Math.max(0, baseVal)) * (
+                // Tính toán bán kính phân tầng thẩm mỹ cao: Tinh tú thanh thoát, Trụ cột vừa vặn quý phái
+                const baseVal = node.val || 8;
+                const calculatedR = Math.sqrt(Math.max(1, baseVal)) * (
                     isMajorHub 
-                        ? 3.8 
+                        ? 2.1 
                         : node.type === 'philosophy' 
-                        ? 2.8 
+                        ? 1.45 
                         : node.type === 'archetype' 
-                        ? 2.4 
+                        ? 1.3 
                         : node.type === 'region' 
-                        ? 2.3 
-                        : 1.5
+                        ? 1.25 
+                        : 0.88
                 );
+                // Giới hạn bán kính chuẩn mực, hoàn toàn ngăn chặn hiện tượng nốt bị phình to thô kệch
+                const maxR = isMajorHub ? 13 : (node.type === 'philosophy' || node.type === 'archetype') ? 8.5 : 5.2;
+                const minR = isMajorHub ? 7 : 2.8;
+                const r = Math.max(minR, Math.min(maxR, calculatedR));
 
                 ctx.save();
 
@@ -442,25 +466,25 @@ const KnowledgeGraph = () => {
                         // Hiệu ứng nhịp đập vũ trụ (Cosmic Pulsing Aura) cho 5 Trụ cột cốt lõi
                         const pulse = (Math.sin(Date.now() / 450) + 1) / 2;
                         
-                        // Vành hào quang khuếch tán ngoài cùng
+                        // Vành hào quang khuếch tán ngoài cùng tinh tế
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, r + 12 + pulse * 6, 0, 2 * Math.PI, false);
-                        ctx.fillStyle = `${node.color || '#ec4899'}22`;
+                        ctx.arc(node.x, node.y, r + 7 + pulse * 3.5, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = `${node.color || '#ec4899'}20`;
                         ctx.shadowColor = node.color || '#ec4899';
-                        ctx.shadowBlur = 28 + pulse * 10;
+                        ctx.shadowBlur = 16 + pulse * 6;
                         ctx.fill();
 
                         // Vành đai tia sáng vàng kim bao quanh Trụ cột
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, r + 5 + pulse * 3, 0, 2 * Math.PI, false);
-                        ctx.lineWidth = 1.4;
+                        ctx.arc(node.x, node.y, r + 3.5 + pulse * 1.8, 0, 2 * Math.PI, false);
+                        ctx.lineWidth = 1.2;
                         ctx.strokeStyle = `rgba(251, 191, 36, ${0.5 + pulse * 0.4})`;
                         ctx.setLineDash([4, 3]);
                         ctx.stroke();
                         ctx.setLineDash([]);
                     } else if (isSelected || isHovered || isTourCurrentNode || isNewInCurrentEra || (hasFocus && highlightedElementsRef.current.nodes.has(node.id))) {
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, r + (isTourCurrentNode ? 9 : isSelected ? 8 : isNewInCurrentEra ? 6 : isHovered ? 5 : 3), 0, 2 * Math.PI, false);
+                        ctx.arc(node.x, node.y, r + (isTourCurrentNode ? 6 : isSelected ? 5.5 : isNewInCurrentEra ? 4.5 : isHovered ? 4 : 2), 0, 2 * Math.PI, false);
                         ctx.fillStyle = isTourCurrentNode
                             ? 'rgba(251, 191, 36, 0.45)'
                             : isNewInCurrentEra
@@ -469,17 +493,28 @@ const KnowledgeGraph = () => {
                             ? 'rgba(251, 191, 36, 0.4)'
                             : `${node.color || '#10b981'}35`;
                         ctx.shadowColor = isTourCurrentNode ? '#fbbf24' : isNewInCurrentEra ? '#f59e0b' : (node.color || '#10b981');
-                        ctx.shadowBlur = isTourCurrentNode ? 24 : isNewInCurrentEra ? 18 : isSelected ? 22 : isHovered ? 14 : 8;
+                        ctx.shadowBlur = isTourCurrentNode ? 16 : isNewInCurrentEra ? 14 : isSelected ? 16 : isHovered ? 10 : 6;
                         ctx.fill();
                     }
                 }
 
                 // 2. Vẽ hình tròn nốt chính
+                // Áp dụng trường sâu thị giác: Khi ở góc nhìn xa và chưa chọn nốt nào, nốt tác phẩm lá non có độ mờ nhẹ để các Trụ cột & Cổ mẫu nổi bật
+                const isWorkNode = node.type === 'work';
+                const applyDepthAlpha = !hasFocus && isWorkNode && globalScale < 1.35;
+                if (applyDepthAlpha) {
+                    ctx.globalAlpha = 0.65;
+                }
+
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
                 ctx.fillStyle = isHighlighted ? (node.color || '#10b981') : 'rgba(55, 65, 81, 0.18)';
                 ctx.shadowBlur = 0;
                 ctx.fill();
+
+                if (applyDepthAlpha) {
+                    ctx.globalAlpha = 1.0;
+                }
 
                 // Viền ngoài nốt
                 ctx.lineWidth = isTourCurrentNode ? 3.5 : isSelected ? 2.8 : isMajorHub ? 2.6 : isHovered ? 2 : 1;
@@ -617,10 +652,14 @@ const KnowledgeGraph = () => {
             })
             .nodePointerAreaPaint((node, color, ctx) => {
                 const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
-                const baseVal = node.val || 12;
-                const r = Math.sqrt(Math.max(0, baseVal)) * (
-                    isMajorHub ? 3.8 : node.type === 'philosophy' ? 2.8 : node.type === 'archetype' ? 2.4 : node.type === 'region' ? 2.3 : 1.5
-                ) + 6;
+                const baseVal = node.val || 8;
+                const calculatedR = Math.sqrt(Math.max(1, baseVal)) * (
+                    isMajorHub ? 2.1 : node.type === 'philosophy' ? 1.45 : node.type === 'archetype' ? 1.3 : node.type === 'region' ? 1.25 : 0.88
+                );
+                const maxR = isMajorHub ? 13 : 8.5;
+                const minR = isMajorHub ? 7 : 2.8;
+                // Vùng nhận diện click cộng thêm 7px để người dùng nhấp cực kỳ nhạy và dễ trúng
+                const r = Math.max(minR, Math.min(maxR, calculatedR)) + 7;
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
@@ -638,6 +677,12 @@ const KnowledgeGraph = () => {
                 }
 
                 setActiveNode(node);
+                setExplorationTrail((prev) => {
+                    if (prev.length > 0 && prev[prev.length - 1].id === node.id) return prev;
+                    const next = [...prev, node];
+                    return next.slice(-6);
+                });
+                setIsQuickGuideOpen(false);
                 // Giữ lại pathResult để người dùng có thể vừa xem đường đi vừa xem chi tiết nốt trên đường đi
                 graph.centerAt(node.x, node.y, 800);
                 graph.zoom(2.2, 800);
@@ -653,38 +698,38 @@ const KnowledgeGraph = () => {
                 setPathResult(null);
             });
 
-        graph.minZoom(0.55).maxZoom(4.2);
+        graph.minZoom(0.15).maxZoom(4.0);
 
         if (graph.d3Force('charge')) {
             graph.d3Force('charge')
                 .strength((node) => {
                     const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
-                    if (isMajorHub) return -720;
-                    if (node.type === 'philosophy') return -460;
-                    if (node.type === 'archetype') return -360;
-                    if (node.type === 'region') return -320;
-                    return -180;
+                    if (isMajorHub) return -340;
+                    if (node.type === 'philosophy') return -210;
+                    if (node.type === 'archetype') return -170;
+                    if (node.type === 'region') return -140;
+                    return -85;
                 })
-                .distanceMin(30)
-                .distanceMax(950);
+                .distanceMin(20)
+                .distanceMax(650);
         }
         if (graph.d3Force('link')) {
             graph.d3Force('link')
                 .distance((link) => {
                     const l = link.label || '';
-                    if (l.includes('chủ đề')) return 165;
-                    if (l.includes('địa danh') || l.includes('xuất xứ')) return 145;
-                    if (l.includes('hình tượng')) return 130;
-                    if (l.includes('biểu trưng')) return 140;
-                    return 110;
+                    if (l.includes('chủ đề')) return 105;
+                    if (l.includes('địa danh') || l.includes('xuất xứ')) return 90;
+                    if (l.includes('hình tượng')) return 80;
+                    if (l.includes('biểu trưng')) return 85;
+                    return 65;
                 });
         }
-        // Thêm lực chống đè nốt (Collision force) giúp các nốt dãn ra, không bị rối mắt
+        // Thêm lực chống đè nốt (Collision force) nhẹ nhàng giúp các nốt dãn ra vừa vặn
         try {
             graph.d3Force('collide', forceCollide().radius((node) => {
                 const isMajorHub = Boolean(node.isMajorHub || node.isPillar);
-                const baseVal = node.val || 12;
-                return Math.sqrt(Math.max(0, baseVal)) * (isMajorHub ? 4.2 : 3.0) + (isMajorHub ? 32 : 18);
+                const baseVal = node.val || 8;
+                return Math.sqrt(Math.max(1, baseVal)) * (isMajorHub ? 2.4 : 1.7) + (isMajorHub ? 15 : 7);
             }).iterations(2));
         } catch (e) {
             console.warn('Không thể khởi tạo collide force:', e);
@@ -693,7 +738,7 @@ const KnowledgeGraph = () => {
         // Lực hút định hướng về tâm (Radial & Center): Giữ các nốt luôn quây quần thành một dải ngân hà thống nhất, không trôi dạt ra góc xa
         try {
             graph.d3Force('radial', forceRadial(0, 0, 0).strength((node) => {
-                return (node.degree && node.degree > 3) ? 0.03 : 0.08;
+                return (node.degree && node.degree > 3) ? 0.035 : 0.085;
             }));
             graph.d3Force('center', forceCenter(0, 0));
         } catch (e) {
@@ -702,16 +747,10 @@ const KnowledgeGraph = () => {
 
         graphInstance.current = graph;
 
+        // Căn giữa toàn cảnh vũ trụ với khoảng đệm 110px thoáng đãng, tuyệt đối không bị phóng to thô kệch
         const timer = setTimeout(() => {
-            graph.zoomToFit(700, 70);
-            // Đảm bảo mức zoom ban đầu luôn bung tỏa đầy đặn màn hình, không bị teo nhỏ
-            setTimeout(() => {
-                const currentZ = graph.zoom();
-                if (currentZ < 0.95) {
-                    graph.zoom(1.18, 600);
-                }
-            }, 750);
-        }, 500);
+            graph.zoomToFit(800, 110);
+        }, 450);
 
         const handleResize = () => {
             if (containerRef.current && graphInstance.current) {
@@ -758,7 +797,7 @@ const KnowledgeGraph = () => {
 
         if (isTimeMachineActive) {
             if (selectedEraId === 0) {
-                graphInstance.current.zoomToFit(800, 50);
+                graphInstance.current.zoomToFit(800, 100);
             } else {
                 const flagshipMap = {
                     1: ['arc-trau-cau', 'arc-hat-gao-noi-com', 'arc-cay-tre-canh-truc'],
@@ -774,9 +813,9 @@ const KnowledgeGraph = () => {
 
                 if (target && typeof target.x === 'number' && typeof target.y === 'number') {
                     graphInstance.current.centerAt(target.x + 90, target.y, 900);
-                    graphInstance.current.zoom(2.2, 900);
+                    graphInstance.current.zoom(2.0, 900);
                 } else {
-                    graphInstance.current.zoomToFit(800, 50);
+                    graphInstance.current.zoomToFit(800, 100);
                 }
             }
         }
@@ -885,6 +924,13 @@ const KnowledgeGraph = () => {
     const handleSelectSearchNode = (node) => {
         setActiveNode(node);
         setSearchQuery('');
+        setViewMode('graph');
+        setIsQuickGuideOpen(false);
+        setExplorationTrail((prev) => {
+            if (prev.length > 0 && prev[prev.length - 1].id === node.id) return prev;
+            const next = [...prev, node];
+            return next.slice(-6);
+        });
         if (graphInstance.current) {
             if (isSoundEnabled) playTraditionalChime();
             const runtimeNodes = graphInstance.current.graphData()?.nodes || [];
@@ -911,8 +957,7 @@ const KnowledgeGraph = () => {
         if (!graphInstance.current) return;
         setActiveNode(null);
         setPathResult(null);
-        graphInstance.current.centerAt(0, 0, 700);
-        graphInstance.current.zoom(1.18, 700);
+        graphInstance.current.zoomToFit(700, 110);
     };
 
     // Tìm đường đi văn hóa ngắn nhất (BFS) kèm AI Luận Giải (Gemini)
@@ -1242,6 +1287,17 @@ const KnowledgeGraph = () => {
                 onZoomOut={handleZoomOut}
                 onResetView={handleResetView}
                 graphData={graphData}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                onOpenQuickGuide={() => setIsQuickGuideOpen(true)}
+            />
+
+            {/* 1.2. VẾT CHÂN KHÁM PHÁ (BREADCRUMB TRAIL) */}
+            <GraphBreadcrumbTrail
+                trail={explorationTrail}
+                onSelectNode={handleSelectSearchNode}
+                onClearTrail={() => setExplorationTrail([])}
+                isSidebarOpen={Boolean(activeNode)}
             />
 
             {/* 1.5. THANH ĐỊNH HƯỚNG TRỤ CỘT CỐT LÕI (DÀNH CHO NGƯỜI DÙNG MỚI) */}
@@ -1253,6 +1309,41 @@ const KnowledgeGraph = () => {
                 isTourActive={Boolean(activeTour)}
                 isPathResultActive={Boolean(pathResult?.path?.length)}
             />
+
+            {/* 1.8. BANNER HƯỚNG DẪN NHANH 15 GIÂY (DÀNH CHO NGƯỜI DÙNG MỚI BỠ NGỠ) */}
+            <GraphQuickGuideBanner
+                isOpen={isQuickGuideOpen && !activeTour && !isTimeMachineActive && !pathResult}
+                onClose={() => {
+                    setIsQuickGuideOpen(false);
+                    sessionStorage.setItem('kg_quick_guide_seen', 'true');
+                }}
+                onOpenTour={() => setIsTourModalOpen(true)}
+                onSwitchToGrid={() => setViewMode('grid')}
+            />
+
+            {/* 1.9. CHẾ ĐỘ THƯ VIỆN THẺ BENTO (DÀNH CHO NGƯỜI THÍCH ĐỌC DANH MỤC TRỰC QUAN HƠN ĐỒ THỊ) */}
+            {viewMode === 'grid' && (
+                <GraphBentoGridView
+                    graphData={graphData}
+                    onSelectNodeOnGraph={(node) => {
+                        handleSelectSearchNode(node);
+                        setViewMode('graph');
+                    }}
+                    onOpenTourModal={() => {
+                        setViewMode('graph');
+                        setIsTourModalOpen(true);
+                    }}
+                    onOpenTimeMachine={() => {
+                        setViewMode('graph');
+                        setIsTimeMachineActive(true);
+                    }}
+                    onOpenPathModal={() => {
+                        setViewMode('graph');
+                        setIsPathModalOpen(true);
+                    }}
+                    onCloseGrid={() => setViewMode('graph')}
+                />
+            )}
 
             {/* 2. KHUNG VẼ CANVAS ĐỒ THỊ FORCEGRAPH */}
             <div ref={containerRef} className="kg-canvas-wrapper" />
