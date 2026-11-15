@@ -60,14 +60,14 @@ const Navbar = () => {
 
     const avatarSrc = user ? getAvatarUrl(user.avatar) : null;
 
-    // Các mục chính giữ lại trên Header (cân đối 6 mục khám phá & học tập cốt lõi)
+    // Các mục chính giữ lại trên Header (phân bổ responsive tối ưu theo kích thước màn hình để chống đè chữ)
     const primaryHeaderItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
         { name: 'Triển lãm Ảo', path: '/trien-lam', isRoute: true, icon: Layers },
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map, visibility: 'hidden lg:inline-flex' },
-        { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden lg:inline-flex' },
-        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden xl:inline-flex' },
+        { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden xl:inline-flex' },
+        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden 2xl:inline-flex' },
     ];
 
     // Cấu trúc danh mục toàn diện được chuyển vào Thanh bên trái (Left Sidebar)
@@ -203,11 +203,11 @@ const Navbar = () => {
                 {/* Dải viền son - vàng hoàng kim trên đỉnh header */}
                 <div className="h-1 w-full bg-gradient-to-r from-red-900 via-amber-500 to-red-900" />
 
-                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-3 lg:gap-4">
                         
                         {/* CỤM BÊN TRÁI: NÚT MỞ THANH DANH MỤC + LOGO THƯƠNG HIỆU */}
-                        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-1 md:flex-initial md:flex-shrink-0">
+                        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-shrink-0">
                             {/* Nút bật Thanh bên trái (Menu Drawer Trigger) - Thiết kế cao cấp, thanh lịch */}
                             <button
                                 type="button"
@@ -251,18 +251,18 @@ const Navbar = () => {
                                     </div>
                                     <span className="hidden sm:flex text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-0.5 items-center gap-1 whitespace-nowrap">
                                         <span className="text-amber-700 font-bold text-[9px]">❖</span> 
-                                        <span className="hidden 2xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
-                                        <span className="2xl:hidden hidden xl:inline">Di Sản Văn Hóa</span>
+                                        <span className="hidden 2xl:inline">Kho Tàng Di Sản Dân Gian</span>
+                                        <span className="2xl:hidden hidden xl:inline">Di Sản Dân Gian</span>
                                         <span className="xl:hidden">Di Sản Việt</span>
                                     </span>
                                 </div>
                             </Link>
                         </div>
 
-                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (6 MỤC CÂN ĐỐI Ở GIỮA) */}
+                        {/* MỤC ĐIỀU HƯỚNG TRÊN HEADER (CÂN ĐỐI Ở GIỮA, CHỐNG OVERFLOW BẰNG RESPONSIVE BREAKPOINT) */}
                         <nav
                             aria-label="Menu điều hướng chính"
-                            className="hidden md:flex items-center justify-center gap-0.5 lg:gap-1 xl:gap-1.5 flex-1 min-w-0 px-2 lg:px-4"
+                            className="hidden md:flex items-center justify-center gap-0.5 lg:gap-1 xl:gap-1.5 2xl:gap-2 flex-1 min-w-0 px-1 sm:px-2 lg:px-3 overflow-hidden"
                         >
                             {primaryHeaderItems.map((item) => {
                                 const active = isItemActive(item.path, item.isAction);
@@ -273,7 +273,7 @@ const Navbar = () => {
                                         key={item.name}
                                         type="button"
                                         onClick={(e) => handleNavClick(item, e)}
-                                        className={`relative px-2.5 py-1.5 xl:px-3 xl:py-2 text-xs xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
+                                        className={`relative px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2 text-xs lg:text-[12.5px] xl:text-[13px] 2xl:text-sm font-semibold rounded-xl transition-all duration-200 items-center gap-1 lg:gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 whitespace-nowrap flex-shrink-0 ${visibilityClass} ${
                                             active
                                                 ? 'text-red-950 bg-amber-100/90 shadow-2xs border border-amber-300 font-bold'
                                                 : 'text-stone-700 hover:text-red-950 hover:bg-amber-100/40 border border-transparent'
@@ -296,7 +296,7 @@ const Navbar = () => {
                         </nav>
 
                         {/* KHU VỰC HÀNH ĐỘNG BÊN PHẢI (TÀI KHOẢN & ĐĂNG NHẬP) */}
-                        <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
+                        <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0 z-10 pl-1 sm:pl-2">
                             {isAuthenticated ? (
                                 <div className="relative" ref={dropdownRef}>
                                     <button

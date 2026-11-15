@@ -21,7 +21,7 @@ const storyBranchService = {
      * Tiến bước tới hồi tiếp theo
      */
     nextChapter: async (payload) => {
-        const response = await api.post('/story-branch/next', payload);
+        const response = await api.post('/story-branch/next', payload, { timeout: 35000 });
         return response.data;
     },
 };

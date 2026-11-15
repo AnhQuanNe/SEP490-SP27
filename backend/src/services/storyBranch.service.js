@@ -1,5 +1,4 @@
 const { removeVietnameseTones } = require('../utils/vietnamese.utils');
-
 const { GEMINI_MODELS } = require('../constants/geminiModels');
 
 /**
@@ -44,7 +43,7 @@ Trước mắt bá quan văn võ và muôn dân trăm họ, Tấm nhìn mẹ con
                     iconType: 'scale',
                     text: 'Chiếu theo luật nước, phế truất thường dân và lưu đày mẹ con Cám ra biên ải xa xôi.',
                     folkQuote: 'Quốc có quốc pháp, gia có gia quy',
-                    requiredStat: { stat: 'tri', min: 55 },
+                    requiredStat: null,
                     statChanges: { tam: -5, tri: 20, dung: 15, longDan: 5 },
                 },
                 {
@@ -99,7 +98,7 @@ Tiếng tù và giục giã, đất trời rung chuyển. Nhà vua và triều �
                     iconType: 'sword',
                     text: 'Khoác hoàng bào vung búa thần xuất kích, trảm tướng tiên phong chư hầu trấn áp can qua.',
                     folkQuote: 'Trai thời trung hiếu làm đầu / Gặp cơn quốc nạn quản chi thân mình',
-                    requiredStat: { stat: 'dung', min: 55 },
+                    requiredStat: null,
                     statChanges: { tam: -10, tri: 5, dung: 25, longDan: 5 },
                 },
                 {
@@ -143,7 +142,7 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
                     iconType: 'scroll',
                     text: 'Bí mật đúc lẫy nỏ giả đem tráo đổi, cất giấu lẫy thật để vừa thử lòng phu quân vừa giữ yên xã tắc.',
                     folkQuote: 'Vỏ quýt dày có móng tay nhọn / Trí tuệ giữ yên vạn dặm giang sơn',
-                    requiredStat: { stat: 'tri', min: 55 },
+                    requiredStat: null,
                     statChanges: { tam: 0, tri: 25, dung: 10, longDan: 15 },
                 },
                 {
@@ -218,7 +217,7 @@ Gió lạnh rít qua tường thành Cổ Loa, Mỵ Châu phải đưa ra quyế
                     iconType: 'compass',
                     text: 'Thi triển Bát Quái trận đồ khơi thông các dòng phụ lưu, biến sóng thần cuộn trào thành nguồn nước tưới tiêu.',
                     folkQuote: 'Trí giả bất hoặc, dũng giả bất cụ / Chuyển họa thiên tai thành phúc thái bình',
-                    requiredStat: { stat: 'tri', min: 55 },
+                    requiredStat: null,
                     statChanges: { tam: 5, tri: 30, dung: 10, longDan: 20 },
                 },
             ],
@@ -262,7 +261,7 @@ Trước kho vàng vô tận giữa biển khơi, người em sẽ đưa ra quy�
                     iconType: 'scroll',
                     text: 'Lấy đúng một túi ba gang, dùng một nửa san sẻ cho anh trai và nửa còn lại mở xưởng mộc dạy nghề.',
                     folkQuote: 'Khéo ăn thì no, khéo co thì ấm / Buôn có bạn, bán có phường',
-                    requiredStat: { stat: 'tri', min: 55 },
+                    requiredStat: null,
                     statChanges: { tam: 15, tri: 25, dung: 10, longDan: 15 },
                 },
                 {
@@ -306,7 +305,131 @@ function getStoryBySlug(slug) {
 }
 
 /**
- * Gọi Gemini AI để sinh tiếp chương tiếp theo có kiểm soát
+ * Parser JSON an toàn, tự động khắc phục các lỗi quote hoặc newline từ LLM
+ */
+function safeParseStoryJson(rawText) {
+    if (!rawText) return null;
+    let text = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+    try {
+        return JSON.parse(text);
+    } catch (e1) {
+        // Khắc phục lỗi nếu LLM có thêm lời dẫn bên ngoài JSON
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            text = text.substring(firstBrace, lastBrace + 1);
+            try {
+                return JSON.parse(text);
+            } catch (e2) {}
+        }
+
+        // Khắc phục lỗi ký tự điều khiển xuống dòng trực tiếp trong chuỗi JSON
+        try {
+            const sanitized = text
+                .replace(/(?<!\\)\r?\n/g, '\\n')
+                .replace(/\t/g, '\\t');
+            return JSON.parse(sanitized);
+        } catch (e3) {
+            // Khắc phục lỗi dấu nháy kép không escape bên trong storyText
+            try {
+                const fixed = text.replace(/"storyText"\s*:\s*"([\s\S]*?)"\s*,\s*"statChanges"/, (m, content) => {
+                    const escapedContent = content.replace(/"/g, "'");
+                    return `"storyText": "${escapedContent}", "statChanges"`;
+                });
+                return JSON.parse(fixed);
+            } catch (e4) {
+                return null;
+            }
+        }
+    }
+}
+
+/**
+ * Lấy danh sách toàn bộ Gemini API Key có sẵn (tự động phân tách dấu phẩy để xoay tua)
+ */
+function getGeminiApiKeys() {
+    const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+    return rawKeys
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k && !k.includes('your_gemini_api_key'));
+}
+
+let currentGeminiKeyIndex = 0;
+
+/**
+ * Tầng dự phòng cấp 2: Gọi Groq AI (Llama 3 / Mixtral) khi Gemini chạm giới hạn quota
+ */
+async function callGroqStoryEngine({ systemPrompt, story, nextStep, chosenText, isCustomAction, currentStats }) {
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey || !groqKey.trim() || groqKey.includes('your_groq_api_key')) {
+        return null;
+    }
+
+    const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b'];
+    const prompt = `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi ${isCustomAction ? 'đột phá thực hiện' : 'chọn'}: "${chosenText}".`;
+
+    for (const model of groqModels) {
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${groqKey.trim()}`,
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: prompt },
+                    ],
+                    response_format: { type: 'json_object' },
+                    temperature: isCustomAction ? 0.85 : 0.75,
+                    max_tokens: 2048,
+                }),
+                signal: AbortSignal.timeout(8000),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const contentText = data?.choices?.[0]?.message?.content || '';
+                const parsed = safeParseStoryJson(contentText);
+
+                if (parsed && parsed.storyText) {
+                    const newStats = {
+                        tam: Math.min(100, Math.max(0, currentStats.tam + (parsed.statChanges?.tam || 0))),
+                        tri: Math.min(100, Math.max(0, currentStats.tri + (parsed.statChanges?.tri || 0))),
+                        dung: Math.min(100, Math.max(0, currentStats.dung + (parsed.statChanges?.dung || 0))),
+                        longDan: Math.min(100, Math.max(0, currentStats.longDan + (parsed.statChanges?.longDan || 0))),
+                    };
+
+                    console.log(`[StoryBranch] Đã dệt cốt truyện thành công bằng Groq AI (${model})`);
+
+                    return {
+                        step: nextStep,
+                        chapterTitle: parsed.chapterTitle || `Hồi ${nextStep}: Biến Cố Mới`,
+                        sceneMood: parsed.sceneMood || 'dramatic',
+                        storyText: parsed.storyText,
+                        statChanges: parsed.statChanges || { tam: 0, tri: 0, dung: 0, longDan: 0 },
+                        newStats,
+                        isEnding: !!parsed.isEnding,
+                        choices: parsed.choices || [],
+                        endingData: parsed.endingData || null,
+                        sourceType: `groq_story_engine (${model})`,
+                    };
+                }
+            }
+        } catch (err) {
+            console.warn(`[StoryBranch - Groq] Model ${model} gặp sự cố:`, err.message);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Gọi Gemini AI (hỗ trợ Key Pool Rotation) & Fallback Groq AI để sinh tiếp chương tiếp theo có kiểm soát
  */
 async function generateNextChapter({
     storySlug,
@@ -322,30 +445,27 @@ async function generateNextChapter({
     }
 
     const nextStep = (step || 1) + 1;
-    const isTargetEnding = nextStep >= 4; // Sau 3-4 bước thì dẫn tới Kết cục (Ending)
+    const isTargetEnding = nextStep >= 5; // Cốt truyện kéo dài 4 - 5 hồi (Hồi 1 -> Hồi 2 -> Hồi 3 -> Hồi 4 -> Hồi Kết)
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (apiKey) {
-        const customDirective = isCustomAction
-            ? `
+    const customDirective = isCustomAction
+        ? `
 [CHẾ ĐỘ SÁNG TẠO TỰ DO (SANDBOX CHOICE)]:
 Người chơi vừa TỰ TAY GÕ HÀNH ĐỘNG RIÊNG: "${chosenText}".
 - TUYỆT ĐỐI TÔN TRỌNG ý tưởng của người chơi! Không được gạt bỏ, không được 'tẩy trắng' hay bẻ lái thô bạo câu chuyện quay lại khuôn mẫu cổ tích quen thuộc.
 - Hãy phản ánh chân thực hậu quả của hành động này: Những người xung quanh (Vua, bá quan, Cám, dân chúng, tướng sĩ...) sẽ sững sờ, hoảng loạn, ngỡ ngàng hay hưởng ứng ra sao trước bước đi bất ngờ này?
 - TẠO BIẾN CỐ & KỊCH TÍNH: Tạo ra hệ quả trực tiếp, phản ứng dây chuyền sống động, cho thấy quyết định này làm xoay chuyển tình thế ra sao.
 `
-            : `
+        : `
 Người chơi vừa chọn hướng đi: "${chosenText}".
 `;
 
-        const systemPrompt = `Bạn là Game Master kiêm Nhà văn cốt truyện tương tác (Interactive Heritage Story Engine) cho kho tàng tích truyện Việt Nam.
+    const systemPrompt = `Bạn là Game Master kiêm Nhà văn cốt truyện tương tác (Interactive Heritage Story Engine) cho kho tàng tích truyện Việt Nam.
 Phong cách kể: Văn phong sắc sảo, điện ảnh, giàu tính hành động và cảm xúc chân thực của nhân vật, tránh xa sự sáo rỗng hay giáo điều.
 ${customDirective}
 QUY TẮC BẮT BUỘC:
 1. NGUYÊN TẮC KỂ CHUYỆN (STORY TEXT):
-- Độ dài khoảng 140 - 200 từ, chia làm 2 - 3 đoạn văn ngắn rõ ràng, ngăn cách nhau bằng đúng 2 dấu xuống dòng (\n\n).
-- Đưa lời thoại trực tiếp của nhân vật vào nếu có tình huống đối đáp (đặt trong ngoặc kép "..." để tạo điểm nhấn kịch tính).
+- Độ dài khoảng 140 - 200 từ, chia làm 2 - 3 đoạn văn ngắn rõ ràng, ngăn cách nhau bằng đúng 2 ký tự \\n\\n.
+- Đưa lời thoại trực tiếp của nhân vật vào nếu có tình huống đối đáp (dùng dấu nháy đơn '...' hoặc dấu gạch ngang, TUYỆT ĐỐI KHÔNG dùng dấu nháy kép bên trong chuỗi text để tránh làm hỏng cấu trúc JSON).
 - Đoạn cuối cùng phải kết thúc bằng một biến cố mở hoặc một tình thế nan giải/câu hỏi quyết định mà nhân vật phải đối mặt (VD: Trước tình thế ấy, nàng sẽ quyết định ra sao?).
 - NGUYÊN TẮC SHOW, DON'T TELL: Kể hành động cụ thể, biểu cảm sắc nét. TUYỆT ĐỐI CẤM câu đúc kết triết lý giáo điều hay răn dạy đạo lý ở cuối đoạn (VD: CẤM các câu như '...dùng lòng nhân ái hóa giải...', '...cái giá phải trả là sự thanh thản...', '...gieo nhân nào gặt quả nấy...').
 2. BỘ 3 THẺ TRÚC MỆNH LỆNH (CHOICES):
@@ -364,18 +484,18 @@ QUY TẮC BẮT BUỘC:
   + "statChanges": Thay đổi điểm số tương ứng (+/- từ 5 đến 25)
 3. Chỉ số hiện tại: Tâm: ${currentStats.tam}, Trí: ${currentStats.tri}, Dũng: ${currentStats.dung}, Lòng Dân: ${currentStats.longDan}.
 4. Lịch sử các bước trước: ${JSON.stringify(previousHistory)}.
-5. Bước hiện tại: ${nextStep}. ${isTargetEnding ? 'ĐÂY LÀ HỒI KẾT (Ending). Hãy viết đoạn kết trọn vẹn, xúc động, đúc kết vận mệnh nhân vật một cách độc đáo.' : 'Đây là hồi cao trào, mở ra 2 lựa chọn tiếp theo đối mặt với tình thế mới.'}
+5. Bước hiện tại: ${nextStep} (Tổng hành trình gồm 4 - 5 Hồi). ${isTargetEnding ? 'ĐÂY LÀ HỒI KẾT (Ending). Hãy viết đoạn kết trọn vẹn, xúc động, đúc kết vận mệnh nhân vật một cách độc đáo.' : 'Đây là hồi phát triển cao trào (Hồi ' + nextStep + '/5), mở ra 3 lựa chọn Thẻ Trúc tiếp theo đối mặt với tình thế mới.'}
 
-BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG ĐƯỢC KÈM LỜI DẪN, KHÔNG DÙNG BACKTICKS MARKDOWN):
+BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG ĐƯỢC KÈM LỜI DẪN, KHÔNG DÙNG BACKTICKS MARKDOWN, KHÔNG CÓ KÝ TỰ XUỐNG DÒNG THÔ TRONG CHUỖI STRING):
 {
   "chapterTitle": "Tiêu đề của hồi này (VD: Hồi ${nextStep}: ...)",
   "sceneMood": "serene" | "dramatic" | "mystic" | "dark" | "triumphant",
   "storyText": "Nội dung kể chuyện dài khoảng 140 - 180 từ, giàu hình ảnh, kịch tính, mô tả tác động thực tế của lựa chọn vừa rồi.",
   "statChanges": {
-    "tam": số nguyên từ -20 đến +20,
-    "tri": số nguyên từ -20 đến +20,
-    "dung": số nguyên từ -20 đến +20,
-    "longDan": số nguyên từ -20 đến +20
+    "tam": 10,
+    "tri": 5,
+    "dung": 0,
+    "longDan": 10
   },
   "isEnding": ${isTargetEnding},
   "choices": ${
@@ -428,63 +548,104 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
   }
 }`;
 
-        for (const model of GEMINI_MODELS) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        system_instruction: { parts: [{ text: systemPrompt }] },
-                        contents: [
-                            {
-                                role: 'user',
-                                parts: [{ text: `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi ${isCustomAction ? 'đột phá thực hiện' : 'chọn'}: "${chosenText}"` }],
+    try {
+        // =========================================================================
+        // TẦNG 1: GOOGLE GEMINI AI (VỚI CƠ CHẾ XOAY VÒNG KEY ROTATION POOL)
+        // =========================================================================
+        const geminiKeys = getGeminiApiKeys();
+
+    if (geminiKeys.length > 0) {
+        const activeModels = ['gemini-3.6-flash', 'gemini-3.5-flash'];
+
+        for (let k = 0; k < geminiKeys.length; k++) {
+            const keyIdx = (currentGeminiKeyIndex + k) % geminiKeys.length;
+            const apiKey = geminiKeys[keyIdx];
+
+            for (const model of activeModels) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            system_instruction: { parts: [{ text: systemPrompt }] },
+                            contents: [
+                                {
+                                    role: 'user',
+                                    parts: [{ text: `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi ${isCustomAction ? 'đột phá thực hiện' : 'chọn'}: "${chosenText}"` }],
+                                },
+                            ],
+                            generationConfig: {
+                                temperature: isCustomAction ? 0.85 : 0.75,
+                                maxOutputTokens: 2048,
+                                responseMimeType: 'application/json',
                             },
-                        ],
-                        generationConfig: {
-                            temperature: isCustomAction ? 0.85 : 0.75,
-                            maxOutputTokens: 2048,
-                            responseMimeType: 'application/json',
-                        },
-                    }),
-                    signal: AbortSignal.timeout(15000),
-                });
+                        }),
+                        signal: AbortSignal.timeout(5000),
+                    });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                    const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                    const parsed = JSON.parse(cleaned);
+                    // Nếu key chạm giới hạn (429 Rate Limit / 403 Quota Exceeded), đổi ngay sang key tiếp theo
+                    if (response.status === 429 || response.status === 403) {
+                        console.warn(`[StoryBranch] Key Gemini #${keyIdx + 1} chạm giới hạn (HTTP ${response.status}). Tự động đổi sang Key tiếp theo...`);
+                        currentGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+                        break;
+                    }
 
-                    // Tính toán cập nhật stats mới
-                    const newStats = {
-                        tam: Math.min(100, Math.max(0, currentStats.tam + (parsed.statChanges?.tam || 0))),
-                        tri: Math.min(100, Math.max(0, currentStats.tri + (parsed.statChanges?.tri || 0))),
-                        dung: Math.min(100, Math.max(0, currentStats.dung + (parsed.statChanges?.dung || 0))),
-                        longDan: Math.min(100, Math.max(0, currentStats.longDan + (parsed.statChanges?.longDan || 0))),
-                    };
+                    if (response.ok) {
+                        const data = await response.json();
+                        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        const parsed = safeParseStoryJson(rawText);
 
-                    return {
-                        step: nextStep,
-                        chapterTitle: parsed.chapterTitle || `Hồi ${nextStep}: Biến Cố Mới`,
-                        sceneMood: parsed.sceneMood || 'dramatic',
-                        storyText: parsed.storyText,
-                        statChanges: parsed.statChanges || { tam: 0, tri: 0, dung: 0, longDan: 0 },
-                        newStats,
-                        isEnding: !!parsed.isEnding,
-                        choices: parsed.choices || [],
-                        endingData: parsed.endingData || null,
-                        sourceType: 'gemini_story_engine',
-                    };
+                        if (parsed && parsed.storyText) {
+                            const newStats = {
+                                tam: Math.min(100, Math.max(0, currentStats.tam + (parsed.statChanges?.tam || 0))),
+                                tri: Math.min(100, Math.max(0, currentStats.tri + (parsed.statChanges?.tri || 0))),
+                                dung: Math.min(100, Math.max(0, currentStats.dung + (parsed.statChanges?.dung || 0))),
+                                longDan: Math.min(100, Math.max(0, currentStats.longDan + (parsed.statChanges?.longDan || 0))),
+                            };
+
+                            return {
+                                step: nextStep,
+                                chapterTitle: parsed.chapterTitle || `Hồi ${nextStep}: Biến Cố Mới`,
+                                sceneMood: parsed.sceneMood || 'dramatic',
+                                storyText: parsed.storyText,
+                                statChanges: parsed.statChanges || { tam: 0, tri: 0, dung: 0, longDan: 0 },
+                                newStats,
+                                isEnding: !!parsed.isEnding,
+                                choices: parsed.choices || [],
+                                endingData: parsed.endingData || null,
+                                sourceType: geminiKeys.length > 1 ? `gemini_story_engine (Key #${keyIdx + 1})` : 'gemini_story_engine',
+                            };
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`[StoryBranch] Model ${model} (Key #${keyIdx + 1}) gặp sự cố:`, err.message);
                 }
-            } catch (err) {
-                console.warn(`[StoryBranch] Model ${model} gặp sự cố:`, err.message);
             }
         }
     }
 
-    // Fallback cục bộ khi không có API key hoặc network ngắt quãng
+    // =========================================================================
+    // TẦNG 2: GROQ AI (LLAMA 3 / MIXTRAL) — DỰ PHÒNG MIỄN PHÍ TỐC ĐỘ CAO
+    // =========================================================================
+    const groqResult = await callGroqStoryEngine({
+        systemPrompt,
+        story,
+        nextStep,
+        chosenText,
+        isCustomAction,
+        currentStats,
+    });
+        if (groqResult) {
+            return groqResult;
+        }
+    } catch (aiEngineErr) {
+        console.warn('[StoryBranch] Toàn bộ engine AI ngoại vi gặp sự cố, tự động kích hoạt Tầng 3:', aiEngineErr.message);
+    }
+
+    // =========================================================================
+    // TẦNG 3: LOCAL NARRATIVE ENGINE — DỰ PHÒNG CỤC BỘ KHÔNG CẦN INTERNET
+    // =========================================================================
     return generateLocalFallbackChapter({ story, nextStep, chosenText, currentStats });
 }
 
@@ -492,7 +653,7 @@ BẠN PHẢI TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON CHUẨN (KHÔNG Đ
  * Fallback thông minh nội bộ đảm bảo 100% người dùng luôn chơi được mượt mà
  */
 function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStats }) {
-    const isEnding = nextStep >= 3;
+    const isEnding = nextStep >= 5;
 
     if (story.slug === 'tam-cam') {
         if (isEnding) {
@@ -535,14 +696,37 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
             isEnding: false,
             choices: [
                 {
-                    id: 'fallback_c1',
+                    id: 'tc_fb_1',
+                    cardTitle: 'Dâng Kỹ Nghệ Cho Triều Đình',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scale',
                     text: 'Dâng toàn bộ kỹ nghệ dệt lụa cho triều đình để mở rộng nghề dệt khắp non sông',
-                    hint: '+Trí tuệ, +Quốc gia thịnh vượng',
+                    folkQuote: 'Nước thịnh dân an / Non sông vững bền một dải',
+                    requiredStat: { stat: 'tri', min: 60 },
+                    statChanges: { tam: 5, tri: 15, dung: 5, longDan: 10 },
                 },
                 {
-                    id: 'fallback_c2',
+                    id: 'tc_fb_2',
+                    cardTitle: 'Gìn Giữ Sản Nghiệp Thôn Quê',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
                     text: 'Giữ nghề dệt làm sản nghiệp chung cho dân nghèo trong làng, sống đời thanh bần giản dị',
-                    hint: '+Lòng Dân, +Thanh thản',
+                    folkQuote: 'Đói no có bạn, rách lành có nhau',
+                    requiredStat: null,
+                    statChanges: { tam: 15, tri: 5, dung: 5, longDan: 20 },
+                },
+                {
+                    id: 'tc_fb_3',
+                    cardTitle: 'Khai Phá Vùng Đất Mới',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'feather',
+                    text: 'Cùng mẹ con Cám mang nghề dệt đến những vùng biên cương xa xôi giúp dân nghèo lập nghiệp',
+                    folkQuote: 'Dấn thân mở lối / Gieo mầm phúc đức muôn phương',
+                    requiredStat: null,
+                    statChanges: { tam: 10, tri: 5, dung: 20, longDan: 15 },
                 },
             ],
             endingData: null,
@@ -591,14 +775,37 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
             isEnding: false,
             choices: [
                 {
-                    id: 'ts_next_1',
+                    id: 'ts_fb_1',
+                    cardTitle: 'Minh Ước Hòa Bình',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scale',
                     text: 'Ký kết Minh Ước Hòa Bình, thiết lập bang giao hòa hiếu lâu dài giữa các nước',
-                    hint: '+Trí tuệ, +Thái bình thịnh trị',
+                    folkQuote: 'Đem đại nghĩa để thắng hung tàn / Lấy chí nhân để thay cường bạo',
+                    requiredStat: null,
+                    statChanges: { tam: 10, tri: 20, dung: 10, longDan: 20 },
                 },
                 {
-                    id: 'ts_next_2',
+                    id: 'ts_fb_2',
+                    cardTitle: 'Ẩn Tích Dưới Gốc Đa',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
                     text: 'Từ tạ ấn kiếm Nguyên soái, cùng công chúa trở về dưới gốc đa xưa dạy dân làm nương rẫy',
-                    hint: '+Tâm đức, +Khí phách thanh cao',
+                    folkQuote: 'Công danh phú quý thoảng như mây / Trọn nghĩa vẹn tình ấm cõi say',
+                    requiredStat: null,
+                    statChanges: { tam: 25, tri: 5, dung: 10, longDan: 15 },
+                },
+                {
+                    id: 'ts_fb_3',
+                    cardTitle: 'Tuần Du Trấn Biên',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'sword',
+                    text: 'Cầm quân tuần du khắp các cửa ải biên cương, giúp dân khai hoang lập ấp giữ yên bờ cõi',
+                    folkQuote: 'Trai thời trung hiếu làm đầu / Gặp cơn quốc nạn quản chi thân mình',
+                    requiredStat: null,
+                    statChanges: { tam: 5, tri: 10, dung: 25, longDan: 20 },
                 },
             ],
             endingData: null,
@@ -647,14 +854,37 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
             isEnding: false,
             choices: [
                 {
-                    id: 'adv_next_1',
+                    id: 'adv_fb_1',
+                    cardTitle: 'Lệnh Tiễn Sấm Sét',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'sword',
                     text: 'Cùng vua cha giương nỏ thần thật phát huy sấm sét bắn tan hạm đội giặc tại sông Cầu',
-                    hint: '+Dũng khí, +Bảo quốc an dân',
+                    folkQuote: 'Nỏ thần một phát tan muôn giặc / Non nước ngàn năm vững thái bình',
+                    requiredStat: null,
+                    statChanges: { tam: 5, tri: 10, dung: 25, longDan: 20 },
                 },
                 {
-                    id: 'adv_next_2',
+                    id: 'adv_fb_2',
+                    cardTitle: 'Đối Chất Quan Ải',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
                     text: 'Đích thân ra trước quan ải đối chất cùng Trọng Thủy, khuyên chàng hồi tâm chuyển ý quy thuận Âu Lạc',
-                    hint: '+Tâm tình, +Thử thách lòng người',
+                    folkQuote: 'Lấy chân tình thức tỉnh lương tri / Trọn vẹn đạo đời dẫu biệt ly',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 15, dung: 5, longDan: 15 },
+                },
+                {
+                    id: 'adv_fb_3',
+                    cardTitle: 'Bày Trận Thành Ốc',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scale',
+                    text: 'Dụ quân Triệu Đà tiến sâu vào mê cung chín vòng thành Ốc rồi vây khốn bức hàng',
+                    folkQuote: 'Trí mưu định quốc, hiểm địa thắng binh',
+                    requiredStat: null,
+                    statChanges: { tam: 5, tri: 25, dung: 15, longDan: 15 },
                 },
             ],
             endingData: null,
@@ -703,14 +933,37 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
             isEnding: false,
             choices: [
                 {
-                    id: 'st_next_1',
+                    id: 'st_fb_1',
+                    cardTitle: 'Minh Ước Sơn Hà',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scale',
                     text: 'Lập đàn tế Trời Đất, ký Minh ước Sơn Hà đời đời hòa hợp với loài thủy tộc phương Nam',
-                    hint: '+Trí tuệ, +Thái bình thịnh trị',
+                    folkQuote: 'Nước lùi non tiến, hòa khí sinh tài',
+                    requiredStat: null,
+                    statChanges: { tam: 15, tri: 25, dung: 10, longDan: 20 },
                 },
                 {
-                    id: 'st_next_2',
+                    id: 'st_fb_2',
+                    cardTitle: 'Dạy Dân Đắp Đê',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
                     text: 'Truyền dạy cho muôn dân phương pháp canh tác lúa nước theo mùa lũ, biến hiểm họa thành mùa vàng',
-                    hint: '+Lòng Dân, +Bách nghệ phồn vinh',
+                    folkQuote: 'Thuận thiên dưỡng dân / Châu thổ ngàn đời trĩu hạt',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 15, dung: 10, longDan: 25 },
+                },
+                {
+                    id: 'st_fb_3',
+                    cardTitle: 'Trấn Yểm Phong Ba',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'mountain',
+                    text: 'Dựng cọc gỗ lim trấn yểm các ngã ba sông, chế ngự cuồng lưu bảo vệ vạn nhà',
+                    folkQuote: 'Dũng khí dời non lấp biển / Uy danh rạng rỡ trời Nam',
+                    requiredStat: null,
+                    statChanges: { tam: 5, tri: 10, dung: 25, longDan: 20 },
                 },
             ],
             endingData: null,
@@ -759,14 +1012,37 @@ function generateLocalFallbackChapter({ story, nextStep, chosenText, currentStat
             isEnding: false,
             choices: [
                 {
-                    id: 'ck_next_1',
-                    text: 'Cùng người anh lập Quỹ Tương Tế Làng Xã, trích một phần hoa lợi hàng năm để cứu tế dân nghèo',
-                    hint: '+Đại Phúc Đức, +Lòng Dân',
+                    id: 'ck_fb_1',
+                    cardTitle: 'Mở Xưởng Dạy Nghề',
+                    sealText: 'TRÍ MƯU',
+                    pillar: 'tri',
+                    iconType: 'scale',
+                    text: 'Dùng một phần vàng mở xưởng mộc truyền nghề cho dân làng, gây dựng cơ nghiệp lâu dài',
+                    folkQuote: 'Một nghề cho chín còn hơn chín nghề / Cơ nghiệp bền từ bàn tay chăm chỉ',
+                    requiredStat: null,
+                    statChanges: { tam: 10, tri: 20, dung: 5, longDan: 20 },
                 },
                 {
-                    id: 'ck_next_2',
-                    text: 'Trồng thêm một vạn cây ăn quả quanh bờ đê để chim muông muôn phương tìm về làm tổ, tạo cảnh thái bình',
-                    hint: '+Tâm đức, +Thuận hòa tự nhiên',
+                    id: 'ck_fb_2',
+                    cardTitle: 'Cứu Tế Muôn Dân',
+                    sealText: 'TÂM ĐỨC',
+                    pillar: 'tam',
+                    iconType: 'lotus',
+                    text: 'San sẻ của cải cứu trợ nạn đói cho xóm làng, khuyên anh trai cùng chung tay làm thiện tích đức',
+                    folkQuote: 'Thương người như thể thương thân / Nhường cơm sẻ áo trọn phần nghĩa nhân',
+                    requiredStat: null,
+                    statChanges: { tam: 25, tri: 10, dung: 5, longDan: 25 },
+                },
+                {
+                    id: 'ck_fb_3',
+                    cardTitle: 'Thuận Theo Tự Nhiên',
+                    sealText: 'DŨNG KHÍ',
+                    pillar: 'dung',
+                    iconType: 'feather',
+                    text: 'Trả lại vàng thừa cho chim thần, chỉ giữ lấy hạt giống cây quý gieo trồng khắp non sông',
+                    folkQuote: 'Gieo mầm phúc đức / Đơm hoa thơm cho đời đời',
+                    requiredStat: null,
+                    statChanges: { tam: 20, tri: 10, dung: 20, longDan: 20 },
                 },
             ],
             endingData: null,
