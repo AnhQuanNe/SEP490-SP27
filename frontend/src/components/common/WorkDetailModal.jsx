@@ -263,8 +263,8 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                        {/* Audio Recitation button with Neural Edge-TTS (Hiện ở Header khi không ở tab Văn bản để tránh trùng thanh Bar) */}
-                        {activeTab !== 'van-ban' && (
+                        {/* Audio Recitation button with Neural Edge-TTS (Hiện ở Header khi không ở tab Văn bản hoặc Tất cả để tránh trùng thanh Bar) */}
+                        {activeTab !== 'van-ban' && activeTab !== 'tat-ca' && (
                             <HeritageAudioPlayer
                                 text={current.quote || current.content || current.summary}
                                 audioUrl={current.audioUrl}
@@ -537,6 +537,19 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                                     </span>
                                                 )}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* Thanh nghe diễn ngâm cho tác phẩm nếu không có khung trích đoạn riêng */}
+                                    {!current.quote && (current.audioUrl || current.content) && (
+                                        <div className="mb-4">
+                                            <HeritageAudioPlayer
+                                                text={current.content || current.title}
+                                                audioUrl={current.audioUrl}
+                                                performer={current.audioPerformer}
+                                                title={`Diễn ngâm ${current.categoryName || 'Tác phẩm Di sản'}`}
+                                                variant="bar"
+                                            />
                                         </div>
                                     )}
 

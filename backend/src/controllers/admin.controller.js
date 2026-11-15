@@ -473,8 +473,29 @@ const updateWork = async (req, res) => {
             updateData.tags = updateData.tags.split(',').map((t) => t.trim()).filter(Boolean);
         }
 
-        const updatedWork = await Work.findByIdAndUpdate(
-            id,
+        // Tự động đồng bộ categoryName tương ứng nếu người dùng đổi category
+        const CATEGORY_NAMES = {
+            'ca-dao': 'Ca dao Dân ca',
+            'tuc-ngu': 'Tục ngữ',
+            'co-tich': 'Truyện cổ tích',
+            'truyen-thuyet': 'Truyền thuyết',
+            'than-thoai': 'Thần thoại',
+            'trung-dai': 'Văn học Trung đại',
+            'hien-dai': 'Văn học Hiện đại',
+            'khac': 'Tác phẩm khác',
+        };
+        if (updateData.category && (!updateData.categoryName || updateData.categoryName === 'Ca dao Dân ca')) {
+            updateData.categoryName = CATEGORY_NAMES[updateData.category] || updateData.category;
+        }
+
+        const mongoose = require('mongoose');
+        let query = { _id: id };
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
+        }
+
+        const updatedWork = await Work.findOneAndUpdate(
+            query,
             updateData,
             { returnDocument: 'after', runValidators: true }
         );
@@ -527,8 +548,14 @@ const updateWorkStatus = async (req, res) => {
             });
         }
 
-        const work = await Work.findByIdAndUpdate(
-            id,
+        const mongoose = require('mongoose');
+        let query = { _id: id };
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
+        }
+
+        const work = await Work.findOneAndUpdate(
+            query,
             { status },
             { returnDocument: 'after' }
         );
@@ -559,7 +586,13 @@ const updateWorkStatus = async (req, res) => {
 const deleteWork = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await Work.findByIdAndDelete(id);
+        const mongoose = require('mongoose');
+        let query = { _id: id };
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
+        }
+
+        const deleted = await Work.findOneAndDelete(query);
         if (!deleted) {
             return res.status(404).json({
                 success: false,

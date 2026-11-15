@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const generateToken = (userId) => {
     return jwt.sign(
         { id: userId },
-        process.env.JWT_SECRET || 'fallback_secret_sep490',
+        process.env.JWT_SECRET || 'sep490_super_secret_jwt_key_2026_sp27',
         {
             expiresIn: process.env.JWT_EXPIRES_IN || '7d',
         }
