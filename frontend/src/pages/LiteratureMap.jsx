@@ -556,7 +556,7 @@ const LiteratureMap = () => {
                             {/* Danh sách địa danh cổ tiêu biểu bấm nhanh */}
                             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] text-slate-500 scrollbar-none">
                                 <span className="font-bold text-slate-700 flex-shrink-0">Gợi ý cửa ải lịch sử:</span>
-                                {ancientLandmarks.slice(0, 8).map((item) => (
+                                {ancientLandmarks.slice(0, 10).map((item) => (
                                     <button
                                         key={item.id}
                                         type="button"

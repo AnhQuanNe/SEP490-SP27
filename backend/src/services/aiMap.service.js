@@ -31,12 +31,14 @@ function calculateSimilarity(s1, s2) {
  */
 function getSuggestedLandmarks() {
     return [
-        { id: 'anc-song-bach-dang', ancientName: 'Sông Bạch Đằng', slug: 'song-bach-dang', period: 'Năm 938, 981, 1288' },
+        { id: 'anc-ai-nam-quan', ancientName: 'Ải Nam Quan', slug: 'ai-nam-quan', period: 'Biên cương ngàn năm' },
+        { id: 'anc-cua-gianh', ancientName: 'Cửa Gianh (Sông Gianh)', slug: 'cua-gianh', period: 'Phân tranh Đàng Trong - Đàng Ngoài (1627-1672)' },
+        { id: 'anc-hai-van-quan', ancientName: 'Hải Vân Quan', slug: 'hai-van-quan', period: 'Triều Nguyễn (1826)' },
         { id: 'anc-ai-chi-lang', ancientName: 'Ải Chi Lăng', slug: 'ai-chi-lang', period: 'Năm 1427' },
-        { id: 'anc-ben-chuong-duong', ancientName: 'Bến Chương Dương', slug: 'ben-chuong-duong', period: 'Năm 1285' },
-        { id: 'anc-thanh-co-loa', ancientName: 'Thành Cổ Loa', slug: 'thanh-co-loa', period: 'Thế kỷ III TCN' },
-        { id: 'anc-thanh-tay-do', ancientName: 'Thành Nhà Hồ (Tây Đô)', slug: 'thanh-tay-do', period: 'Năm 1397' },
         { id: 'anc-deo-ngang', ancientName: 'Đèo Ngang (Hoành Sơn)', slug: 'deo-ngang', period: 'Thơ Bà Huyện Thanh Quan' },
+        { id: 'anc-deo-ba-doi', ancientName: 'Đèo Ba Dội (Tam Điệp)', slug: 'deo-ba-doi', period: 'Năm 1788 - 1789' },
+        { id: 'anc-song-bach-dang', ancientName: 'Sông Bạch Đằng', slug: 'song-bach-dang', period: 'Năm 938, 981, 1288' },
+        { id: 'anc-ben-chuong-duong', ancientName: 'Bến Chương Dương', slug: 'ben-chuong-duong', period: 'Năm 1285' },
     ];
 }
 
@@ -127,6 +129,254 @@ async function findVerifiedHeritageImage(query, backupQuery) {
  */
 const ANCIENT_LANDMARKS_CATALOG = [
     {
+        "id": "anc-ai-nam-quan",
+        "slug": "ai-nam-quan",
+        "ancientName": "Ải Nam Quan (Trấn Nam Quan)",
+        "dynasty": "Thời Tiền Lê • Lý • Trần • Lê • Nguyễn (Thế kỷ X - XIX)",
+        "period": "Cửa ải biên cương phương Bắc trọng yếu nhất trong lịch sử Đại Việt",
+        "modernLocation": "Cửa khẩu Quốc tế Hữu Nghị, Thị trấn Đồng Đăng, Huyện Cao Lộc, Tỉnh Lạng Sơn",
+        "coordinates": {
+            "lat": 21.9833,
+            "lng": 106.7167
+        },
+        "historicalEvent": "Là cửa ải biên giới thiên cổ chứng kiến bao sự kiện lịch sử bi tráng: nơi Nguyễn Trãi gạt nước mắt chia tay cha là Nguyễn Phi Khanh bị quân Minh bắt giải sang Trung Quốc; nơi hàng trăm đoàn sứ thần Đại Việt qua lại bang giao; và là tuyến phòng thủ then chốt của dân tộc.",
+        "literatureQuote": "Ải Bắc quân thù từng khiếp vía / Nam Quan phụ tử lệ tuôn rơi...",
+        "literatureAuthor": "Sử thi dân gian nhớ tích Nguyễn Trãi chia tay cha tại Ải Nam Quan",
+        "geographicalChange": "Từ cổng đá Trấn Nam Quan trên đỉnh ải phân định cương giới hai nước ngàn năm, ngày nay là Cửa khẩu Quốc tế Hữu Nghị hiện đại, cột mốc Km 0 mở đầu cho tuyến đường huyết mạch xuyên Việt Quốc lộ 1A.",
+        "culturalSignificance": "Biểu tượng ngàn năm của chủ quyền biên cương lãnh thổ phương Bắc và truyền thống ngoại giao bang giao của dân tộc.",
+        "tags": [
+            "Ải Nam Quan",
+            "Trấn Nam Quan",
+            "Hữu Nghị Quan",
+            "Nguyễn Trãi",
+            "Lạng Sơn",
+            "Cửa ải",
+            "Biên cương"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/Tr%E1%BA%A5nNamQuan.png/960px-Tr%E1%BA%A5nNamQuan.png",
+                "title": "Cửa Trấn Nam Quan trong Bắc Sứ Thủy Lục Địa Đồ (1880)",
+                "caption": "Họa đồ cổ khắc họa cửa ải Trấn Nam Quan trong tập bản đồ sứ trình triều Nguyễn.",
+                "source": "Bắc Sứ Thủy Lục Địa Đồ (1880) - Viện Nghiên cứu Hán Nôm",
+                "era": "Triều Nguyễn (Năm 1880)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/H%E1%BB%AFu_Ngh%E1%BB%8B_Quan.JPG/960px-H%E1%BB%AFu_Ngh%E1%BB%8B_Quan.JPG",
+                "title": "Cửa Hữu Nghị Quan (Ải Nam Quan xưa) hôm nay",
+                "caption": "Tòa quan ải sừng sững tại Km 0 ranh giới Việt - Trung tại thị trấn Đồng Đăng, Lạng Sơn.",
+                "source": "Nhiếp ảnh Biên cương Tổ quốc",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
+        "id": "anc-cua-gianh",
+        "slug": "cua-gianh",
+        "ancientName": "Cửa Gianh (Sông Gianh - Lũy Thầy)",
+        "dynasty": "Thời Trịnh - Nguyễn phân tranh (1627 - 1672) • Thời Lê Trung Hưng",
+        "period": "Ranh giới chia cắt Đàng Trong và Đàng Ngoài gần nửa thế kỷ",
+        "modernLocation": "Thị xã Ba Đồn & Huyện Quảng Trạch, Tỉnh Quảng Bình",
+        "coordinates": {
+            "lat": 17.7167,
+            "lng": 106.4667
+        },
+        "historicalEvent": "Suốt gần nửa thế kỷ (1627 - 1672), dòng sông Gianh (Linh Giang) cùng hệ thống chiến lũy Lũy Thầy do Đào Duy Từ chỉ huy đắp đã trở thành phòng tuyến quân sự kiên cố không thể vượt qua, chia cắt non sông thành Đàng Ngoài (chúa Trịnh) và Đàng Trong (chúa Nguyễn) qua 7 lần giao tranh ác liệt.",
+        "literatureQuote": "Khôn ngoan qua được Thanh Hà / Dẫu rằng có cánh khó qua Lũy Thầy.",
+        "literatureAuthor": "Ca dao lịch sử thời Trịnh - Nguyễn phân tranh",
+        "geographicalChange": "Sông Gianh bắt nguồn từ dãy Trường Sơn đổ ra Biển Đông tại Cửa Gianh, dòng nước sâu rộng cuồn cuộn chia cắt hai miền. Ngày nay đôi bờ sông Gianh đã nối liền bằng cầu Sông Gianh trên Quốc lộ 1A, tượng đài chiến thắng và dấu tích lũy cổ Đào Duy Từ vẫn còn lưu dấu.",
+        "culturalSignificance": "Cửa ải lịch sử định hình cục diện phân tranh Đàng Trong - Đàng Ngoài, minh chứng cho tài năng công binh kiệt xuất của Đào Duy Từ.",
+        "tags": [
+            "Cửa Gianh",
+            "Cửa Danh",
+            "Sông Gianh",
+            "Lũy Thầy",
+            "Đào Duy Từ",
+            "Trịnh Nguyễn",
+            "Đàng Trong Đàng Ngoài",
+            "Quảng Bình"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Ho%C3%A0nh_S%C6%A1n-_S%C3%B4ng_Gianh-_C%E1%BB%ADa_Nh%E1%BA%ADt_L%E1%BB%87-_L%C5%A9y_Th%E1%BA%A7y.PNG/960px-Ho%C3%A0nh_S%C6%A1n-_S%C3%B4ng_Gianh-_C%E1%BB%ADa_Nh%E1%BA%ADt_L%E1%BB%87-_L%C5%A9y_Th%E1%BA%A7y.PNG",
+                "title": "Bản đồ cổ Hoành Sơn - Sông Gianh - Cửa Nhật Lệ - Lũy Thầy",
+                "caption": "Địa đồ lịch sử ghi lại phòng tuyến ranh giới Đàng Trong - Đàng Ngoài thời Trịnh - Nguyễn phân tranh.",
+                "source": "Viện Nghiên cứu Hán Nôm & Sử liệu cổ",
+                "era": "Thời Trịnh - Nguyễn phân tranh (1627 - 1672)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Gianh_River.jpg/960px-Gianh_River.jpg",
+                "title": "Dòng sông Gianh & Cửa Gianh thanh bình hôm nay",
+                "caption": "Cửa sông Gianh lịch sử mênh mông đổ ra Biển Đông nối liền đôi bờ tại thị xã Ba Đồn, Quảng Bình.",
+                "source": "Nhiếp ảnh Danh thắng Quảng Bình",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
+        "id": "anc-hai-van-quan",
+        "slug": "hai-van-quan",
+        "ancientName": "Hải Vân Quan (Thiên Hạ Đệ Nhất Hùng Quan)",
+        "dynasty": "Triều Nguyễn (Năm 1826)",
+        "period": "Cửa ải yết hầu phòng thủ chiến lược ven biển miền Trung",
+        "modernLocation": "Đỉnh đèo Hải Vân, Ranh giới TT-Huế và TP. Đà Nẵng",
+        "coordinates": {
+            "lat": 16.1969,
+            "lng": 108.1311
+        },
+        "historicalEvent": "Năm Minh Mạng thứ 7 (1826), triều đình cho xây dựng cụm thành lũy phòng thủ kiên cố với cổng vòm đá trên đỉnh đèo Hải Vân. Cửa nhìn về Thừa Thiên khắc chữ \"Hải Vân Quan\", cửa nhìn về Quảng Nam khắc chữ \"Thiên Hạ Đệ Nhất Hùng Quan\".",
+        "literatureQuote": "Đệ nhất hùng quan mây trắng phủ / Non xanh biển biếc tạc sơn hà.",
+        "literatureAuthor": "Vua Lê Thánh Tông xưng tụng danh xưng \"Thiên hạ đệ nhất hùng quan\"",
+        "geographicalChange": "Đỉnh đèo Hải Vân cao gần 500m quanh năm mây mù bao phủ, chia cắt khí hậu hai miền Nam - Bắc đèo. Di tích Hải Vân Quan đã được trùng tu phục dựng nguyên bản cổng thành triều Nguyễn đón du khách thưởng ngoạn.",
+        "culturalSignificance": "Di tích Quốc gia đặc biệt, kiệt tác kiến trúc quân sự phòng thủ cửa ải kết hợp tuyệt sắc non nước bậc nhất Việt Nam.",
+        "tags": [
+            "Hải Vân Quan",
+            "Đèo Hải Vân",
+            "Thiên Hạ Đệ Nhất Hùng Quan",
+            "Đà Nẵng",
+            "Huế",
+            "Triều Nguyễn"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/H%E1%BA%A3i_V%C3%A2n_Gate%2C_H%E1%BA%A3i_V%C3%A2n_Pass%2C_Vietnam_%286944533488%29.jpg/960px-H%E1%BA%A3i_V%C3%A2n_Gate%2C_H%E1%BA%A3i_V%C3%A2n_Pass%2C_Vietnam_%286944533488%29.jpg",
+                "title": "Cổng vòm đá Hải Vân Quan triều Nguyễn (1826)",
+                "caption": "Cổng vòm thành đá cổ rêu phong xây dựng thời vua Minh Mạng trấn giữ đỉnh đèo Hải Vân.",
+                "source": "Di tích Quốc gia Hải Vân Quan",
+                "era": "Triều Nguyễn (Năm 1826)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Hai_Van_Pass_ocean_view.jpg/960px-Hai_Van_Pass_ocean_view.jpg",
+                "title": "Toàn cảnh Đèo Hải Vân & Vịnh Lăng Cô hôm nay",
+                "caption": "Cung đường đèo uốn lượn hùng vĩ lưng chừng mây nhìn xuống vịnh Lăng Cô và biển Đà Nẵng.",
+                "source": "Nhiếp ảnh Danh thắng Việt Nam",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
+        "id": "anc-ai-chi-lang",
+        "slug": "ai-chi-lang",
+        "ancientName": "Ải Chi Lăng (Chi Lăng Quan)",
+        "dynasty": "Thời Tiền Lê (981) • Thời Trần (1285) • Thời Hậu Lê (1427)",
+        "period": "Chiến trường cửa ải biên cương chém đầu Liễu Thăng",
+        "modernLocation": "Huyện Chi Lăng, Tỉnh Lạng Sơn",
+        "coordinates": {
+            "lat": 21.65,
+            "lng": 106.5833
+        },
+        "historicalEvent": "Tháng 10 năm 1427, tướng Trần Lựu giả thua nhử Liễu Thăng vào đầm lầy Mã Yên tại Ải Chi Lăng. Quân phục binh của Lê Sát và Lưu Nhân Chú đổ ra chém rơi đầu Liễu Thăng, bẻ gãy đạo viện binh 10 vạn giặc Minh.",
+        "literatureQuote": "Liễu Thăng sơn trượng đầu rơi rụng / Lương Minh bại trận mạng tiêu vong",
+        "literatureAuthor": "Nguyễn Trãi — \"Bình Ngô đại cáo\" (1428)",
+        "geographicalChange": "Ải Chi Lăng nằm trong thung lũng hẹp kẹp giữa hai dãy núi đá vôi hiểm trở, đầm lầy Mã Yên xưa nay là ruộng lúa phì nhiêu, núi Mã Yên sừng sững tạc vào sử xanh.",
+        "culturalSignificance": "Bức trường thành thiên nhiên kiên cố bảo vệ biên cương phía Bắc của Tổ quốc.",
+        "tags": [
+            "Khởi nghĩa Lam Sơn",
+            "Nguyễn Trãi",
+            "Liễu Thăng",
+            "Lạng Sơn",
+            "Ải Chi Lăng"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Chi_Lang_Pass_%289980921026%29.jpg/960px-Chi_Lang_Pass_%289980921026%29.jpg",
+                "title": "Thung lũng hiểm địa Ải Chi Lăng & Núi Mã Yên",
+                "caption": "Địa hình thung lũng khe sâu nơi nghĩa quân Lam Sơn phục kích chém rơi đầu giặc Liễu Thăng năm 1427.",
+                "source": "Bảo tàng Khởi nghĩa Lam Sơn & Sử liệu Hậu Lê",
+                "era": "Thời Hậu Lê (Năm 1427)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Quymon.JPG/960px-Quymon.JPG",
+                "title": "Cửa ải Quỷ Môn Quan tại Chi Lăng hôm nay",
+                "caption": "Cổng trời đá tự nhiên sừng sững trấn giữ cửa ngõ biên ải phía Bắc tại huyện Chi Lăng, Lạng Sơn.",
+                "source": "Ban Quản lý Di tích Lịch sử Ải Chi Lăng",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
+        "id": "anc-deo-ngang",
+        "slug": "deo-ngang",
+        "ancientName": "Đèo Ngang (Hoành Sơn Quan)",
+        "dynasty": "Thời nhà Nguyễn & Trung đại",
+        "period": "Cửa ải phân chia địa lý Đàng Trong - Đàng Ngoài thuở xưa",
+        "modernLocation": "Ranh giới Huyện Kỳ Anh (Hà Tĩnh) và Huyện Quảng Trạch (Quảng Bình)",
+        "coordinates": {
+            "lat": 17.9719,
+            "lng": 106.4789
+        },
+        "historicalEvent": "Dãy Hoành Sơn đâm ngang ra biển Đông, nơi vua Minh Mạng cho xây dựng Hoành Sơn Quan bằng gạch đá vào năm 1833 được mệnh danh là \"Cổng Trời\" hiểm yếu.",
+        "literatureQuote": "Bước tới Đèo Ngang bóng xế tà / Cỏ cây chen đá lá chen hoa / Lom khom dưới núi tiều vài chú / Lác đác bên sông chợ mấy nhà...",
+        "literatureAuthor": "Bà Huyện Thanh Quan — Bài thơ tuyệt tác \"Qua Đèo Ngang\"",
+        "geographicalChange": "Con đường đèo hiểm trở quanh co vượt qua đỉnh Hoành Sơn mây mù bao phủ nay đã có hầm đường bộ Đèo Ngang hiện đại xuyên núi nối liền Hà Tĩnh và Quảng Bình.",
+        "culturalSignificance": "Thi tứ bất hủ của văn học trung đại Việt Nam, không gian hoài cổ trầm mặc gắn liền với hồn thơ dân tộc.",
+        "tags": [
+            "Bà Huyện Thanh Quan",
+            "Đèo Ngang",
+            "Quảng Bình",
+            "Hà Tĩnh",
+            "Thơ trung đại",
+            "Hoành Sơn"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Ho%C3%A0nh_S%C6%A1n_quan_3.jpeg/960px-Ho%C3%A0nh_S%C6%A1n_quan_3.jpeg",
+                "title": "Cửa Hoành Sơn Quan cổ trên đỉnh Đèo Ngang (1833)",
+                "caption": "Cổng thành rêu phong xây bằng đá gạch dưới triều vua Minh Mạng trấn giữ ranh giới Đàng Trong - Đàng Ngoài.",
+                "source": "Di tích Lịch sử Cửa ải Hoành Sơn Quan",
+                "era": "Triều Nguyễn (Năm 1833)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Ho%C3%A0nh_S%C6%A1n_quan_2.jpeg/960px-Ho%C3%A0nh_S%C6%A1n_quan_2.jpeg",
+                "title": "Toàn cảnh Di tích Hoành Sơn Quan trên đỉnh Đèo Ngang hôm nay",
+                "caption": "Di tích Hoành Sơn Quan sừng sững giữa mây trời non nước nối liền Hà Tĩnh và Quảng Bình.",
+                "source": "Nhiếp ảnh Danh thắng Việt Nam",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
+        "id": "anc-deo-ba-doi",
+        "slug": "deo-ba-doi",
+        "ancientName": "Đèo Ba Dội (Đèo Tam Điệp)",
+        "dynasty": "Thời Hậu Lê & Tây Sơn (Năm 1788 - 1789)",
+        "period": "Phòng tuyến chiến lược Tam Điệp - Biện Sơn của vua Quang Trung",
+        "modernLocation": "TP. Tam Điệp (Tỉnh Ninh Bình) giáp ranh TX. Bỉm Sơn (Tỉnh Thanh Hóa)",
+        "coordinates": {
+            "lat": 20.1417,
+            "lng": 105.8833
+        },
+        "historicalEvent": "Ngô Thì Nhậm hiến kế cho Ngô Văn Sở tạm rút quân thủy bộ về đóng giữ phòng tuyến Tam Điệp - Biện Sơn hiểm trở \"bảo toàn lực lượng chờ đại quân\", tạo bàn đạp quyết định để vua Quang Trung hành quân thần tốc ra Bắc đại phá 29 vạn quân Mãn Thanh.",
+        "literatureQuote": "Một đèo, một đèo, lại một đèo / Khen ai khéo tạc cảnh cảnh cheo leo / Cửa son đỏ loét tùm hum nóc / Hòn đá xanh rì lún phún rêu...",
+        "literatureAuthor": "Nữ sĩ Hồ Xuân Hương — Bài thơ \"Đèo Ba Dội\"",
+        "geographicalChange": "Dãy núi đá vôi Tam Điệp chạy dài ra sát biển chia cắt tự nhiên giữa Bắc Bộ và Trung Bộ với 3 tầng đèo quanh co dốc đứng. Ngày nay quốc lộ 1A và cao tốc Bắc - Nam đã được mở rộng hiện đại xuyên qua cửa ải xưa.",
+        "culturalSignificance": "Yết hầu giao thông thiên lý Bắc - Nam, minh chứng cho tầm nhìn chiến lược quân sự xuất chúng \"bỏ thành giữ người\" của danh sĩ Ngô Thì Nhậm.",
+        "tags": [
+            "Quang Trung",
+            "Tây Sơn",
+            "Tam Điệp",
+            "Hồ Xuân Hương",
+            "Ninh Bình",
+            "Đèo Ba Dội"
+        ],
+        "imagery": {
+            "ancient": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/%C4%90%E1%BB%81n_D%C3%A2u_Tam_%C4%90i%E1%BB%87p_Ninh_B%C3%ACnh.JPG/960px-%C4%90%E1%BB%81n_D%C3%A2u_Tam_%C4%90i%E1%BB%87p_Ninh_B%C3%ACnh.JPG",
+                "title": "Di tích Đền Dâu Quán Cháo tại Đèo Tam Điệp",
+                "caption": "Ngôi đền cổ kính dưới chân đèo Tam Điệp gắn liền với tích vua Quang Trung dừng chân khao quân trước khi tiến ra Thăng Long.",
+                "source": "Di tích Lịch sử Đền Dâu - Tam Điệp, Ninh Bình",
+                "era": "Thời Tây Sơn (Năm 1788 - 1789)"
+            },
+            "modern": {
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Phongtuyentamdiep2010.jpg/960px-Phongtuyentamdiep2010.jpg",
+                "title": "Dãy núi đá vôi Phòng tuyến Tam Điệp hôm nay",
+                "caption": "Dãy núi đá Tam Điệp hiểm trở ngút ngàn nối liền Ninh Bình và Thanh Hóa, nơi ghi dấu phòng tuyến quân sự kiệt xuất.",
+                "source": "Ban Quản lý Di tích Lịch sử Tam Điệp, Ninh Bình",
+                "era": "Hiện tại (Thế kỷ XXI)"
+            }
+        }
+    },
+    {
         "id": "anc-ben-chuong-duong",
         "slug": "ben-chuong-duong",
         "ancientName": "Bến Chương Dương (Chương Dương Độ)",
@@ -158,10 +408,10 @@ const ANCIENT_LANDMARKS_CATALOG = [
                 "era": "Thời nhà Trần (Năm 1285)"
             },
             "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Along_the_Red_River_in_Hanoi_23.jpg/960px-Along_the_Red_River_in_Hanoi_23.jpg",
-                "title": "Bến Chương Dương & Bãi bồi sông Hồng hôm nay",
-                "caption": "Khúc sông Hồng trù phú phù sa bồi đắp bên bến đò Chương Dương tại Thường Tín, Hà Nội.",
-                "source": "Nhiếp ảnh Di sản Văn hóa Việt Nam",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Chuong_Duong_Bridge_2.JPG/960px-Chuong_Duong_Bridge_2.JPG",
+                "title": "Cầu Chương Dương bắc qua dòng sông Hồng hôm nay",
+                "caption": "Cây cầu huyết mạch mang tên chiến tích Bến Chương Dương độ lẫy lừng năm 1285, bắc qua dòng sông Hồng cuộn đỏ phù sa tại Hà Nội.",
+                "source": "Nhiếp ảnh Di sản & Danh thắng Hà Nội",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
         }
@@ -271,17 +521,17 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/T%C6%B0%E1%BB%A3ng_Ch%E1%BB%AD_%C4%90%E1%BB%93ng_T%E1%BB%AD_t%E1%BA%A1i_%C4%90%E1%BB%81n_D%E1%BA%A1_Tr%E1%BA%A1ch.jpg",
-                "title": "Tượng thờ Chử Đồng Tử tại Đền Hóa Dạ Trạch",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/T%C6%B0%E1%BB%A3ng_Ch%E1%BB%AD_%C4%90%E1%BB%93ng_T%E1%BB%AD_v%C3%A0_Ti%C3%AAn_Dung_%28%C3%A1o_%C4%91%E1%BB%8F%29.jpg/960px-T%C6%B0%E1%BB%A3ng_Ch%E1%BB%AD_%C4%90%E1%BB%93ng_T%E1%BB%AD_v%C3%A0_Ti%C3%AAn_Dung_%28%C3%A1o_%C4%91%E1%BB%8F%29.jpg",
+                "title": "Tôn tượng Chử Đồng Tử & Tiên Dung tại Đền Hóa Dạ Trạch",
                 "caption": "Tượng Đức Thánh Chử Đồng Tử và Tiên Dung công chúa gắn liền với truyền thuyết đầm Nhất Dạ.",
                 "source": "Di tích Lịch sử Văn hóa Đền Hóa Dạ Trạch",
                 "era": "Thời Tiền Lý (Thế kỷ VI)"
             },
             "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/V%C4%83n_mi%E1%BA%BFu_X%C3%ADch_%C4%90%E1%BA%B1ng_02.JPG/960px-V%C4%83n_mi%E1%BA%BFu_X%C3%ADch_%C4%90%E1%BA%B1ng_02.JPG",
-                "title": "Khu Di tích Đền Hóa Dạ Trạch hôm nay",
-                "caption": "Ngôi đền cổ kính tĩnh mịch bên đầm sen ngát hương tại xã Dạ Trạch, huyện Khoái Châu, Hưng Yên.",
-                "source": "Sở Văn hóa Thể thao & Du lịch Hưng Yên",
+                "url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Hoi_Den_Hoa_Da_Trach_wikihanoi.jpg",
+                "title": "Lễ hội Đền Hóa Dạ Trạch tại Khoái Châu hôm nay",
+                "caption": "Ngôi đền cổ kính tĩnh mịch nơi tưởng niệm Chử Đồng Tử và căn cứ kháng chiến Dạ Trạch Vương tại Khoái Châu, Hưng Yên.",
+                "source": "Di tích Lịch sử Quốc gia Đền Hóa Dạ Trạch",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
         }
@@ -317,50 +567,10 @@ const ANCIENT_LANDMARKS_CATALOG = [
                 "era": "Thời nhà Lý (Năm 1077)"
             },
             "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5f/B%E1%BB%ADu_S%C6%A1n_T%E1%BB%B1_S%C3%B4ng_C%E1%BA%A7u.jpg/960px-B%E1%BB%ADu_S%C6%A1n_T%E1%BB%B1_S%C3%B4ng_C%E1%BA%A7u.jpg",
-                "title": "Dòng sông Cầu (sông Như Nguyệt) & Đền Xà hôm nay",
-                "caption": "Dòng sông Cầu hiền hòa uốn lượn qua đôi bờ Bắc Ninh - Bắc Giang, nơi in dấu phòng tuyến chiến lũy xưa.",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Song_Cau_ThoHa_Xom1.JPG/960px-Song_Cau_ThoHa_Xom1.JPG",
+                "title": "Dòng sông Cầu (sông Như Nguyệt) tại Bắc Ninh hôm nay",
+                "caption": "Dòng sông Cầu lịch sử uốn lượn qua đôi bờ Bắc Ninh - Bắc Giang, nơi phòng tuyến chiến lũy Như Nguyệt của Lý Thường Kiệt từng chặn đứng giặc Tống.",
                 "source": "Di tích Lịch sử Quốc gia Chiến tuyến Như Nguyệt",
-                "era": "Hiện tại (Thế kỷ XXI)"
-            }
-        }
-    },
-    {
-        "id": "anc-deo-ba-doi",
-        "slug": "deo-ba-doi",
-        "ancientName": "Đèo Ba Dội (Đèo Tam Điệp)",
-        "dynasty": "Thời Hậu Lê & Tây Sơn (Năm 1788 - 1789)",
-        "period": "Phòng tuyến chiến lược Tam Điệp - Biện Sơn của vua Quang Trung",
-        "modernLocation": "TP. Tam Điệp (Tỉnh Ninh Bình) giáp ranh TX. Bỉm Sơn (Tỉnh Thanh Hóa)",
-        "coordinates": {
-            "lat": 20.1417,
-            "lng": 105.8833
-        },
-        "historicalEvent": "Ngô Thì Nhậm hiến kế cho Ngô Văn Sở tạm rút quân thủy bộ về đóng giữ phòng tuyến Tam Điệp - Biện Sơn hiểm trở \"bảo toàn lực lượng chờ đại quân\", tạo bàn đạp quyết định để vua Quang Trung hành quân thần tốc ra Bắc đại phá 29 vạn quân Mãn Thanh.",
-        "literatureQuote": "Một đèo, một đèo, lại một đèo / Khen ai khéo tạc cảnh cảnh cheo leo / Cửa son đỏ loét tùm hum nóc / Hòn đá xanh rì lún phún rêu...",
-        "literatureAuthor": "Nữ sĩ Hồ Xuân Hương — Bài thơ \"Đèo Ba Dội\"",
-        "geographicalChange": "Dãy núi đá vôi Tam Điệp chạy dài ra sát biển chia cắt tự nhiên giữa Bắc Bộ và Trung Bộ với 3 tầng đèo quanh co dốc đứng. Ngày nay quốc lộ 1A và cao tốc Bắc - Nam đã được mở rộng hiện đại xuyên qua cửa ải xưa.",
-        "culturalSignificance": "Yết hầu giao thông thiên lý Bắc - Nam, minh chứng cho tầm nhìn chiến lược quân sự xuất chúng \"bỏ thành giữ người\" của danh sĩ Ngô Thì Nhậm.",
-        "tags": [
-            "Quang Trung",
-            "Tây Sơn",
-            "Tam Điệp",
-            "Hồ Xuân Hương",
-            "Ninh Bình"
-        ],
-        "imagery": {
-            "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Tam_Diep_1f.JPG/960px-Tam_Diep_1f.JPG",
-                "title": "Dấu tích Cửa ải Tam Điệp - Đèo Ba Dội thời xưa",
-                "caption": "Con đường thiên lý cổ xuyên qua ba tầng đèo núi đá vôi hiểm trở nối liền Bắc Hà và Trung Bộ.",
-                "source": "Ký họa Viện Viễn Đông Bác Cổ (EFEO)",
-                "era": "Thời Hậu Lê & Tây Sơn (1788)"
-            },
-            "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Phongtuyentamdiep2010.jpg/960px-Phongtuyentamdiep2010.jpg",
-                "title": "Quần thể Phòng tuyến Tam Điệp hôm nay",
-                "caption": "Bia tưởng niệm phòng tuyến Tam Điệp - Biện Sơn nơi Ngô Thì Nhậm lui binh chờ Quang Trung đại phá quân Thanh.",
-                "source": "Ban Quản lý Di tích Lịch sử Tam Điệp, Ninh Bình",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
         }
@@ -390,10 +600,10 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Ph%E1%BB%91_Tr%E1%BA%A7n_Qu%E1%BB%91c_To%E1%BA%A3n%2C_H%C3%A0_N%E1%BB%99i_002.JPG/960px-Ph%E1%BB%91_Tr%E1%BA%A7n_Qu%E1%BB%91c_To%E1%BA%A3n%2C_H%C3%A0_N%E1%BB%99i_002.JPG",
-                "title": "Bia tưởng niệm Trần Quốc Toản & Hội nghị Bình Than",
-                "caption": "Ghi danh người thiếu niên anh hùng bóp nát quả cam vì không được dự bàn việc quân tại bến Bình Than.",
-                "source": "Bảo tàng Lịch sử Quốc gia",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/B%E1%BA%A3o_t%C3%A0ng_L%E1%BB%8Bch_s%E1%BB%AD_TP_%28Ch%E1%BA%A1m_n%E1%BB%95i_Tr%E1%BA%A7n_Qu%E1%BB%91c_To%E1%BA%A3n_b%C3%B3p_cam%29_%283%29.jpg/960px-B%E1%BA%A3o_t%C3%A0ng_L%E1%BB%8Bch_s%E1%BB%AD_TP_%28Ch%E1%BA%A1m_n%E1%BB%95i_Tr%E1%BA%A7n_Qu%E1%BB%91c_To%E1%BA%A3n_b%C3%B3p_cam%29_%283%29.jpg",
+                "title": "Phù điêu chạm nổi Hoài Văn Hầu Trần Quốc Toản bóp nát quả cam tại Hội nghị Bình Than",
+                "caption": "Tác phẩm chạm nổi tái hiện Hoài Văn Hầu vì không được dự bàn việc nước đã uất ức bóp nát quả cam tại bến Bình Than.",
+                "source": "Bảo tàng Lịch sử TP. Hồ Chí Minh",
                 "era": "Thời nhà Trần (Năm 1282)"
             },
             "modern": {
@@ -430,10 +640,10 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Hong_Duc_ban_do_Thang_Long.jpg/800px-Hong_Duc_ban_do_Thang_Long.jpg",
-                "title": "Bản đồ Hồng Đức Thành Thăng Long (1490)",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/B%E1%BA%A3n_%C4%91%E1%BB%93_kinh_th%C3%A0nh_Th%C4%83ng_Long%2C_theo_H%E1%BB%93ng_%C4%90%E1%BB%A9c_b%E1%BA%A3n_%C4%91%E1%BB%93_s%C3%A1ch_%E6%B4%AA%E5%BE%B7%E7%89%88%E5%9C%96%E5%86%8A_%281490%29.jpg/960px-B%E1%BA%A3n_%C4%91%E1%BB%93_kinh_th%C3%A0nh_Th%C4%83ng_Long%2C_theo_H%E1%BB%93ng_%C4%90%E1%BB%A9c_b%E1%BA%A3n_%C4%91%E1%BB%93_s%C3%A1ch_%E6%B4%AA%E5%BE%B7%E7%89%88%E5%9C%96%E5%86%8A_%281490%29.jpg",
+                "title": "Bản đồ Hồng Đức Kinh thành Thăng Long (1490)",
                 "caption": "Bản đồ địa chính kinh thành cổ nhất của Đại Việt với sơ đồ thành hào và các cửa thành Đại La xưa.",
-                "source": "Viện Nghiên cứu Hán Nôm & Thư viện Quốc gia",
+                "source": "Hồng Đức Bản Đồ Sách (1490) - Viện Nghiên cứu Hán Nôm",
                 "era": "Thời Hồng Đức (Năm 1490)"
             },
             "modern": {
@@ -441,46 +651,6 @@ const ANCIENT_LANDMARKS_CATALOG = [
                 "title": "Cổng Đoan Môn - Hoàng Thành Thăng Long hôm nay",
                 "caption": "Cửa vòm đá uy nghiêm nghìn năm tuổi tại trung tâm di sản văn hóa thế giới UNESCO Hoàng Thành Thăng Long.",
                 "source": "Trung tâm Bảo tồn Di sản Thăng Long - Hà Nội",
-                "era": "Hiện tại (Thế kỷ XXI)"
-            }
-        }
-    },
-    {
-        "id": "anc-ai-chi-lang",
-        "slug": "ai-chi-lang",
-        "ancientName": "Ải Chi Lăng (Chi Lăng Quan)",
-        "dynasty": "Thời Tiền Lê (981) • Thời Trần (1285) • Thời Hậu Lê (1427)",
-        "period": "Chiến trường cửa ải biên cương chém đầu Liễu Thăng",
-        "modernLocation": "Huyện Chi Lăng, Tỉnh Lạng Sơn",
-        "coordinates": {
-            "lat": 21.65,
-            "lng": 106.5833
-        },
-        "historicalEvent": "Tháng 10 năm 1427, tướng Trần Lựu giả thua nhử Liễu Thăng vào đầm lầy Mã Yên tại Ải Chi Lăng. Quân phục binh của Lê Sát và Lưu Nhân Chú đổ ra chém rơi đầu Liễu Thăng, bẻ gãy đạo viện binh 10 vạn giặc Minh.",
-        "literatureQuote": "Liễu Thăng sơn trượng đầu rơi rụng / Lương Minh bại trận mạng tiêu vong",
-        "literatureAuthor": "Nguyễn Trãi — \"Bình Ngô đại cáo\" (1428)",
-        "geographicalChange": "Ải Chi Lăng nằm trong thung lũng hẹp kẹp giữa hai dãy núi đá vôi hiểm trở, đầm lầy Mã Yên xưa nay là ruộng lúa phì nhiêu, núi Mã Yên sừng sững tạc vào sử xanh.",
-        "culturalSignificance": "Bức trường thành thiên nhiên kiên cố bảo vệ biên cương phía Bắc của Tổ quốc.",
-        "tags": [
-            "Khởi nghĩa Lam Sơn",
-            "Nguyễn Trãi",
-            "Liễu Thăng",
-            "Lạng Sơn",
-            "Ải Chi Lăng"
-        ],
-        "imagery": {
-            "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Chi_Lang_Pass_%289980921026%29.jpg/960px-Chi_Lang_Pass_%289980921026%29.jpg",
-                "title": "Thung lũng hiểm địa Ải Chi Lăng & Núi Mã Yên",
-                "caption": "Địa hình thung lũng khe sâu nơi nghĩa quân Lam Sơn phục kích chém rơi đầu giặc Liễu Thăng năm 1427.",
-                "source": "Bảo tàng Khởi nghĩa Lam Sơn & Sử liệu Hậu Lê",
-                "era": "Thời Hậu Lê (Năm 1427)"
-            },
-            "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Quymon.JPG/960px-Quymon.JPG",
-                "title": "Cửa ải Quỷ Môn Quan tại Chi Lăng hôm nay",
-                "caption": "Cổng trời đá tự nhiên sừng sững trấn giữ cửa ngõ biên ải phía Bắc tại huyện Chi Lăng, Lạng Sơn.",
-                "source": "Ban Quản lý Di tích Lịch sử Ải Chi Lăng",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
         }
@@ -510,9 +680,9 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Ky-bi-doi-rong-da-mat-dau-o-thanh-nha-ho.jpg",
-                "title": "Đôi rồng đá khảo cổ Thành Tây Đô thời nhà Hồ",
-                "caption": "Hiện vật rồng đá nguyên khối không đầu điêu khắc tinh xảo khai quật bên trong cung điện Thành nhà Hồ.",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/C%E1%BB%95ng_B%E1%BA%AFc_th%C3%A0nh_nh%C3%A0_H%E1%BB%93_.jpg/960px-C%E1%BB%95ng_B%E1%BA%AFc_th%C3%A0nh_nh%C3%A0_H%E1%BB%93_.jpg",
+                "title": "Cổng Bắc và tường thành đá nguyên khối Thành Nhà Hồ",
+                "caption": "Kỳ quan tường thành đá nguyên khối ghép khít khao được xây dựng thần tốc năm 1397 dưới thời Hồ Quý Ly.",
                 "source": "Bảo tàng Khảo cổ học Việt Nam",
                 "era": "Thời nhà Hồ (Năm 1397)"
             },
@@ -549,16 +719,16 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Chuong_chua_Hai_Tang.JPG/960px-Chuong_chua_Hai_Tang.JPG",
-                "title": "Chuông đồng cổ tự thương cảng Phố Hiến thế kỷ XVII",
-                "caption": "Hiện vật chuông đồng cổ kính minh chứng cho thời kỳ hoàng kim giao thương quốc tế Đàng Ngoài.",
-                "source": "Bảo tàng Tỉnh Hưng Yên",
+                "url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Ch%C3%B9a_Chu%C3%B4ng_H%C6%B0ng_Y%C3%AAn.jpg",
+                "title": "Chùa Chuông Hưng Yên - \"Phố Hiến Đệ Nhất Danh Lam\"",
+                "caption": "Ngôi chùa cổ kính xây dựng từ thời Hậu Lê (thế kỷ XVII), trung tâm tâm linh gắn với thời kỳ hoàng kim thương cảng Phố Hiến.",
+                "source": "Khu Di tích Quốc gia đặc biệt Phố Hiến",
                 "era": "Thời Lê Trung Hưng (Thế kỷ XVII)"
             },
             "modern": {
                 "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/V%C4%83n_mi%E1%BA%BFu_X%C3%ADch_%C4%90%E1%BA%B1ng_02.JPG/960px-V%C4%83n_mi%E1%BA%BFu_X%C3%ADch_%C4%90%E1%BA%B1ng_02.JPG",
                 "title": "Văn Miếu Xích Đằng & Phố Hiến hôm nay",
-                "caption": "Cổng tam quan Văn Miếu Xích Đằng và Chùa Chuông cổ tự tại thành phố Hưng Yên trầm mặc ngày nay.",
+                "caption": "Cổng tam quan Văn Miếu Xích Đằng tại thành phố Hưng Yên trầm mặc ngày nay.",
                 "source": "Khu Di tích Quốc gia đặc biệt Phố Hiến",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
@@ -588,57 +758,17 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/T%C6%B0%E1%BB%A3ng_%C4%91%C3%A0i_Quang_Trung_t%E1%BA%A1i_B%E1%BA%A3o_t%C3%A0ng_Quang_Trung.JPG/960px-T%C6%B0%E1%BB%A3ng_%C4%91%C3%A0i_Quang_Trung_t%E1%BA%A1i_B%E1%BA%A3o_t%C3%A0ng_Quang_Trung.JPG",
-                "title": "Tượng đài Hoàng đế Quang Trung đại phá quân Xiêm",
-                "caption": "Tượng uy phong lẫm liệt của người anh hùng áo vải Nguyễn Huệ tại chiến trường Rạch Gầm - Xoài Mút.",
-                "source": "Bảo tàng Quang Trung",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Battle_of_R%E1%BA%A1ch_G%E1%BA%A7m_-_Xo%C3%A0i_M%C3%BAt%2Cjpg.JPG/960px-Battle_of_R%E1%BA%A1ch_G%E1%BA%A7m_-_Xo%C3%A0i_M%C3%BAt%2Cjpg.JPG",
+                "title": "Họa phẩm đại chiến thủy quân Tây Sơn tại Rạch Gầm - Xoài Mút",
+                "caption": "Tác phẩm phục dựng đại thắng hỏa pháo tiêu diệt 300 chiến thuyền quân Xiêm năm 1785 trưng bày tại Bảo tàng Quang Trung.",
+                "source": "Bảo tàng Quang Trung - Tây Sơn",
                 "era": "Thời Tây Sơn (Năm 1785)"
             },
             "modern": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/R%E1%BA%A1ch_G%E1%BA%A7m-Xo%C3%A0i_M%C3%BAt_2.JPG/960px-R%E1%BA%A1ch_G%E1%BA%A7m-Xo%C3%A0i_M%C3%BAt_2.JPG",
-                "title": "Khu Di tích Chiến thắng Rạch Gầm - Xoài Mút hôm nay",
-                "caption": "Quang cảnh tượng đài và khu lưu niệm chiến thắng oai hùng soi bóng xuống dòng sông Tiền, Tiền Giang.",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/T%C6%B0%E1%BB%A3ng_%C4%91%C3%A0i_R%E1%BA%A1ch_G%E1%BA%A7m-Xo%C3%A0i_M%C3%BAt.JPG/960px-T%C6%B0%E1%BB%A3ng_%C4%91%C3%A0i_R%E1%BA%A1ch_G%E1%BA%A7m-Xo%C3%A0i_M%C3%BAt.JPG",
+                "title": "Tượng đài Chiến thắng Rạch Gầm - Xoài Mút bên bờ sông Tiền hôm nay",
+                "caption": "Quần thể tượng đài người anh hùng áo vải Quang Trung Nguyễn Huệ sừng sững bên bờ sông Tiền tại huyện Châu Thành, Tiền Giang.",
                 "source": "Khu Di tích Lịch sử Rạch Gầm - Xoài Mút",
-                "era": "Hiện tại (Thế kỷ XXI)"
-            }
-        }
-    },
-    {
-        "id": "anc-deo-ngang",
-        "slug": "deo-ngang",
-        "ancientName": "Đèo Ngang (Hoành Sơn Quan)",
-        "dynasty": "Thời nhà Nguyễn & Trung đại",
-        "period": "Cửa ải phân chia địa lý Đàng Trong - Đàng Ngoài thuở xưa",
-        "modernLocation": "Ranh giới Huyện Kỳ Anh (Hà Tĩnh) và Huyện Quảng Trạch (Quảng Bình)",
-        "coordinates": {
-            "lat": 17.9719,
-            "lng": 106.4789
-        },
-        "historicalEvent": "Dãy Hoành Sơn đâm ngang ra biển Đông, nơi vua Minh Mạng cho xây dựng Hoành Sơn Quan bằng gạch đá vào năm 1833 được mệnh danh là \"Cổng Trời\" hiểm yếu.",
-        "literatureQuote": "Bước tới Đèo Ngang bóng xế tà / Cỏ cây chen đá lá chen hoa / Lom khom dưới núi tiều vài chú / Lác đác bên sông chợ mấy nhà...",
-        "literatureAuthor": "Bà Huyện Thanh Quan — Bài thơ tuyệt tác \"Qua Đèo Ngang\"",
-        "geographicalChange": "Con đường đèo hiểm trở quanh co vượt qua đỉnh Hoành Sơn mây mù bao phủ nay đã có hầm đường bộ Đèo Ngang hiện đại xuyên núi nối liền Hà Tĩnh và Quảng Bình.",
-        "culturalSignificance": "Thi tứ bất hủ của văn học trung đại Việt Nam, không gian hoài cổ trầm mặc gắn liền với hồn thơ dân tộc.",
-        "tags": [
-            "Bà Huyện Thanh Quan",
-            "Đèo Ngang",
-            "Quảng Bình",
-            "Hà Tĩnh",
-            "Thơ trung đại"
-        ],
-        "imagery": {
-            "ancient": {
-                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Ho%C3%A0nh_S%C6%A1n_quan_3.jpeg/960px-Ho%C3%A0nh_S%C6%A1n_quan_3.jpeg",
-                "title": "Cửa Hoành Sơn Quan cổ trên đỉnh Đèo Ngang (1833)",
-                "caption": "Cổng thành rêu phong xây bằng đá gạch dưới triều vua Minh Mạng trấn giữ ranh giới Đàng Trong - Đàng Ngoài.",
-                "source": "Di tích Lịch sử Cửa ải Hoành Sơn Quan",
-                "era": "Triều Nguyễn (Năm 1833)"
-            },
-            "modern": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/8/81/%C4%90%C3%A8oNgang-2073234670_e426170883_o.jpg",
-                "title": "Toàn cảnh Đèo Ngang mây trời non nước hôm nay",
-                "caption": "Đèo Ngang uốn lượn hùng vĩ kẹp giữa biển trời xanh thẳm nối liền Kỳ Anh (Hà Tĩnh) và Quảng Trạch (Quảng Bình).",
-                "source": "Nhiếp ảnh Danh thắng Việt Nam",
                 "era": "Hiện tại (Thế kỷ XXI)"
             }
         }
@@ -668,8 +798,8 @@ const ANCIENT_LANDMARKS_CATALOG = [
         ],
         "imagery": {
             "ancient": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/%C4%90o%E1%BA%A1n_tr%C6%B0%E1%BB%9Dng_t%C3%A2n_thanh.png",
-                "title": "Bản khắc gỗ cổ \"Đoạn Trường Tân Thanh\" (Truyện Kiều)",
+                "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Kim_V%C3%A2n_Ki%E1%BB%81u_t%C3%A2n_truy%E1%BB%87n.jpg/960px-Kim_V%C3%A2n_Ki%E1%BB%81u_t%C3%A2n_truy%E1%BB%87n.jpg",
+                "title": "Bản khắc cổ \"Kim Vân Kiều Tân Truyện\" (Truyện Kiều)",
                 "caption": "Tư liệu cổ thư tác phẩm kiệt xuất của Đại thi hào Nguyễn Du gắn với quê hương Tiên Điền bên chân núi Hồng.",
                 "source": "Bảo tàng Khu Lưu niệm Đại thi hào Nguyễn Du",
                 "era": "Thế kỷ XVIII - XIX"
