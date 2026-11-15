@@ -92,8 +92,24 @@ export const adminService = {
         return response;
     },
 
+    async updateWorkStatus(id, status) {
+        const response = await api.patch(`/admin/works/${id}/status`, { status });
+        return response;
+    },
+
     async deleteWork(id) {
         const response = await api.delete(`/admin/works/${id}`);
+        return response;
+    },
+
+    async uploadAudio(file) {
+        const formData = new FormData();
+        formData.append('audio', file);
+        const response = await api.post('/admin/upload-audio', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response;
     },
 

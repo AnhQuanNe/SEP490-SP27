@@ -267,6 +267,8 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                         {activeTab !== 'van-ban' && (
                             <HeritageAudioPlayer
                                 text={current.quote || current.content || current.summary}
+                                audioUrl={current.audioUrl}
+                                performer={current.audioPerformer}
                                 variant="button"
                             />
                         )}
@@ -501,6 +503,8 @@ const WorkDetailModal = ({ work, isOpen, onClose, onWorkSelect }) => {
                                                 <div className="mt-4">
                                                     <HeritageAudioPlayer
                                                         text={current.quote}
+                                                        audioUrl={current.audioUrl}
+                                                        performer={current.audioPerformer}
                                                         title={
                                                             current.category === 'tuc-ngu'
                                                                 ? 'Diễn đọc Tục ngữ Dân gian'

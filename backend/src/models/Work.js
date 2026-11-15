@@ -49,6 +49,16 @@ const workSchema = new mongoose.Schema(
             default: '',
             trim: true,
         },
+        audioUrl: {
+            type: String,
+            default: '',
+            trim: true,
+        },
+        audioPerformer: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         summary: {
             type: String,
             required: [true, 'Vui lòng nhập tóm tắt tác phẩm'],

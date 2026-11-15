@@ -17,6 +17,7 @@ import {
     AlertCircle, 
     Save, 
     Eye,
+    EyeOff,
     TrendingUp,
     Clock,
     Activity,
@@ -29,7 +30,10 @@ import {
     Layers,
     UserCheck,
     UserX,
-    HelpCircle
+    HelpCircle,
+    Volume2,
+    Music,
+    UploadCloud
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import AdminSidebar from '../../components/admin/AdminSidebar';
@@ -197,8 +201,12 @@ const AdminDashboard = () => {
     const [worksLoading, setWorksLoading] = useState(false);
     const [workSearch, setWorkSearch] = useState('');
     const [workCategoryFilter, setWorkCategoryFilter] = useState('all');
+    const [workStatusFilter, setWorkStatusFilter] = useState('all');
     const [editingWork, setEditingWork] = useState(null); // null = closed, {} = create new, { _id: ... } = edit
     const [deleteWorkTarget, setDeleteWorkTarget] = useState(null);
+
+    const [audioUploading, setAudioUploading] = useState(false);
+    const [audioUploadError, setAudioUploadError] = useState('');
 
     const [workForm, setWorkForm] = useState({
         title: '',
@@ -211,6 +219,8 @@ const AdminDashboard = () => {
         lesson: '',
         historicalContext: '',
         source: '',
+        audioUrl: '',
+        audioPerformer: '',
         status: 'published',
     });
 
@@ -220,6 +230,7 @@ const AdminDashboard = () => {
             const data = await adminService.getWorks({
                 search: workSearch,
                 category: workCategoryFilter,
+                status: workStatusFilter,
             });
             setWorks(data.works || []);
         } catch (err) {
@@ -228,10 +239,30 @@ const AdminDashboard = () => {
         } finally {
             setWorksLoading(false);
         }
-    }, [workSearch, workCategoryFilter]);
+    }, [workSearch, workCategoryFilter, workStatusFilter]);
+
+    const handleToggleWorkStatus = async (w) => {
+        const nextStatus = w.status === 'published' ? 'draft' : 'published';
+        const isHiding = nextStatus === 'draft';
+        try {
+            await adminService.updateWorkStatus(w._id, nextStatus);
+            showToast(
+                isHiding
+                    ? `Đã tạm ẩn tác phẩm: "${w.title}"`
+                    : `Đã công khai tác phẩm: "${w.title}"`
+            );
+            setWorks((prev) =>
+                prev.map((item) => (item._id === w._id ? { ...item, status: nextStatus } : item))
+            );
+        } catch (err) {
+            console.error('Lỗi cập nhật trạng thái tác phẩm:', err);
+            showToast(err.message || 'Lỗi khi cập nhật trạng thái tác phẩm', 'error');
+        }
+    };
 
     const openCreateWork = () => {
         setEditingWork({});
+        setAudioUploadError('');
         setWorkForm({
             title: '',
             category: 'ca-dao',
@@ -243,12 +274,15 @@ const AdminDashboard = () => {
             lesson: '',
             historicalContext: '',
             source: '',
+            audioUrl: '',
+            audioPerformer: '',
             status: 'published',
         });
     };
 
     const openEditWork = (w) => {
         setEditingWork(w);
+        setAudioUploadError('');
         setWorkForm({
             title: w.title,
             category: w.category,
@@ -260,8 +294,50 @@ const AdminDashboard = () => {
             lesson: w.lesson || '',
             historicalContext: w.historicalContext || '',
             source: w.source || '',
+            audioUrl: w.audioUrl || '',
+            audioPerformer: w.audioPerformer || '',
             status: w.status || 'published',
         });
+    };
+
+    const handleAudioUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset input để có thể chọn lại file nếu muốn
+        e.target.value = '';
+
+        setAudioUploading(true);
+        setAudioUploadError('');
+        try {
+            const res = await adminService.uploadAudio(file);
+            const uploadedUrl = res.data?.audioUrl || res.audioUrl;
+            if (uploadedUrl) {
+                setWorkForm((prev) => ({
+                    ...prev,
+                    audioUrl: uploadedUrl,
+                }));
+                showToast('Tải file âm thanh thành công!');
+            } else {
+                throw new Error('Không nhận được liên kết âm thanh');
+            }
+        } catch (err) {
+            console.error('Lỗi tải file âm thanh:', err);
+            const msg = err.message || err.response?.data?.message || 'Lỗi khi tải file âm thanh';
+            setAudioUploadError(msg);
+            showToast(msg, 'error');
+        } finally {
+            setAudioUploading(false);
+        }
+    };
+
+    const handleRemoveAudio = () => {
+        setWorkForm((prev) => ({
+            ...prev,
+            audioUrl: '',
+            audioPerformer: '',
+        }));
+        showToast('Đã gỡ file âm thanh khỏi tác phẩm');
     };
 
     const handleSaveWork = async (e) => {
@@ -1136,6 +1212,16 @@ const AdminDashboard = () => {
                                         <option value="khac">Khác</option>
                                     </select>
 
+                                    <select
+                                        value={workStatusFilter}
+                                        onChange={(e) => setWorkStatusFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                                    >
+                                        <option value="all">Tất cả trạng thái</option>
+                                        <option value="published">Đang công khai</option>
+                                        <option value="draft">Đang tạm ẩn</option>
+                                    </select>
+
                                     <button
                                         onClick={openCreateWork}
                                         className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
@@ -1250,6 +1336,108 @@ const AdminDashboard = () => {
                                                 />
                                             </div>
 
+                                            {/* Mục Audio diễn ngâm / Giọng đọc người thật */}
+                                            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="flex items-center gap-2 text-[11px] font-bold text-amber-300 uppercase tracking-wide">
+                                                        <Volume2 className="w-4 h-4 text-amber-400" />
+                                                        Audio Diễn ngâm / Giọng đọc người thật (Tùy chọn)
+                                                    </label>
+                                                    {workForm.audioUrl && (
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 font-medium">
+                                                            <CheckCircle2 className="w-3 h-3" /> Đã nạp âm thanh thành công
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                    {/* Nút bấm tải file MP3 */}
+                                                    <div className="sm:col-span-2">
+                                                        <input
+                                                            type="file"
+                                                            id="audio-upload-input"
+                                                            accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"
+                                                            onChange={handleAudioUpload}
+                                                            disabled={audioUploading}
+                                                            className="hidden"
+                                                        />
+                                                        {!workForm.audioUrl ? (
+                                                            <label
+                                                                htmlFor="audio-upload-input"
+                                                                className={`flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                                                                    audioUploading
+                                                                        ? 'border-amber-500/50 bg-amber-500/5 text-amber-300'
+                                                                        : 'border-slate-700 hover:border-amber-500/60 bg-slate-900/60 hover:bg-slate-900 text-slate-300'
+                                                                }`}
+                                                            >
+                                                                {audioUploading ? (
+                                                                    <div className="flex items-center gap-2 text-xs font-medium text-amber-300">
+                                                                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                                                                        <span>Đang nạp file âm thanh...</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex items-center gap-2.5 text-xs">
+                                                                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+                                                                            <UploadCloud className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="font-semibold text-amber-200">Bấm để tải file .MP3 / M4A</span>
+                                                                            <p className="text-[10px] text-slate-400">Hỗ trợ định dạng .MP3, .M4A, .WAV (Tối đa 25MB)</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </label>
+                                                        ) : (
+                                                            <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 space-y-2">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[11px] font-semibold text-amber-200 flex items-center gap-1.5 truncate">
+                                                                        <Music className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                                                        Nghe thử bản thu:
+                                                                    </span>
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <label
+                                                                            htmlFor="audio-upload-input"
+                                                                            className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer transition-colors"
+                                                                        >
+                                                                            Thay file khác
+                                                                        </label>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={handleRemoveAudio}
+                                                                            className="text-[10px] px-2 py-0.5 rounded-md bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/40 cursor-pointer transition-colors flex items-center gap-1"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" /> Gỡ
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Audio player nghe thử */}
+                                                                <audio controls src={workForm.audioUrl} className="w-full h-8 rounded-lg" preload="metadata" />
+                                                            </div>
+                                                        )}
+
+                                                        {audioUploadError && (
+                                                            <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1">
+                                                                <AlertCircle className="w-3 h-3" /> {audioUploadError}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Nhập tên người thể hiện (Nghệ sĩ / Giọng đọc) */}
+                                                    <div className="space-y-1">
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Người thể hiện / Nghệ sĩ</label>
+                                                        <input
+                                                            type="text"
+                                                            value={workForm.audioPerformer || ''}
+                                                            onChange={(e) => setWorkForm({ ...workForm, audioPerformer: e.target.value })}
+                                                            placeholder="Ví dụ: NSND Thúy Mùi"
+                                                            className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500"
+                                                        />
+                                                        <p className="text-[10px] text-slate-500">Vinh danh giọng đọc trên tác phẩm</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
                                                 <button
                                                     type="button"
@@ -1307,11 +1495,45 @@ const AdminDashboard = () => {
                                                             {w.source || 'Dân gian'}
                                                         </td>
                                                         <td className="p-4">
-                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                                {w.status || 'published'}
-                                                            </span>
+                                                            {w.status === 'draft' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                                                    Tạm ẩn
+                                                                </span>
+                                                            ) : w.status === 'archived' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                                                    Lưu trữ
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                                    Công khai
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="p-4 text-right space-x-1">
+                                                            {/* Nút Tạm ẩn / Công khai (Xóa mềm - Soft Delete) */}
+                                                            <button
+                                                                onClick={() => handleToggleWorkStatus(w)}
+                                                                className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                                                                    w.status === 'draft' || w.status === 'archived'
+                                                                        ? 'text-amber-400 hover:text-emerald-300 hover:bg-emerald-950/40'
+                                                                        : 'text-slate-400 hover:text-amber-300 hover:bg-amber-950/40'
+                                                                }`}
+                                                                title={
+                                                                    w.status === 'draft' || w.status === 'archived'
+                                                                        ? 'Đang tạm ẩn — Bấm để công khai tác phẩm ra ngoài'
+                                                                        : 'Đang công khai — Bấm để tạm ẩn khỏi công chúng'
+                                                                }
+                                                            >
+                                                                {w.status === 'draft' || w.status === 'archived' ? (
+                                                                    <EyeOff className="w-4 h-4 text-amber-400" />
+                                                                ) : (
+                                                                    <Eye className="w-4 h-4 text-slate-300" />
+                                                                )}
+                                                            </button>
+
                                                             <button
                                                                 onClick={() => openEditWork(w)}
                                                                 className="p-1.5 rounded-lg text-slate-300 hover:text-amber-400 hover:bg-slate-800 cursor-pointer"
@@ -1322,7 +1544,7 @@ const AdminDashboard = () => {
                                                             <button
                                                                 onClick={() => setDeleteWorkTarget(w)}
                                                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 cursor-pointer"
-                                                                title="Xóa tác phẩm"
+                                                                title="Xóa vĩnh viễn"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -1351,19 +1573,35 @@ const AdminDashboard = () => {
                                             Hành động này sẽ gỡ bỏ vĩnh viễn tác phẩm{' '}
                                             <strong className="text-amber-300">"{deleteWorkTarget.title}"</strong> khỏi kho tàng văn hóa.
                                         </p>
+                                        <p className="text-[11px] text-amber-400/90 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 text-left">
+                                            💡 <strong>Gợi ý an toàn:</strong> Nếu bạn chỉ muốn giấu bài viết khỏi công chúng mà vẫn giữ lại toàn vẹn dữ liệu, hãy chọn <strong>"Tạm ẩn thay vì xóa"</strong>.
+                                        </p>
 
-                                        <div className="flex items-center justify-center gap-3 pt-2">
+                                        <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                                             <button
                                                 onClick={() => setDeleteWorkTarget(null)}
-                                                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
+                                                className="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
                                             >
                                                 Hủy
                                             </button>
                                             <button
-                                                onClick={executeDeleteWork}
-                                                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                                                onClick={async () => {
+                                                    const target = deleteWorkTarget;
+                                                    setDeleteWorkTarget(null);
+                                                    if (target.status === 'published') {
+                                                        await handleToggleWorkStatus(target);
+                                                    }
+                                                }}
+                                                className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
                                             >
-                                                Xác Nhận Xóa
+                                                <EyeOff className="w-3.5 h-3.5" />
+                                                Tạm ẩn thay vì xóa
+                                            </button>
+                                            <button
+                                                onClick={executeDeleteWork}
+                                                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                                            >
+                                                Xóa vĩnh viễn
                                             </button>
                                         </div>
                                     </div>

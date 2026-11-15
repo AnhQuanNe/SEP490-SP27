@@ -2,9 +2,13 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middlewares/auth.middlewares');
+const { uploadAudio } = require('../middlewares/upload.middleware');
 
 // Tất cả các route quản trị đều yêu cầu đăng nhập và có vai trò 'admin'
 router.use(protect, authorize('admin'));
+
+// Upload audio lên Cloudinary phục vụ ngâm thơ / giọng đọc tác phẩm
+router.post('/upload-audio', uploadAudio.single('audio'), adminController.uploadAudioWork);
 
 // UC20: Dashboard Overview Stats
 router.get('/stats', adminController.getDashboardStats);
@@ -23,6 +27,7 @@ router.post('/submissions/:id/reject', adminController.rejectSubmission);
 router.get('/works', adminController.getWorks);
 router.post('/works', adminController.createWork);
 router.put('/works/:id', adminController.updateWork);
+router.patch('/works/:id/status', adminController.updateWorkStatus);
 router.delete('/works/:id', adminController.deleteWork);
 
 // UC19: Configure system settings
