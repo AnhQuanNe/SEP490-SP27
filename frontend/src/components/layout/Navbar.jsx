@@ -60,14 +60,14 @@ const Navbar = () => {
 
     const avatarSrc = user ? getAvatarUrl(user.avatar) : null;
 
-    // Các mục chính giữ lại trên Header (cân đối 6 mục khám phá & học tập cốt lõi)
+    // Các mục chính giữ lại trên Header (phân bổ responsive tối ưu theo kích thước màn hình để chống đè chữ)
     const primaryHeaderItems = [
         { name: 'Trang chủ', path: '/', isRoute: true },
         { name: 'Khám phá', path: '/kham-pha', isRoute: true },
         { name: 'Triển lãm Ảo', path: '/trien-lam', isRoute: true, icon: Layers },
         { name: 'Bản đồ', path: '/ban-do', isRoute: true, icon: Map, visibility: 'hidden lg:inline-flex' },
-        { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden lg:inline-flex' },
-        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden xl:inline-flex' },
+        { name: 'Gia sư AI', path: '/gia-su-ai', isRoute: true, icon: GraduationCap, visibility: 'hidden xl:inline-flex' },
+        { name: 'Đồ thị Tri thức', path: '/do-thi-tri-thuc', isRoute: true, icon: Share2, visibility: 'hidden 2xl:inline-flex' },
     ];
 
     // Cấu trúc danh mục toàn diện được chuyển vào Thanh bên trái (Left Sidebar)
@@ -251,8 +251,8 @@ const Navbar = () => {
                                     </div>
                                     <span className="hidden sm:flex text-[10px] sm:text-[11px] font-medium text-stone-600 tracking-normal mt-0.5 items-center gap-1 whitespace-nowrap">
                                         <span className="text-amber-700 font-bold text-[9px]">❖</span> 
-                                        <span className="hidden 2xl:inline">Kho Tàng Ca Dao, Tục Ngữ & Di Sản Việt</span>
-                                        <span className="2xl:hidden hidden xl:inline">Di Sản Văn Hóa</span>
+                                        <span className="hidden 2xl:inline">Kho Tàng Di Sản Dân Gian</span>
+                                        <span className="2xl:hidden hidden xl:inline">Di Sản Dân Gian</span>
                                         <span className="xl:hidden">Di Sản Việt</span>
                                     </span>
                                 </div>

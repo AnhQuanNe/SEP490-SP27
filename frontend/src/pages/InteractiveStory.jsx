@@ -26,7 +26,8 @@ import {
     Quote,
     Scale,
     Shield,
-    Flower2
+    Flower2,
+    AlertCircle
 } from 'lucide-react';
 import storyBranchService from '../services/storyBranch.service';
 import DragonPhoenixHeritage from '../components/common/DragonPhoenixHeritage';
@@ -149,6 +150,14 @@ const InteractiveStory = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [pendingStory, setPendingStory] = useState(null);
 
+    // Trạng thái modal thông báo biến cố / lỗi cổ phong (thay thế alert)
+    const [errorModal, setErrorModal] = useState({
+        isOpen: false,
+        title: 'Thiên Cơ Gián Đoạn',
+        message: '',
+        retryAction: null,
+    });
+
     const storyContainerRef = useRef(null);
 
     // Tải danh sách câu chuyện khi mở trang
@@ -249,7 +258,16 @@ const InteractiveStory = () => {
             storyContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (err) {
             console.error('Lỗi khi tiến bước câu chuyện:', err);
-            alert('Đã có lỗi khi dệt tiếp cốt truyện. Vui lòng thử lại!');
+            const errorMsg =
+                err.message ||
+                err.data?.message ||
+                'Đường truyền hoặc máy chủ trí tuệ nhân gian đang tạm thời gián đoạn. Bạn có thể nhấn Thử Lại để dệt tiếp.';
+            setErrorModal({
+                isOpen: true,
+                title: 'Thiên Cơ Tạm Gián Đoạn',
+                message: errorMsg,
+                retryAction: () => handleChooseOption(optionText, isCustom),
+            });
         } finally {
             setLoadingNext(false);
         }
@@ -901,6 +919,63 @@ Khám phá và viết tiếp dị bản tại VietHeritage AI!`;
                                 className="text-stone-400 hover:text-stone-200 text-xs transition-colors pt-2 block mx-auto"
                             >
                                 Để sau, tôi muốn xem tiếp danh mục truyện
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* MODAL THÔNG BÁO BIẾN CỐ / LỖI CỔ PHONG (THAY THẾ NATIVE ALERT) */}
+            {/* ============================================================ */}
+            {errorModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-stone-900 via-[#1c1412] to-stone-950 border-2 border-rose-500/40 p-6 sm:p-8 shadow-2xl shadow-rose-950/50 overflow-hidden text-center">
+                        {/* Dải vân hỏa xích trên đầu modal */}
+                        <div className="h-1 w-full bg-gradient-to-r from-transparent via-rose-500 to-transparent absolute top-0 left-0" />
+
+                        {/* Nút đóng X */}
+                        <button
+                            onClick={() => setErrorModal((prev) => ({ ...prev, isOpen: false }))}
+                            className="absolute top-4 right-4 text-stone-400 hover:text-stone-200 p-1.5 rounded-full hover:bg-stone-800/80 transition-colors"
+                            aria-label="Đóng"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        {/* Icon biểu tượng biến cố / lỗi */}
+                        <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 border border-rose-500/40 flex items-center justify-center mb-4 shadow-lg shadow-rose-500/20">
+                            <AlertCircle className="w-7 h-7 text-rose-400" />
+                        </div>
+
+                        <h3 className="text-xl sm:text-2xl font-bold text-amber-200 font-heritage mb-2">
+                            {errorModal.title}
+                        </h3>
+
+                        <p className="text-stone-300 text-xs sm:text-sm leading-relaxed mb-6">
+                            {errorModal.message}
+                        </p>
+
+                        <div className="space-y-3">
+                            {errorModal.retryAction && (
+                                <button
+                                    onClick={() => {
+                                        const retry = errorModal.retryAction;
+                                        setErrorModal((prev) => ({ ...prev, isOpen: false }));
+                                        retry();
+                                    }}
+                                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/40 transition-all duration-200 active:scale-95"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Thử dệt lại hồi này</span>
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => setErrorModal((prev) => ({ ...prev, isOpen: false }))}
+                                className="w-full py-2.5 px-4 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-stone-300 border border-stone-700/60 hover:border-stone-500 font-semibold text-xs sm:text-sm transition-all duration-200"
+                            >
+                                Đóng thông báo
                             </button>
                         </div>
                     </div>

@@ -170,7 +170,7 @@ const CulturalMap = ({
                             <span style="font-size: 18px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));">🇻🇳</span>
                         </div>
                     </div>
-                    <div style="margin-top: 4px; white-space: nowrap; background: rgba(15, 23, 42, 0.95); color: #fde047; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.6); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); letter-spacing: 0.2px; font-family: inherit;">
+                    <div style="margin-top: 4px; white-space: nowrap; background: rgba(15, 23, 42, 0.95); color: #fde047; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.6); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); letter-spacing: 0.2px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${item.name}
                     </div>
                 </div>
@@ -188,25 +188,25 @@ const CulturalMap = ({
 
             // Popup trang trọng khẳng định chủ quyền
             const popupContent = `
-                <div style="min-width: 250px; max-width: 300px; font-family: inherit; padding: 4px 2px;">
+                <div style="min-width: 250px; max-width: 300px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 4px 2px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0;">
                         <span style="font-size: 20px;">🇻🇳</span>
                         <div>
-                            <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase;">
+                            <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.2px;">
                                 ${item.name}
                             </h4>
-                            <span style="font-size: 10px; font-weight: 700; color: #b45309;">
+                            <span style="font-size: 10px; font-weight: 700; color: #b45309; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                                 ${item.administrativeUnit}
                             </span>
                         </div>
                     </div>
-                    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; font-size: 10.5px; color: #991b1b; font-weight: 600;">
+                    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; font-size: 10.5px; color: #991b1b; font-weight: 600; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.4;">
                         ✓ Khẳng định Chủ quyền toàn vẹn lãnh thổ bất khả xâm phạm của Nước CHXHCN Việt Nam.
                     </div>
-                    <p style="font-size: 11px; color: #334155; margin: 0 0 6px 0; line-height: 1.45;">
+                    <p style="font-size: 11px; color: #334155; margin: 0 0 6px 0; line-height: 1.45; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${item.culturalSignificance}
                     </p>
-                    <div style="font-size: 10px; color: #64748b; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+                    <div style="font-size: 10px; color: #64748b; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         <strong>Căn cứ lịch sử:</strong> ${item.historicalProof}
                     </div>
                 </div>
@@ -299,6 +299,7 @@ const CulturalMap = ({
                         white-space: nowrap;
                         background: ${isSelected ? '#92400e' : 'rgba(15, 23, 42, 0.9)'};
                         color: ${isSelected ? '#fef08a' : '#ffffff'};
+                        font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                         font-size: 10px;
                         font-weight: 700;
                         padding: 1px 6px;
@@ -321,12 +322,12 @@ const CulturalMap = ({
             const marker = L.marker([loc.coordinates.lat, loc.coordinates.lng], { icon: customIcon });
 
             const popupContent = `
-                <div style="min-width: 180px; font-family: inherit;">
-                    <h4 style="font-weight: 700; font-size: 13px; color: #0f172a; margin: 0 0 4px 0;">${loc.name}</h4>
-                    <p style="font-size: 11px; color: #475569; margin: 0 0 6px 0; line-height: 1.4;">
+                <div style="min-width: 180px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h4 style="font-weight: 700; font-size: 13px; color: #0f172a; margin: 0 0 4px 0; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${loc.name}</h4>
+                    <p style="font-size: 11px; color: #475569; margin: 0 0 6px 0; line-height: 1.4; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${loc.description ? loc.description.substring(0, 75) + '...' : 'Địa danh văn hóa tiêu biểu.'}
                     </p>
-                    <div style="font-size: 11px; font-weight: 600; color: #d97706;">
+                    <div style="font-size: 11px; font-weight: 600; color: #d97706; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${count} tác phẩm gắn liền
                     </div>
                 </div>
@@ -421,6 +422,7 @@ const CulturalMap = ({
                         text-overflow: ellipsis;
                         background: ${isSelected ? 'linear-gradient(135deg, #7c2d12 0%, #991b1b 100%)' : 'rgba(24, 24, 27, 0.94)'};
                         color: ${isSelected ? '#fef08a' : '#fef3c7'};
+                        font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                         font-size: ${isSelected ? '10px' : '9.5px'};
                         font-weight: 800;
                         padding: 1.5px 7px;
@@ -446,7 +448,7 @@ const CulturalMap = ({
             const marker = L.marker([lat, lng], { icon, zIndexOffset: isSelected ? 900 : 500 });
 
             const popupContent = `
-                <div style="min-width: 240px; max-width: 280px; font-family: inherit; border-radius: 10px; overflow: hidden;">
+                <div style="min-width: 240px; max-width: 280px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 10px; overflow: hidden;">
                     ${landmarkPhoto ? `
                         <div style="width: 100%; height: 110px; overflow: hidden; position: relative; margin-bottom: 8px; border-radius: 8px; background: #1c1917;">
                             <img 
@@ -455,25 +457,25 @@ const CulturalMap = ({
                                 referrerpolicy="no-referrer"
                                 style="width: 100%; height: 100%; object-fit: cover;" 
                             />
-                            <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fde68a; font-size: 9px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px;">
+                            <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fde68a; font-size: 9px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                                 ${item.imagery?.modern?.era || 'Di tích hôm nay'}
                             </span>
                         </div>
                     ` : ''}
                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
                         <span style="font-size: 15px;">🏛️</span>
-                        <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #9a3412;">${item.ancientName}</h4>
+                        <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #9a3412; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${item.ancientName}</h4>
                     </div>
-                    <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 4px;">
+                    <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 4px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${item.dynasty}
                     </div>
-                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 3px 6px; font-size: 10.5px; color: #78350f; margin-bottom: 6px;">
+                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 3px 6px; font-size: 10.5px; color: #78350f; margin-bottom: 6px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         <strong>📍 Hiện nay:</strong> ${item.modernLocation}
                     </div>
-                    <p style="font-size: 10.5px; color: #334155; margin: 0 0 6px 0; line-height: 1.45;">
+                    <p style="font-size: 10.5px; color: #334155; margin: 0 0 6px 0; line-height: 1.45; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         ${item.historicalEvent ? (item.historicalEvent.length > 100 ? item.historicalEvent.substring(0, 100) + '...' : item.historicalEvent) : ''}
                     </p>
-                    <div style="font-size: 10px; color: #d97706; font-weight: 700; text-align: right; border-top: 1px solid #f1f5f9; padding-top: 4px;">
+                    <div style="font-size: 10px; color: #d97706; font-weight: 700; text-align: right; border-top: 1px solid #f1f5f9; padding-top: 4px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         Xem đối chiếu ảnh Xưa - Nay →
                     </div>
                 </div>
