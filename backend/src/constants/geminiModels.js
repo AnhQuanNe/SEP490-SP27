@@ -3,9 +3,9 @@
  * Dùng chung cho toàn bộ các module AI trong backend để tránh lặp lại danh sách model lỗi thời.
  */
 const GEMINI_MODELS = [
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
+    'gemini-2.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
 ];
 
 module.exports = { GEMINI_MODELS };

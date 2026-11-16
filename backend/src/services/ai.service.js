@@ -104,7 +104,7 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
                             maxOutputTokens: 4096,
                         },
                     }),
-                    signal: AbortSignal.timeout(15000),
+                    signal: AbortSignal.timeout(7000),
                 });
 
                 if (response.ok) {

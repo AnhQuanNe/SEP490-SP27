@@ -80,7 +80,7 @@ const checkGuestQuota = async (req, res, next) => {
                 $set: { lastUsedAt: new Date(), ip: clientIp },
                 $setOnInsert: { createdAt: new Date() },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         const remaining = Math.max(0, GUEST_AI_DAILY_LIMIT - updated.count);

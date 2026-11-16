@@ -21,12 +21,11 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_FILTERS = [
-    { id: 'all', label: 'Tất cả thể loại' },
-    { id: 'ca-dao', label: 'Ca dao Dân ca' },
-    { id: 'tuc-ngu', label: 'Tục ngữ Việt Nam' },
-    { id: 'truyen-thuyet', label: 'Truyền thuyết' },
-    { id: 'co-tich', label: 'Cổ tích' },
+    { id: 'all', label: 'Tất cả tác phẩm' },
+    { id: 'hien-dai', label: 'Văn học Hiện đại' },
     { id: 'trung-dai', label: 'Văn học Trung đại' },
+    { id: 'truyen-thuyet', label: 'Truyền thuyết' },
+    { id: 'co-tich', label: 'Cổ tích & Dân gian' },
 ];
 
 const REGION_FILTERS = [
@@ -296,14 +295,14 @@ const LiteratureMap = () => {
                         <div className="max-w-2xl space-y-3">
                             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold">
                                 <Compass className="w-3.5 h-3.5 text-amber-400" />
-                                <span>Bản Đồ Số GIS & Trí Tuệ Nhân Tạo Không Gian</span>
+                                <span>Bản Đồ Số GIS & Không Gian Tác Phẩm Văn Học</span>
                             </div>
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heritage tracking-tight leading-tight">
-                                Không Gian Văn Hóa & Cổ Danh Lịch Sử Việt Nam
+                                Bản Đồ Tác Phẩm Văn Học & Cổ Danh Lịch Sử Việt Nam
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
-                                Khám phá ca dao, tích truyện dân gian gắn liền với các vùng đất trên dải đất hình chữ S, 
-                                đồng thời tra cứu và giải mã các địa danh cổ, cửa ải lịch sử sang tọa độ thực tế ngày nay.
+                                Khám phá các kiệt tác văn học Việt Nam (hiện đại, trung đại, truyền thuyết) gắn liền với xuất xứ,
+                                bối cảnh không gian nghệ thuật trên mọi miền Tổ quốc, đồng thời tra cứu và giải mã các cổ danh lịch sử.
                             </p>
                         </div>
 
@@ -312,14 +311,14 @@ const LiteratureMap = () => {
                             <div className="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center gap-3">
                                 <MapPin className="w-5 h-5 text-amber-400" />
                                 <div>
-                                    <span className="text-xs text-slate-400 block font-medium">Địa phương văn hóa</span>
+                                    <span className="text-xs text-slate-400 block font-medium">Không gian tác phẩm</span>
                                     <span className="text-lg font-bold text-white font-heritage">{locations.length}</span>
                                 </div>
                             </div>
                             <div className="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center gap-3">
                                 <BookOpen className="w-5 h-5 text-amber-400" />
                                 <div>
-                                    <span className="text-xs text-slate-400 block font-medium">Tác phẩm kết nối</span>
+                                    <span className="text-xs text-slate-400 block font-medium">Kiệt tác văn học</span>
                                     <span className="text-lg font-bold text-white font-heritage">{totalWorksCount}</span>
                                 </div>
                             </div>
@@ -334,34 +333,32 @@ const LiteratureMap = () => {
                     {/* HÀNG 1: TAB CHUYỂN ĐỔI 2 CHẾ ĐỘ THÔNG MINH */}
                     <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3 border-b border-slate-100 pb-2.5">
                         <div className="flex items-center gap-1 sm:gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 w-full sm:w-auto">
-                            {/* Tab 1: Địa phương */}
+                            {/* Tab 1: Tác phẩm Văn học */}
                             <button
                                 type="button"
                                 onClick={() => setMapMode('places')}
-                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
-                                    mapMode === 'places'
-                                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90'
-                                        : 'text-slate-600 hover:text-slate-900'
-                                }`}
+                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${mapMode === 'places'
+                                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90'
+                                    : 'text-slate-600 hover:text-slate-900'
+                                    }`}
                             >
-                                <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                                <span>Bản đồ Địa phương</span>
+                                <BookOpen className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                                <span>Bản đồ Tác phẩm Văn học</span>
                             </button>
 
                             {/* Tab 2: Cổ danh & Cửa ải Lịch sử */}
                             <button
                                 type="button"
                                 onClick={() => setMapMode('ancient')}
-                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${
-                                    mapMode === 'ancient'
-                                        ? 'bg-slate-900 text-amber-300 shadow-sm border border-slate-950'
-                                        : 'text-slate-600 hover:text-slate-900'
-                                }`}
+                                className={`flex-1 sm:flex-initial justify-center px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap ${mapMode === 'ancient'
+                                    ? 'bg-slate-900 text-amber-300 shadow-sm border border-slate-950'
+                                    : 'text-slate-600 hover:text-slate-900'
+                                    }`}
                             >
                                 <Landmark className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                                 <span>Cổ Danh<span className="hidden sm:inline"> &amp; Cửa Ải</span> Lịch Sử</span>
                                 <span className="hidden sm:inline px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-600 border border-amber-500/30 text-[9px] font-extrabold tracking-wider">
-                                    GPS AI
+                                    GPS
                                 </span>
                             </button>
                         </div>
@@ -382,11 +379,10 @@ const LiteratureMap = () => {
                                         key={cat.id}
                                         type="button"
                                         onClick={() => setSelectedCategory(cat.id)}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                                            selectedCategory === cat.id
-                                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
-                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                                        }`}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${selectedCategory === cat.id
+                                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
+                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                                            }`}
                                     >
                                         {cat.label}
                                     </button>
@@ -400,11 +396,10 @@ const LiteratureMap = () => {
                                             key={reg.id}
                                             type="button"
                                             onClick={() => setSelectedRegion(reg.id)}
-                                            className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer ${
-                                                selectedRegion === reg.id
-                                                    ? 'bg-white text-slate-900 shadow-xs font-bold'
-                                                    : 'text-slate-600 hover:text-slate-900'
-                                            }`}
+                                            className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer ${selectedRegion === reg.id
+                                                ? 'bg-white text-slate-900 shadow-xs font-bold'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                                }`}
                                         >
                                             {reg.label}
                                         </button>
@@ -420,7 +415,7 @@ const LiteratureMap = () => {
                                         }}
                                         className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                                     >
-                                        <option value="">Nhảy tới địa phương...</option>
+                                        <option value="">Chọn địa danh / tác phẩm...</option>
                                         {locations.map((loc) => (
                                             <option key={loc._id} value={loc._id}>
                                                 {loc.name} ({loc.totalWorks || loc.worksCount || 0} tác phẩm)
@@ -466,7 +461,7 @@ const LiteratureMap = () => {
                                     ) : (
                                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                     )}
-                                    <span>AI Định Vị GPS</span>
+                                    <span> Định Vị GPS</span>
                                 </button>
                             </form>
 
@@ -561,11 +556,10 @@ const LiteratureMap = () => {
                                         key={item.id}
                                         type="button"
                                         onClick={() => handleSelectAncientLandmark(item)}
-                                        className={`px-2.5 py-0.5 rounded-lg border text-xs whitespace-nowrap transition cursor-pointer ${
-                                            selectedAncientLandmark?.id === item.id
-                                                ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
-                                                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                                        }`}
+                                        className={`px-2.5 py-0.5 rounded-lg border text-xs whitespace-nowrap transition cursor-pointer ${selectedAncientLandmark?.id === item.id
+                                            ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                                            : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                                            }`}
                                     >
                                         {item.ancientName.split('(')[0].trim()}
                                     </button>
@@ -599,12 +593,12 @@ const LiteratureMap = () => {
                             <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
                             <div className="space-y-1">
                                 <p className="font-bold">
-                                    {mapMode === 'places' && 'Lưu ý khoa học về địa lý văn hóa dân gian:'}
+                                    {mapMode === 'places' && 'Không gian nghệ thuật & Bối cảnh tác phẩm:'}
                                     {mapMode === 'ancient' && 'Cơ sở học thuật định vị Cổ danh sang GPS:'}
                                 </p>
                                 <p className="text-slate-600 leading-relaxed text-[11px]">
                                     {mapMode === 'places' &&
-                                        'Ca dao và tục ngữ là sản phẩm truyền khẩu dân gian. Hệ thống phân định rõ Nơi khởi nguồn, Địa danh gắn liền và Vùng lưu truyền, tôn trọng chủ quyền toàn vẹn lãnh thổ Việt Nam.'}
+                                        'Bản đồ định vị chính xác địa danh xuất xứ, bối cảnh lịch sử và không gian nghệ thuật của các kiệt tác văn học Việt Nam (Hiện đại, Trung đại, Truyền thuyết), tôn trọng tính xác thực học thuật và chủ quyền toàn vẹn lãnh thổ Việt Nam.'}
                                     {mapMode === 'ancient' &&
                                         'Các địa danh cổ (Bến Chương Dương, Cửa Hàm Tử, Đầm Dạ Trạch, Sông Như Nguyệt...) được đối chiếu từ Đại Việt Sử Ký Toàn Thư và Đại Nam Nhất Thống Chí để giải mã chính xác địa chỉ hành chính và tọa độ GPS ngày nay.'}
                                 </p>
@@ -614,9 +608,8 @@ const LiteratureMap = () => {
 
                     {/* SIDE PANEL / DRAWER BÊN PHẢI (5 hoặc 4 cột) TÙY THEO MODE */}
                     <aside
-                        className={`lg:col-span-5 xl:col-span-4 bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col transition-all duration-300 ${
-                            isMobileDrawerOpen ? 'block' : 'hidden lg:flex'
-                        } lg:sticky lg:top-24 max-h-[800px]`}
+                        className={`lg:col-span-5 xl:col-span-4 bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col transition-all duration-300 ${isMobileDrawerOpen ? 'block' : 'hidden lg:flex'
+                            } lg:sticky lg:top-24 max-h-[800px]`}
                     >
                         {/* ========================================================= */}
                         {/* SIDEBAR PANEL CHO MODE 1: ĐỊA PHƯƠNG VĂN HÓA (PLACES)   */}
@@ -695,9 +688,16 @@ const LiteratureMap = () => {
                                                     className="p-3.5 rounded-2xl border border-slate-200/80 bg-white hover:border-amber-400 hover:shadow-md transition-all cursor-pointer group"
                                                 >
                                                     <div className="flex items-start justify-between gap-2">
-                                                        <h4 className="font-bold text-slate-900 group-hover:text-amber-800 text-sm font-heritage transition">
-                                                            {work.title}
-                                                        </h4>
+                                                        <div>
+                                                            <h4 className="font-bold text-slate-900 group-hover:text-amber-800 text-sm font-heritage transition">
+                                                                {work.title}
+                                                            </h4>
+                                                            {work.author && (
+                                                                <span className="text-[11px] text-amber-800/90 font-medium block mt-0.5">
+                                                                    Tác giả: {work.author}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60 flex-shrink-0">
                                                             {work.categoryName || work.category}
                                                         </span>
@@ -710,6 +710,12 @@ const LiteratureMap = () => {
                                                     <p className="mt-2 text-xs text-slate-500 line-clamp-2">
                                                         {work.summary || work.lesson}
                                                     </p>
+                                                    {work.relationNotes && (
+                                                        <div className="mt-2 text-[10px] text-amber-900/90 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1">
+                                                            <span>📍</span>
+                                                            <span className="line-clamp-1">{work.relationNotes}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))
                                         )}
@@ -717,12 +723,12 @@ const LiteratureMap = () => {
                                 </div>
                             ) : (
                                 <div className="p-8 text-center space-y-3 my-auto">
-                                    <MapPin className="w-10 h-10 text-amber-600/40 mx-auto" />
+                                    <BookOpen className="w-10 h-10 text-amber-600/40 mx-auto" />
                                     <h3 className="font-heritage font-bold text-slate-800 text-base">
-                                        Chưa chọn địa phương
+                                        Chưa chọn không gian tác phẩm
                                     </h3>
                                     <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                                        Nhấp vào một điểm ghim trên bản đồ hoặc chọn từ danh sách để xem các tác phẩm văn học dân gian gắn liền.
+                                        Nhấp vào một điểm ghim trên bản đồ hoặc chọn từ danh sách để khám phá các kiệt tác văn học gắn liền với vùng đất.
                                     </p>
                                 </div>
                             )

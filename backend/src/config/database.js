@@ -33,6 +33,12 @@ const connectDB = async () => {
         seedQuizQuestions().catch((seedErr) => {
             console.warn('[AutoSeed Quiz] Lưu ý nạp dữ liệu câu hỏi:', seedErr.message);
         });
+
+        // Tự động đồng bộ Bản đồ Tác phẩm Văn học vào Database (tự nạp vào MongoDB Atlas khi push lên EC2)
+        const seedLiteratureMap = require('../seeds/seedLiteratureMap');
+        seedLiteratureMap().catch((mapSeedErr) => {
+            console.warn('[AutoSeed Literature Map] Lưu ý nạp dữ liệu bản đồ:', mapSeedErr.message);
+        });
     } catch (error) {
         console.error(`[MongoDB] Connection error: ${error.message}`);
         // Không exit ngay để server vẫn khởi động và báo lỗi rõ ràng nếu DB chưa bật

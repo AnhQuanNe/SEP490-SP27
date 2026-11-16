@@ -15,15 +15,22 @@ class LocationService {
 
         const locations = await Location.find(locationQuery).sort({ name: 1 }).lean();
 
-        // Xây dựng điều kiện lọc tác phẩm
-        const workMatch = { status: 'published' };
+        // Xây dựng điều kiện lọc tác phẩm (chỉ lấy tác phẩm văn học, loại bỏ ca dao/tục ngữ)
+        const workMatch = {
+            status: 'published',
+            category: { $nin: ['ca-dao', 'tuc-ngu'] },
+        };
         if (category && category !== 'all') {
-            if (category === 'ca-dao') {
-                workMatch.category = 'ca-dao';
-            } else if (category === 'tuc-ngu') {
-                workMatch.category = 'tuc-ngu';
+            if (category === 'hien-dai') {
+                workMatch.category = 'hien-dai';
+            } else if (category === 'trung-dai') {
+                workMatch.category = 'trung-dai';
+            } else if (category === 'truyen-thuyet') {
+                workMatch.category = { $in: ['truyen-thuyet', 'than-thoai'] };
+            } else if (category === 'co-tich') {
+                workMatch.category = 'co-tich';
             } else if (category === 'dan-gian') {
-                workMatch.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich', 'ca-dao', 'tuc-ngu'] };
+                workMatch.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich'] };
             } else {
                 workMatch.category = category;
             }
@@ -92,15 +99,20 @@ class LocationService {
         const workQuery = {
             locationIds: location._id,
             status: 'published',
+            category: { $nin: ['ca-dao', 'tuc-ngu'] },
         };
 
         if (category && category !== 'all') {
-            if (category === 'ca-dao') {
-                workQuery.category = 'ca-dao';
-            } else if (category === 'tuc-ngu') {
-                workQuery.category = 'tuc-ngu';
+            if (category === 'hien-dai') {
+                workQuery.category = 'hien-dai';
+            } else if (category === 'trung-dai') {
+                workQuery.category = 'trung-dai';
+            } else if (category === 'truyen-thuyet') {
+                workQuery.category = { $in: ['truyen-thuyet', 'than-thoai'] };
+            } else if (category === 'co-tich') {
+                workQuery.category = 'co-tich';
             } else if (category === 'dan-gian') {
-                workQuery.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich', 'ca-dao', 'tuc-ngu'] };
+                workQuery.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich'] };
             } else {
                 workQuery.category = category;
             }
@@ -156,15 +168,20 @@ class LocationService {
         const workMatch = {
             locationIds: { $in: locationIds },
             status: 'published',
+            category: { $nin: ['ca-dao', 'tuc-ngu'] },
         };
 
         if (category && category !== 'all') {
-            if (category === 'ca-dao') {
-                workMatch.category = 'ca-dao';
-            } else if (category === 'tuc-ngu') {
-                workMatch.category = 'tuc-ngu';
+            if (category === 'hien-dai') {
+                workMatch.category = 'hien-dai';
+            } else if (category === 'trung-dai') {
+                workMatch.category = 'trung-dai';
+            } else if (category === 'truyen-thuyet') {
+                workMatch.category = { $in: ['truyen-thuyet', 'than-thoai'] };
+            } else if (category === 'co-tich') {
+                workMatch.category = 'co-tich';
             } else if (category === 'dan-gian') {
-                workMatch.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich', 'ca-dao', 'tuc-ngu'] };
+                workMatch.category = { $in: ['than-thoai', 'truyen-thuyet', 'co-tich'] };
             } else {
                 workMatch.category = category;
             }
@@ -248,7 +265,7 @@ class LocationService {
     }
 
     async updateLocation(id, data) {
-        const location = await Location.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+        const location = await Location.findByIdAndUpdate(id, data, { returnDocument: 'after', runValidators: true });
         if (!location) {
             throw new Error('Không tìm thấy địa phương cần cập nhật');
         }

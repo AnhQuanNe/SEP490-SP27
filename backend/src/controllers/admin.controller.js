@@ -463,10 +463,41 @@ const createWork = async (req, res) => {
     }
 };
 
+// Helper xây dựng query tìm tác phẩm linh hoạt theo ObjectId, slug hoặc title mà không gây lỗi CastError
+const buildWorkLookupQuery = (id, extra = {}) => {
+    const mongoose = require('mongoose');
+    const cleanId = String(id || '').trim();
+    const conditions = [];
+
+    if (cleanId) {
+        if (mongoose.Types.ObjectId.isValid(cleanId)) {
+            conditions.push({ _id: new mongoose.Types.ObjectId(cleanId) });
+            conditions.push({ _id: cleanId });
+        } else {
+            conditions.push({ slug: cleanId });
+            conditions.push({ title: cleanId });
+        }
+    }
+
+    if (extra.slug && String(extra.slug).trim() && extra.slug !== cleanId) {
+        conditions.push({ slug: String(extra.slug).trim() });
+    }
+
+    if (extra.title && String(extra.title).trim() && extra.title !== cleanId) {
+        conditions.push({ title: String(extra.title).trim() });
+    }
+
+    return conditions.length === 1 ? conditions[0] : { $or: conditions };
+};
+
 const updateWork = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = { ...req.body };
+
+        // Loại bỏ _id và id khỏi updateData để tránh lỗi Mongoose immutable field
+        delete updateData._id;
+        delete updateData.id;
 
         // Xử lý tags nếu là chuỗi phân cách bởi dấu phẩy
         if (updateData.tags && typeof updateData.tags === 'string') {
@@ -488,22 +519,18 @@ const updateWork = async (req, res) => {
             updateData.categoryName = CATEGORY_NAMES[updateData.category] || updateData.category;
         }
 
-        const mongoose = require('mongoose');
-        let query = { _id: id };
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
-        }
+        const query = buildWorkLookupQuery(id, { slug: updateData.slug, title: updateData.title });
 
         const updatedWork = await Work.findOneAndUpdate(
             query,
-            updateData,
+            { $set: updateData },
             { returnDocument: 'after', runValidators: true }
         );
 
         if (!updatedWork) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy tác phẩm để cập nhật',
+                message: 'Không tìm thấy tác phẩm để cập nhật trong hệ thống',
             });
         }
 
@@ -548,15 +575,11 @@ const updateWorkStatus = async (req, res) => {
             });
         }
 
-        const mongoose = require('mongoose');
-        let query = { _id: id };
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
-        }
+        const query = buildWorkLookupQuery(id, { slug: req.body?.slug, title: req.body?.title });
 
         const work = await Work.findOneAndUpdate(
             query,
-            { status },
+            { $set: { status } },
             { returnDocument: 'after' }
         );
 
@@ -586,11 +609,7 @@ const updateWorkStatus = async (req, res) => {
 const deleteWork = async (req, res) => {
     try {
         const { id } = req.params;
-        const mongoose = require('mongoose');
-        let query = { _id: id };
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { _id: id }] };
-        }
+        const query = buildWorkLookupQuery(id, { slug: req.body?.slug, title: req.body?.title });
 
         const deleted = await Work.findOneAndDelete(query);
         if (!deleted) {

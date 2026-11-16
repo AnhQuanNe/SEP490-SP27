@@ -325,10 +325,10 @@ const CulturalMap = ({
                 <div style="min-width: 180px; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                     <h4 style="font-weight: 700; font-size: 13px; color: #0f172a; margin: 0 0 4px 0; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${loc.name}</h4>
                     <p style="font-size: 11px; color: #475569; margin: 0 0 6px 0; line-height: 1.4; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                        ${loc.description ? loc.description.substring(0, 75) + '...' : 'Địa danh văn hóa tiêu biểu.'}
+                        ${loc.description ? loc.description.substring(0, 75) + '...' : 'Không gian tác phẩm văn học tiêu biểu.'}
                     </p>
                     <div style="font-size: 11px; font-weight: 600; color: #d97706; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                        ${count} tác phẩm gắn liền
+                        ${count} tác phẩm văn học
                     </div>
                 </div>
             `;

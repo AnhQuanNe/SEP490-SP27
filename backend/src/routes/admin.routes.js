@@ -23,12 +23,17 @@ router.get('/submissions', adminController.getSubmissions);
 router.post('/submissions/:id/approve', adminController.approveSubmission);
 router.post('/submissions/:id/reject', adminController.rejectSubmission);
 
-// UC18: Manage published folk literature content
+// UC18: Manage published folk literature content (hỗ trợ cả /works và alias số ít /work)
 router.get('/works', adminController.getWorks);
+router.get('/work', adminController.getWorks);
 router.post('/works', adminController.createWork);
+router.post('/work', adminController.createWork);
 router.put('/works/:id', adminController.updateWork);
+router.put('/work/:id', adminController.updateWork);
 router.patch('/works/:id/status', adminController.updateWorkStatus);
+router.patch('/work/:id/status', adminController.updateWorkStatus);
 router.delete('/works/:id', adminController.deleteWork);
+router.delete('/work/:id', adminController.deleteWork);
 
 // UC19: Configure system settings
 router.get('/settings', adminController.getSettings);

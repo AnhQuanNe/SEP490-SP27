@@ -297,6 +297,7 @@ const AdminDashboard = () => {
             audioUrl: w.audioUrl || '',
             audioPerformer: w.audioPerformer || '',
             status: w.status || 'published',
+            slug: w.slug || '',
         });
     };
 
@@ -343,8 +344,9 @@ const AdminDashboard = () => {
     const handleSaveWork = async (e) => {
         e.preventDefault();
         try {
-            if (editingWork._id) {
-                await adminService.updateWork(editingWork._id, workForm);
+            const targetId = editingWork?._id || editingWork?.id || editingWork?.slug;
+            if (targetId) {
+                await adminService.updateWork(targetId, workForm);
                 showToast(`Đã cập nhật tác phẩm: "${workForm.title}"`);
             } else {
                 await adminService.createWork(workForm);
@@ -354,20 +356,25 @@ const AdminDashboard = () => {
             loadWorks();
             loadStats();
         } catch (err) {
-            showToast(err.response?.data?.message || 'Lỗi khi lưu tác phẩm', 'error');
+            console.error('Lỗi khi lưu tác phẩm:', err);
+            const errorMsg = err?.message || err?.data?.message || err?.response?.data?.message || 'Lỗi khi lưu tác phẩm';
+            showToast(errorMsg, 'error');
         }
     };
 
     const executeDeleteWork = async () => {
         if (!deleteWorkTarget) return;
         try {
-            await adminService.deleteWork(deleteWorkTarget._id);
+            const targetId = deleteWorkTarget._id || deleteWorkTarget.id || deleteWorkTarget.slug;
+            await adminService.deleteWork(targetId);
             showToast(`Đã xóa tác phẩm: "${deleteWorkTarget.title}"`);
             setDeleteWorkTarget(null);
             loadWorks();
             loadStats();
         } catch (err) {
-            showToast(err.response?.data?.message || 'Lỗi khi xóa tác phẩm', 'error');
+            console.error('Lỗi khi xóa tác phẩm:', err);
+            const errorMsg = err?.message || err?.data?.message || err?.response?.data?.message || 'Lỗi khi xóa tác phẩm';
+            showToast(errorMsg, 'error');
         }
     };
 
