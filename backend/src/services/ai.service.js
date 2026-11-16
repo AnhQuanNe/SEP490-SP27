@@ -14,12 +14,25 @@ const {
     isConversationalGreeting,
     isOffTopicQuery,
 } = require('../constants/aiKnowledge.constants');
+let currentAiGeminiKeyIndex = 0;
+
 /**
- * Gọi Google Gemini API với danh sách model hoạt động thực tế
+ * Lấy danh sách Gemini API Keys hỗ trợ Bể xoay tua (Rotation Pool)
+ */
+function getAiServiceGeminiKeys() {
+    const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+    return rawKeys
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k && !k.includes('your_gemini_api_key'));
+}
+
+/**
+ * Gọi Google Gemini API với danh sách model hoạt động thực tế & Key Rotation Pool
  */
 async function callGeminiApi({ question, contextText, history = [], customInstruction = null }) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    const geminiKeys = getAiServiceGeminiKeys();
+    if (geminiKeys.length === 0) return null;
 
     const systemInstruction = customInstruction || `Bạn là VietHeritage AI — Trợ lý nghiên cứu và đối thoại học thuật về Di sản Văn học & Văn hóa Dân gian Việt Nam.
 Nhiệm vụ của bạn:
@@ -72,34 +85,43 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
         parts: [{ text: userPrompt }],
     });
 
-    for (const model of GEMINI_MODELS) {
-        try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    for (let k = 0; k < geminiKeys.length; k++) {
+        const keyIdx = (currentAiGeminiKeyIndex + k) % geminiKeys.length;
+        const apiKey = geminiKeys[keyIdx];
 
-                        const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemInstruction }] },
-                    contents,
-                    generationConfig: {
-                        temperature: 0.6,
-                        maxOutputTokens: 4096,
-                    },
-                }),
-                signal: AbortSignal.timeout(15000),
-            });
+        for (const model of GEMINI_MODELS) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-            if (response.ok) {
-                const data = await response.json();
-                const parts = data.candidates?.[0]?.content?.parts || [];
-                const fullAnswer = parts.map((p) => p.text || '').join('').trim();
-                if (fullAnswer) return fullAnswer;
-            } else {
-                console.warn(`[Gemini API] Model ${model} failed with status ${response.status}`);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: systemInstruction }] },
+                        contents,
+                        generationConfig: {
+                            temperature: 0.6,
+                            maxOutputTokens: 4096,
+                        },
+                    }),
+                    signal: AbortSignal.timeout(15000),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const parts = data.candidates?.[0]?.content?.parts || [];
+                    const fullAnswer = parts.map((p) => p.text || '').join('').trim();
+                    if (fullAnswer) return fullAnswer;
+                } else if ((response.status === 429 || response.status === 503) && geminiKeys.length > 1) {
+                    console.warn(`[Gemini API] Key #${keyIdx + 1} chạm giới hạn (HTTP ${response.status}). Đổi sang Key tiếp theo trong bể xoay tua...`);
+                    currentAiGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+                    break; // Thử ngay key tiếp theo trong bể
+                } else {
+                    console.warn(`[Gemini API] Model ${model} (Key #${keyIdx + 1}) failed with status ${response.status}`);
+                }
+            } catch (err) {
+                console.warn(`[Gemini API] Lỗi model ${model}:`, err.message);
             }
-        } catch (err) {
-            console.warn(`[Gemini API] Lỗi model ${model}:`, err.message);
         }
     }
 

@@ -358,70 +358,98 @@ function getGeminiApiKeys() {
 
 let currentGeminiKeyIndex = 0;
 
+let currentGroqStoryKeyIndex = 0;
+
 /**
- * Tầng dự phòng cấp 2: Gọi Groq AI (Llama 3 / Mixtral) khi Gemini chạm giới hạn quota
+ * Lấy danh sách Groq API Keys cho Story Engine (ưu tiên GROQ_API_KEY_STORY, hỗ trợ rotation pool)
+ */
+function getGroqStoryApiKeys() {
+    const specificKey = process.env.GROQ_API_KEY_STORY;
+    const rawKeys = process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || '';
+    const pool = rawKeys
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k && !k.includes('your_groq_api_key'));
+
+    if (specificKey && specificKey.trim() && !pool.includes(specificKey.trim())) {
+        return [specificKey.trim(), ...pool];
+    }
+    return pool;
+}
+
+/**
+ * Tầng dự phòng cấp 2: Gọi Groq AI (Llama 3 / Mixtral) khi Gemini chạm giới hạn quota (có Key Rotation)
  */
 async function callGroqStoryEngine({ systemPrompt, story, nextStep, chosenText, isCustomAction, currentStats }) {
-    const groqKey = process.env.GROQ_API_KEY;
-    if (!groqKey || !groqKey.trim() || groqKey.includes('your_groq_api_key')) {
+    const groqKeys = getGroqStoryApiKeys();
+    if (groqKeys.length === 0) {
         return null;
     }
 
     const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b'];
     const prompt = `Hãy tạo Hồi ${nextStep} cho dị bản ${story.title} sau khi người chơi ${isCustomAction ? 'đột phá thực hiện' : 'chọn'}: "${chosenText}".`;
 
-    for (const model of groqModels) {
-        try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${groqKey.trim()}`,
-                },
-                body: JSON.stringify({
-                    model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: prompt },
-                    ],
-                    response_format: { type: 'json_object' },
-                    temperature: isCustomAction ? 0.85 : 0.75,
-                    max_tokens: 2048,
-                }),
-                signal: AbortSignal.timeout(8000),
-            });
+    for (let k = 0; k < groqKeys.length; k++) {
+        const keyIdx = (currentGroqStoryKeyIndex + k) % groqKeys.length;
+        const groqKey = groqKeys[keyIdx];
 
-            if (response.ok) {
-                const data = await response.json();
-                const contentText = data?.choices?.[0]?.message?.content || '';
-                const parsed = safeParseStoryJson(contentText);
+        for (const model of groqModels) {
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${groqKey.trim()}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: prompt },
+                        ],
+                        response_format: { type: 'json_object' },
+                        temperature: isCustomAction ? 0.85 : 0.75,
+                        max_tokens: 2048,
+                    }),
+                    signal: AbortSignal.timeout(8000),
+                });
 
-                if (parsed && parsed.storyText) {
-                    const newStats = {
-                        tam: Math.min(100, Math.max(0, currentStats.tam + (parsed.statChanges?.tam || 0))),
-                        tri: Math.min(100, Math.max(0, currentStats.tri + (parsed.statChanges?.tri || 0))),
-                        dung: Math.min(100, Math.max(0, currentStats.dung + (parsed.statChanges?.dung || 0))),
-                        longDan: Math.min(100, Math.max(0, currentStats.longDan + (parsed.statChanges?.longDan || 0))),
-                    };
+                if (response.ok) {
+                    const data = await response.json();
+                    const contentText = data?.choices?.[0]?.message?.content || '';
+                    const parsed = safeParseStoryJson(contentText);
 
-                    console.log(`[StoryBranch] Đã dệt cốt truyện thành công bằng Groq AI (${model})`);
+                    if (parsed && parsed.storyText) {
+                        const newStats = {
+                            tam: Math.min(100, Math.max(0, currentStats.tam + (parsed.statChanges?.tam || 0))),
+                            tri: Math.min(100, Math.max(0, currentStats.tri + (parsed.statChanges?.tri || 0))),
+                            dung: Math.min(100, Math.max(0, currentStats.dung + (parsed.statChanges?.dung || 0))),
+                            longDan: Math.min(100, Math.max(0, currentStats.longDan + (parsed.statChanges?.longDan || 0))),
+                        };
 
-                    return {
-                        step: nextStep,
-                        chapterTitle: parsed.chapterTitle || `Hồi ${nextStep}: Biến Cố Mới`,
-                        sceneMood: parsed.sceneMood || 'dramatic',
-                        storyText: parsed.storyText,
-                        statChanges: parsed.statChanges || { tam: 0, tri: 0, dung: 0, longDan: 0 },
-                        newStats,
-                        isEnding: !!parsed.isEnding,
-                        choices: parsed.choices || [],
-                        endingData: parsed.endingData || null,
-                        sourceType: `groq_story_engine (${model})`,
-                    };
+                        console.log(`[StoryBranch] Đã dệt cốt truyện thành công bằng Groq AI (${model}, Key #${keyIdx + 1})`);
+
+                        return {
+                            step: nextStep,
+                            chapterTitle: parsed.chapterTitle || `Hồi ${nextStep}: Biến Cố Mới`,
+                            sceneMood: parsed.sceneMood || 'dramatic',
+                            storyText: parsed.storyText,
+                            statChanges: parsed.statChanges || { tam: 0, tri: 0, dung: 0, longDan: 0 },
+                            newStats,
+                            isEnding: !!parsed.isEnding,
+                            choices: parsed.choices || [],
+                            endingData: parsed.endingData || null,
+                            sourceType: `groq_story_engine (${model})`,
+                        };
+                    }
+                } else if (response.status === 429 && groqKeys.length > 1) {
+                    console.warn(`[StoryBranch] Key Groq #${keyIdx + 1} chạm giới hạn (HTTP 429). Tự động đổi sang Key tiếp theo...`);
+                    currentGroqStoryKeyIndex = (keyIdx + 1) % groqKeys.length;
+                    break; // Thoát vòng lặp model của key này để thử key tiếp theo ngay lập tức
                 }
+            } catch (err) {
+                console.warn(`[StoryBranch - Groq] Model ${model} gặp sự cố:`, err.message);
             }
-        } catch (err) {
-            console.warn(`[StoryBranch - Groq] Model ${model} gặp sự cố:`, err.message);
         }
     }
 

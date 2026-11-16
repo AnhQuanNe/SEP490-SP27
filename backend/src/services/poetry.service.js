@@ -5,13 +5,14 @@ if (dns.setDefaultResultOrder) {
 const https = require('https');
 const Poem = require('../models/Poem');
 const { analyzeLucBatPoem, checkWordRhyme, getToneType, extractRime } = require('../utils/lucBatAnalyzer');
+const { GEMINI_MODELS } = require('../constants/geminiModels');
 
 // Cấu hình Groq API & Model Fallback
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODELS = [
+    'qwen/qwen3.8-27b',
     'openai/gpt-oss-120b',
     'openai/gpt-oss-20b',
-    'qwen/qwen3.8-27b',
 ];
 const GROQ_TIMEOUT_MS = 30000;
 const GROQ_FALLBACK_DELAY_MS = 1000;
@@ -149,31 +150,26 @@ function detectPoemTopic(lucLine) {
 }
 
 /**
- * Hiệu chỉnh thông minh câu Bát (tự động ghép 2 tiếng cuối nếu AI dừng ở tiếng 6 vần, hoặc bỏ từ thừa)
+ * Làm sạch và chuẩn hóa câu Bát: loại bỏ dấu câu thừa, đảm bảo chuẩn xác số tiếng
  */
 function tryRepairBatLine(rawLine, word6Luc) {
     if (!rawLine || typeof rawLine !== 'string') return null;
-    const stripPunct = (w) => w.replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…]+$/g, '');
-    let words = rawLine.trim().split(/\s+/).map(stripPunct).filter(Boolean);
+    // Loại bỏ dấu câu ở đầu và cuối dòng (dấu chấm, phẩy, gạch ngang, ngoặc kép...)
+    const cleanLine = rawLine
+        .replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…—–\s]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…—–\s]+$/g, '')
+        .trim();
+    if (!cleanLine) return null;
 
-    // Trường hợp AI sinh 6 tiếng và dừng ngay tại tiếng gieo vần thứ 6:
-    if (words.length === 6) {
-        const w6Tone = getToneType(words[5]);
-        const rhymeCheck = checkWordRhyme(word6Luc, words[5]);
-        if (rhymeCheck.isRhyme && w6Tone.toneType === 'B') {
-            const endWords = w6Tone.isNgang ? ['nẻo', 'đường'] : ['tháng', 'năm'];
-            words.push(...endWords);
-            return words.join(' ');
-        }
-    }
+    const stripPunct = (w) => w.replace(/^[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…—–]+|[.,/#!$%^&*;:{}=\-_~`()"'“”‘’?!…—–]+$/g, '');
+    let words = cleanLine.split(/\s+/).map(stripPunct).filter(Boolean);
 
     if (words.length === 8) {
         return words.join(' ');
     }
 
-    // Trường hợp AI sinh 9 tiếng (thừa 1 hư từ như: thì, mà, đã, đang, rất, quá, thật, lại):
+    // Nếu câu 9 tiếng có 1 hư từ thừa (thì, mà, đã, đang, rất, quá, thật, lại) ở vị trí không cốt tử (1, 3, 5, 7):
     if (words.length === 9) {
-        const fillerWords = ['thì', 'mà', 'đã', 'đang', 'rất', 'quá', 'thật', 'lại'];
+        const fillerWords = ['thì', 'mà', 'đã', 'đang', 'rất', 'quá', 'thật', 'lại', 'những', 'các'];
         for (let i = 0; i < words.length; i++) {
             if (fillerWords.includes(words[i].toLowerCase()) && i !== 1 && i !== 3 && i !== 5 && i !== 7) {
                 const candidateWords = words.filter((_, idx) => idx !== i);
@@ -184,7 +180,7 @@ function tryRepairBatLine(rawLine, word6Luc) {
         }
     }
 
-    return rawLine.trim();
+    return null;
 }
 
 // Từ điển cụm từ & từ láy tự nhiên theo tiếng liền kề (Collocation Map) để gợi ý sửa lỗi chuẩn mực ngữ nghĩa
@@ -801,12 +797,91 @@ function postJsonHttps(urlStr, headers, bodyObj, timeoutMs = 25000) {
     });
 }
 
+let currentPoetryGeminiKeyIndex = 0;
+
 /**
- * Gọi Groq API theo chuẩn OpenAI Chat Completions với cơ chế Fallback tự động
+ * Lấy danh sách Gemini API Keys hỗ trợ Bể xoay tua (Rotation Pool) cho Thơ
  */
-async function callGroqPoetryApi({ prompt, systemInstruction }) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey || !apiKey.trim() || apiKey.includes('your_groq_api_key')) {
+function getGeminiPoetryApiKeys() {
+    const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+    return rawKeys
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k && !k.includes('your_gemini_api_key'));
+}
+
+/**
+ * Gọi Google Gemini API cho Sáng tác & Phân tích Thơ Lục Bát (Chất lượng văn chương & niêm luật cao nhất)
+ */
+async function callGeminiPoetryApi({ prompt, systemInstruction }) {
+    const geminiKeys = getGeminiPoetryApiKeys();
+    if (geminiKeys.length === 0) return null;
+
+    for (let k = 0; k < geminiKeys.length; k++) {
+        const keyIdx = (currentPoetryGeminiKeyIndex + k) % geminiKeys.length;
+        const apiKey = geminiKeys[keyIdx];
+
+        for (const model of GEMINI_MODELS) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                const body = {
+                    system_instruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: 'application/json',
+                        temperature: 0.65,
+                    },
+                };
+
+                const res = await postJsonHttps(url, {}, body, 20000);
+                if (res.ok) {
+                    const data = await res.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const parsed = extractJson(text);
+                        if (parsed) {
+                            return { ok: true, data: parsed, modelUsed: `Gemini (${model})` };
+                        }
+                    }
+                } else if ((res.status === 429 || res.status === 503) && geminiKeys.length > 1) {
+                    console.warn(`[Poetry Gemini AI] Key #${keyIdx + 1} chạm giới hạn (HTTP ${res.status}). Đổi sang Key tiếp theo...`);
+                    currentPoetryGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+                    break;
+                }
+            } catch (err) {
+                console.warn(`[Poetry Gemini AI] Lỗi model ${model}:`, err.message);
+            }
+        }
+    }
+
+    return null;
+}
+
+let currentPoetryKeyIndex = 0;
+
+/**
+ * Lấy danh sách Groq API Keys hỗ trợ Bể xoay tua (Rotation Pool) và Key chuyên biệt cho Thơ
+ */
+function getGroqPoetryApiKeys() {
+    const specificKey = process.env.GROQ_API_KEY_POETRY;
+    const rawKeys = process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || '';
+    const pool = rawKeys
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k && !k.includes('your_groq_api_key'));
+
+    if (specificKey && specificKey.trim() && !pool.includes(specificKey.trim())) {
+        return [specificKey.trim(), ...pool];
+    }
+    return pool;
+}
+
+/**
+ * Gọi Groq API theo chuẩn OpenAI Chat Completions với cơ chế Fallback tự động & Key Rotation Pool
+ */
+async function callGroqPoetryApi({ prompt, systemInstruction, maxTokens }) {
+    const groqKeys = getGroqPoetryApiKeys();
+    if (groqKeys.length === 0) {
         return {
             ok: false,
             reason: 'missing_key',
@@ -819,84 +894,114 @@ async function callGroqPoetryApi({ prompt, systemInstruction }) {
     let lastStatus = 503;
     let sawTransientBusy = false;
 
-    for (let mIdx = 0; mIdx < GROQ_MODELS.length; mIdx += 1) {
-        const model = GROQ_MODELS[mIdx];
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+    // Duyệt qua các Key trong pool (bắt đầu từ key hiện tại)
+    for (let k = 0; k < groqKeys.length; k++) {
+        const keyIdx = (currentPoetryKeyIndex + k) % groqKeys.length;
+        const apiKey = groqKeys[keyIdx];
+        let keyHitRateLimit = false;
 
-        try {
-            const isQwen = model.toLowerCase().includes('qwen');
-            const isGptOss = model.startsWith('openai/gpt-oss');
+        for (let mIdx = 0; mIdx < GROQ_MODELS.length; mIdx += 1) {
+            const model = GROQ_MODELS[mIdx];
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
 
-            const body = {
-                model,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt },
-                ],
-                max_tokens: isQwen ? 1800 : 2500,
-                temperature: 0.5,
-            };
+            try {
+                const isQwen = model.toLowerCase().includes('qwen');
+                const isGptOss = model.startsWith('openai/gpt-oss');
 
-            // Tắt suy nghĩ nội bộ ở Qwen để không bị tràn token/rate limit, đặt low ở GPT-OSS
-            if (isQwen) {
-                body.reasoning_effort = 'none';
-            } else if (isGptOss) {
-                body.reasoning_effort = 'low';
-            }
+                // Giới hạn max_tokens an toàn: Qwen trên Groq free tier có OTPM limit 1000, không được vượt quá 450-800
+                let safeMaxTokens = 450;
+                if (isQwen) {
+                    safeMaxTokens = maxTokens ? Math.min(maxTokens, 450) : 450;
+                } else if (isGptOss) {
+                    safeMaxTokens = Math.max(maxTokens || 1200, 1500);
+                } else {
+                    safeMaxTokens = maxTokens || 2000;
+                }
 
-            clearTimeout(timeoutId);
-            const response = await postJsonHttps(
-                GROQ_API_URL,
-                { Authorization: `Bearer ${apiKey.trim()}` },
-                body,
-                GROQ_TIMEOUT_MS
-            );
+                const body = {
+                    model,
+                    messages: [
+                        { role: 'system', content: systemInstruction },
+                        { role: 'user', content: prompt },
+                    ],
+                    max_tokens: safeMaxTokens,
+                    temperature: 0.6,
+                };
 
-            if (response.ok) {
-                const data = await response.json();
-                const choice = data?.choices?.[0];
-                const contentText = choice?.message?.content || '';
-                const finishReason = choice?.finish_reason || 'unknown';
+                // Tắt suy nghĩ nội bộ ở Qwen để không bị tràn token/rate limit, đặt low ở GPT-OSS
+                if (isQwen) {
+                    body.reasoning_effort = 'none';
+                } else if (isGptOss) {
+                    body.reasoning_effort = 'low';
+                }
 
-                if (contentText) {
-                    const parsed = extractJson(contentText);
-                    if (parsed) {
-                        return { ok: true, data: parsed, modelUsed: model };
+                clearTimeout(timeoutId);
+                const response = await postJsonHttps(
+                    GROQ_API_URL,
+                    { Authorization: `Bearer ${apiKey.trim()}` },
+                    body,
+                    GROQ_TIMEOUT_MS
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const choice = data?.choices?.[0];
+                    const contentText = choice?.message?.content || '';
+                    const finishReason = choice?.finish_reason || 'unknown';
+
+                    if (contentText) {
+                        const parsed = extractJson(contentText);
+                        if (parsed) {
+                            return { ok: true, data: parsed, modelUsed: model };
+                        }
+                    }
+                    lastErrorMessage = `Model ${model} trả về nội dung rỗng hoặc không trích xuất được JSON hợp lệ (finish_reason: ${finishReason})`;
+                    console.warn(`[Poetry AI] Model ${model} trả về nội dung rỗng hoặc không trích xuất được JSON hợp lệ (finish_reason: ${finishReason}). Output: "${contentText.slice(0, 150)}"`);
+                } else {
+                    const errText = await response.text();
+                    lastStatus = response.status;
+                    let parsedErr = '';
+                    try {
+                        parsedErr = JSON.parse(errText)?.error?.message || '';
+                    } catch {
+                        parsedErr = errText.slice(0, 120);
+                    }
+                    lastErrorMessage = `Groq HTTP ${response.status}${parsedErr ? `: ${parsedErr}` : ''}`;
+                    console.warn(`[Poetry AI] Model ${model} (Key #${keyIdx + 1}) HTTP ${response.status}: ${errText.slice(0, 150)}`);
+                    sawTransientBusy = true;
+
+                    // Nếu chạm giới hạn Rate Limit (HTTP 429), lập tức chuyển sang Key khác trong pool
+                    if (response.status === 429 && groqKeys.length > 1) {
+                        console.warn(`[Poetry AI] Key Groq #${keyIdx + 1} chạm giới hạn (HTTP 429). Tự động xoay sang Key tiếp theo trong bể xoay tua...`);
+                        currentPoetryKeyIndex = (keyIdx + 1) % groqKeys.length;
+                        keyHitRateLimit = true;
+                        break; // Thoát vòng lặp model của key này để thử key tiếp theo ngay lập tức
                     }
                 }
-                lastErrorMessage = `Model ${model} trả về nội dung rỗng hoặc không trích xuất được JSON hợp lệ (finish_reason: ${finishReason})`;
-                console.warn(`[Poetry AI] Model ${model} trả về nội dung rỗng hoặc không trích xuất được JSON hợp lệ (finish_reason: ${finishReason}). Output: "${contentText.slice(0, 150)}"`);
-            } else {
-                const errText = await response.text();
-                lastStatus = response.status;
-                let parsedErr = '';
-                try {
-                    parsedErr = JSON.parse(errText)?.error?.message || '';
-                } catch {
-                    parsedErr = errText.slice(0, 120);
-                }
-                lastErrorMessage = `Groq HTTP ${response.status}${parsedErr ? `: ${parsedErr}` : ''}`;
-                console.warn(`[Poetry AI] Model ${model} HTTP ${response.status}: ${errText.slice(0, 150)}`);
-                sawTransientBusy = true;
-            }
-        } catch (err) {
-            const isAbort = err.name === 'AbortError';
-            lastErrorMessage = isAbort
-                ? `Model ${model} quá thời gian chờ (${GROQ_TIMEOUT_MS / 1000}s)`
-                : err.message;
-            console.warn(`[Poetry AI] Lỗi model ${model}:`, err.message);
+            } catch (err) {
+                const isAbort = err.name === 'AbortError';
+                lastErrorMessage = isAbort
+                    ? `Model ${model} quá thời gian chờ (${GROQ_TIMEOUT_MS / 1000}s)`
+                    : err.message;
+                console.warn(`[Poetry AI] Lỗi model ${model}:`, err.message);
 
-            if (isAbort) {
-                sawTransientBusy = true;
+                if (isAbort) {
+                    sawTransientBusy = true;
+                }
+            } finally {
+                clearTimeout(timeoutId);
             }
-        } finally {
-            clearTimeout(timeoutId);
+
+            const hasNextModel = mIdx < GROQ_MODELS.length - 1;
+            if (hasNextModel) {
+                await sleep(GROQ_FALLBACK_DELAY_MS);
+            }
         }
 
-        const hasNextModel = mIdx < GROQ_MODELS.length - 1;
-        if (hasNextModel) {
-            await sleep(GROQ_FALLBACK_DELAY_MS);
+        // Nếu key hiện tại bị rate limit và đã đổi key, tiếp tục thử key kế tiếp
+        if (keyHitRateLimit) {
+            continue;
         }
     }
 
@@ -1070,7 +1175,7 @@ QUY TẮC CỐT TỬ KHI GỢI Ý THAY TỪ (SUGGESTIONS):
    - Luôn kết hợp hài hòa với tiếng trước và tiếng sau để tạo thành từ láy, từ ghép chuẩn xác trong tiếng Việt.
 3. CHỈ TRẢ VỀ DUY NHẤT MỘT KHỐI JSON HỢP LỆ THEO SCHEMA, TUYỆT ĐỐI KHÔNG CÓ BẤT KỲ VĂN BẢN NÀO NGOÀI JSON.`;
 
-    const groqCriticRes = await callGroqPoetryApi({ prompt, systemInstruction });
+    const groqCriticRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 800 });
     let aiCritic = groqCriticRes.ok ? groqCriticRes.data : null;
 
     if (!aiCritic || typeof aiCritic.rhythmScore !== 'number') {
@@ -1184,9 +1289,9 @@ QUY TẮC CỐT TỬ KHI GỢI Ý THAY TỪ (SUGGESTIONS):
 }
 
 /**
- * Đối thơ cùng AI: Nhận câu Lục (6 tiếng) -> Sinh câu Bát (8 tiếng) chuẩn luật & vần
+ * Đối thơ cùng AI: Nhận câu Lục (6 tiếng) -> Sinh câu Bát (8 tiếng) đúng nghĩa đúng cảnh, tiếp nối mạch thơ
  */
-async function coWriteBatLine({ lucLine, context = '' }) {
+async function coWriteBatLine({ lucLine, context = '', previousLines = [] }) {
     if (!lucLine || !lucLine.trim()) {
         throw new Error('Vui lòng nhập câu thơ (câu Lục) để AI phân tích và ứng khẩu câu đối');
     }
@@ -1227,117 +1332,116 @@ async function coWriteBatLine({ lucLine, context = '' }) {
     const suggestedWordsText = (suggestedRhymes.length > 0 ? suggestedRhymes : [word6Luc]).join(', ');
     const detectedTopic = detectPoemTopic(cleanLuc);
 
-    const contextClause = context && context.trim()
-        ? `\n[BÀI THƠ ĐANG VIẾT TRONG TRÌNH SOẠN THẢO — CHỈ THAM KHẢO NẾU CÙNG MẠCH Ý]:\n${context.trim()}\n(LƯU Ý: Nếu bối cảnh trên khác chủ đề với câu Lục "${cleanLuc}", BẮT BUỘC bỏ qua bối cảnh và chỉ đối trực tiếp theo đúng câu Lục "${cleanLuc}"!).\n`
-        : '';
+    // 2. Xử lý ngữ cảnh đa lượt: Nhận diện mạch thơ đã có trước đó
+    let priorVerses = [];
+    if (Array.isArray(previousLines) && previousLines.length > 0) {
+        priorVerses = previousLines.map((l) => String(l || '').trim()).filter(Boolean);
+    } else if (context && typeof context === 'string' && context.trim()) {
+        const rawLines = context.split('\n').map((l) => l.trim()).filter(Boolean);
+        priorVerses = rawLines.filter((l) => !l.startsWith('Tựa đề:') && !l.startsWith('Các câu thơ hiện có:'));
+    }
 
-    // 2. Xây dựng Prompt cho Groq AI: Tư duy văn xuôi trước, bám sát ngữ cảnh và cấm ghép từ vô nghĩa
-    const prompt = `BẠN LÀ MỘT NGHỆ NHÂN ĐỐI THƠ LỤC BÁT DÂN GIAN VIỆT NAM THÔNG MINH, DÍ DỎM, NGÔN TỪ TỰ NHIÊN VÀ GIÀU CẢM XÚC.
+    // Nếu câu Lục hiện tại bị trùng ở cuối mảng lịch sử thì loại bỏ để không lặp lại
+    if (priorVerses.length > 0 && priorVerses[priorVerses.length - 1] === cleanLuc) {
+        priorVerses.pop();
+    }
 
-NHIỆM VỤ:
-Đọc câu Lục (6 tiếng) của người dùng, thấu hiểu tường tận NGỮ CẢNH và Ý NGHĨA, sau đó sáng tác 3 phương án câu Bát (8 tiếng) để đối đáp và tiếp nối mạch cảm xúc, hoàn thiện cặp thơ Lục Bát trọn vẹn.
+    let poemContextSection = '';
+    if (priorVerses.length > 0) {
+        const numberedHistory = priorVerses.map((line, idx) => `Câu ${idx + 1}: ${line}`).join('\n');
+        poemContextSection = `[MẠCH THƠ ĐÃ SÁNG TÁC TRƯỚC ĐÓ (${priorVerses.length} CÂU)]:\n${numberedHistory}\n\n`;
+    }
 
-CÂU LỤC CHÍNH THỨC CỦA NGƯỜI DÙNG VỪA NHẬP (6 tiếng):
+    // 3. Xây dựng Prompt cho AI: Bám sát mạch thơ, chuẩn mực niêm luật dấu thanh & giàu chất thơ
+    const prompt = `Bạn là một Nghệ nhân Thi ca Dân gian Việt Nam bậc thầy, chuyên sáng tác thơ Lục Bát đậm đà bản sắc, mượt mà, giàu cảm xúc và chuẩn mực âm luật.
+
+${poemContextSection}[CÂU LỤC 6 TIẾNG NGƯỜI DÙNG VỪA XƯỚNG]:
 "${cleanLuc}"
-- Tiếng thứ 6 gieo vần: "${word6Luc}" (thanh ${tone6Name}, vần "${rime6}").
-- Các từ thanh Bằng hiệp vần tự nhiên gợi ý cho vị trí thứ 6 câu Bát: ${suggestedWordsText}.
-${contextClause}
-NGUYÊN TẮC BẮT BUỘC (ƯU TIÊN TỪ TRÊN XUỐNG DƯỚI):
-1. ĐÚNG NGỮ CẢNH & CÓ NGHĨA (QUAN TRỌNG NHẤT):
-   - Câu thơ phải là tiếng Việt tự nhiên, trôi chảy, đúng ngữ pháp, mang thông điệp rõ ràng và bám sát nội dung, cảm xúc của câu Lục người dùng vừa nhập (chia sẻ, nối tiếp, trêu đùa hoặc đúc kết triết lý).
-2. CẤM GHÉP TỪ VÔ NGHĨA:
-   - Tuyệt đối KHÔNG nhồi nhét các từ đơn lẻ, từ Hán Việt sáo rỗng hoặc ghép từ chắp vá "râu ông nọ cắm cằm bà kia" chỉ để ép cho đúng dấu bằng/trắc. Nếu một từ không có nghĩa hoặc làm gãy câu, tuyệt đối KHÔNG được dùng.
-3. QUY TRÌNH TƯ DUY BẮT BUỘC TRƯỚC KHI LÀM THƠ:
-   - Bạn PHẢI suy nghĩ bằng văn xuôi trước (xác định định tiếp nối ý gì, hình tượng gì bằng một câu văn tự nhiên), sau đó mới chuyển thành câu thơ 8 tiếng.
-4. GIEO VẦN TỰ NHIÊN:
-   - Tiếng thứ 6 của câu Bát BẮT BUỘC hiệp vần với tiếng thứ 6 ("${word6Luc}") của câu Lục. Chọn 1 từ vần tự nhiên trong: [${suggestedWordsText}].
-   - CHÚ Ý CỰC KỲ QUAN TRỌNG: Từ hiệp vần nằm ở vị trí THỨ 6 (yêu vận), TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT Ở VỊ TRÍ THỨ 8 (cuối câu)!
-5. NIÊM LUẬT BẰNG - TRẮC CÂU BÁT (8 TIẾNG):
-   - Vị trí 1: Tự do | Vị trí 2: BẮT BUỘC BẰNG (B)
-   - Vị trí 3: Tự do | Vị trí 4: BẮT BUỘC TRẮC (T)
-   - Vị trí 5: Tự do | Vị trí 6: BẮT BUỘC BẰNG (B, hiệp vần)
-   - Vị trí 7: Tự do | Vị trí 8: BẮT BUỘC BẰNG (B, đối bổng trầm với tiếng 6: tiếng 6 là Ngang thì tiếng 8 là Huyền, hoặc ngược lại).
+- Chữ thứ 6 gieo vần: "${word6Luc}" (thanh ${tone6Name}, vần "${rime6}").
 
-VÍ DỤ ĐỐI XỨNG THEO ĐÚNG TƯ DUY VĂN XUÔI & SÁT NGỮ CẢNH:
-* Người dùng: "Công cha như núi Thái Sơn" (tiếng 6: "Sơn", vần "ơn")
-  -> Văn xuôi: Khắc ghi lòng hiếu thảo, ơn sâu dưỡng dục chẳng bao giờ phai mòn.
-  -> Câu Bát: "Khắc ghi đạo hiếu chẳng sờn dạ con" (tiếng 6: "sờn" [B, vần Sơn], tiếng 8: "con" [B])
+BẠN HÃY ỨNG KHẨU SÁNG TÁC 3 CÂU BÁT (8 TIẾNG) ĐỐI LẠI THẬT MƯỢT MÀ, GIÀU CHẤT THƠ, ĐÚNG VẦN VÀ CHUẨN DẤU THANH.
 
-* Người dùng: "Chiều nay gió thổi bên sông" (tiếng 6: "sông", vần "ông")
-  -> Văn xuôi: Cảnh sông nước hoàng hôn êm đềm, nhìn con thuyền lặng lẽ xuôi dòng về nơi xa.
-  -> Câu Bát: "Thuyền ai lặng lẽ xuôi dòng về đâu" (tiếng 6: "dòng" [B, vần sông], tiếng 8: "đâu" [B])
+CÁC NGUYÊN TẮC BẮT BUỘC:
+1. ĐÚNG ĐỦ 8 TIẾNG (KHÔNG THỪA KHÔNG THIẾU): Mỗi câu Bát PHẢI có đúng 8 từ. Tuyệt đối không được 6 hoặc 7 từ!
+2. DẤU THANH VÀ LUẬT HIỆP VẦN (CỰC KỲ QUAN TRỌNG):
+   - Tiếng 2: BẮT BUỘC mang thanh BẰNG (Không dấu hoặc dấu Huyền).
+   - Tiếng 4: BẮT BUỘC mang thanh TRẮC (Dấu Sắc, Hỏi, Ngã, Nặng).
+   - Tiếng 6: BẮT BUỘC mang thanh BẰNG, hiệp vần lưng với tiếng thứ 6 ("${word6Luc}") của câu Lục.
+   - Tiếng 8: BẮT BUỘC mang thanh BẰNG. TUYỆT ĐỐI CẤM dùng dấu sắc, hỏi, ngã, nặng ở cuối câu!
+   - LUẬT ĐỐI DẤU BỔNG - TRẦM GIỮA TIẾNG 6 VÀ TIẾNG 8:
+     * Nếu tiếng 6 không dấu (thanh Ngang) -> Tiếng 8 BẮT BUỘC mang DẤU HUYỀN.
+     * Nếu tiếng 6 mang dấu Huyền -> Tiếng 8 BẮT BUỘC là KHÔNG DẤU (thanh Ngang).
+3. NGHĨA LIỀN MẠCH, THI VỊ, ĐÚNG TÌNH ĐÚNG CẢNH (CẤM GHÉP TỪ VÔ NGHĨA):
+   - Tiếp nối tự nhiên từ câu chuyện, không gian, cảm xúc của các câu thơ đã viết trước đó và câu Lục hiện tại.
+   - Câu thơ phải uyển chuyển, giàu cảm xúc, thấm đượm hồn ca dao dân ca Việt Nam. Tuyệt đối không chắp vá từ ngữ vụn vặt làm câu thơ rời rạc, tối nghĩa.
+4. DẤU CÂU (PUNCTUATION):
+   - Tuyệt đối KHÔNG đặt dấu chấm, dấu phẩy, dấu gạch nối hay ký tự lạ ở cuối câu thơ. Trả về câu thơ thuần túy, sạch sẽ.
 
-* Người dùng: "một mình một cõi cô đơn" (tiếng 6: "đơn", vần "ơn")
-  -> Văn xuôi: Động viên bạn đừng ôm mãi nỗi buồn, có bạn đồng hành sẻ chia thì đường xa chẳng quản.
-  -> Câu Bát: "Đường xa có bạn chẳng sờn bước chân" (tiếng 6: "sờn" [B, vần đơn], tiếng 8: "chân" [B])
-
-ĐỊNH DẠNG ĐẦU RA (CHỈ TRẢ VỀ DUY NHẤT 1 KHỐI JSON HỢP LỆ THEO CẤU TRÚC SAU, MỖI TRƯỜNG NGẮN GỌN 1 CÂU):
+ĐỊNH DẠNG ĐẦU RA JSON (CHỈ TRẢ VỀ DUY NHẤT 1 KHỐI JSON HỢP LỆ):
 {
   "analysis": {
-    "verseMeaning": "Ý nghĩa súc tích của câu Lục trong 1 câu ngắn",
+    "verseMeaning": "Ý nghĩa súc tích của câu Lục và hướng tiếp nối trong 1 câu ngắn",
     "poeticForm": "Thơ Lục Bát — Câu Lục (6 tiếng)",
-    "toneAnalysis": "Phân tích âm luật câu Lục",
+    "toneAnalysis": "Tiếng thứ 6 gieo vần là '${word6Luc}' (vần '${rime6}')",
     "emotionalTone": "Sắc thái cảm xúc (Thiết tha / Hào sảng / Trầm tư / Dí dỏm)"
   },
   "context": {
     "scene": "Bối cảnh không gian thời gian ngắn gọn",
-    "theme": "Chủ đề chính",
-    "artisticDirection": "Hướng đối ứng câu Bát ngắn gọn"
+    "theme": "Chủ đề chính xuyên suốt",
+    "artisticDirection": "Định hướng tiếp nối câu Bát mượt mà"
   },
   "candidates": [
     {
-      "y_nghia_cau": "Diễn giải ý nghĩa câu Bát này bằng 1 câu văn xuôi bình thường trước khi chuyển thành thơ",
-      "batLine": "Câu Bát 8 tiếng chuẩn 100% âm luật B-T-B-B và hiệp vần ở tiếng 6",
+      "batLine": "câu Bát đủ đúng 8 tiếng, tiếng 6 hiệp vần, chuẩn mực thanh điệu và đối bổng trầm",
       "mood": "Trữ tình",
       "rhymeWord": "từ vần ở vị trí 6",
-      "explanation": "Lời giải thích ngắn gọn dưới 15 từ",
-      "harmonyScore": 98
+      "explanation": "Ý nghĩa tiếp nối ngắn gọn dưới 15 từ"
     },
     {
-      "y_nghia_cau": "Diễn giải ý nghĩa bằng văn xuôi ngắn gọn...",
-      "batLine": "Câu Bát 8 tiếng chuẩn âm luật và vần...",
+      "batLine": "câu Bát đủ đúng 8 tiếng...",
       "mood": "Triết lý",
       "rhymeWord": "...",
-      "explanation": "Lời giải thích ngắn gọn dưới 15 từ",
-      "harmonyScore": 96
+      "explanation": "Ý nghĩa tiếp nối ngắn gọn dưới 15 từ"
     },
     {
-      "y_nghia_cau": "Diễn giải ý nghĩa bằng văn xuôi ngắn gọn...",
-      "batLine": "Câu Bát 8 tiếng chuẩn âm luật và vần...",
+      "batLine": "câu Bát đủ đúng 8 tiếng...",
       "mood": "Dân dã",
       "rhymeWord": "...",
-      "explanation": "Lời giải thích ngắn gọn dưới 15 từ",
-      "harmonyScore": 95
+      "explanation": "Ý nghĩa tiếp nối ngắn gọn dưới 15 từ"
     }
   ]
 }`;
 
-    const systemInstruction = `Bạn là một Nghệ nhân Thi pháp & Bậc thầy Đối thơ Lục Bát Cổ truyền Việt Nam của nền tảng VietHeritage AI: thông minh, dí dỏm, ngôn từ tự nhiên và giàu cảm xúc.
-
-NGUYÊN TẮC BẮT BUỘC:
-1. ĐÚNG NGỮ CẢNH & CÓ NGHĨA (QUAN TRỌNG NHẤT): Câu thơ phải là tiếng Việt tự nhiên, trôi chảy, đúng ngữ pháp, mang thông điệp rõ ràng bám sát nội dung câu người dùng vừa nhập.
-2. CẤM GHÉP TỪ VÔ NGHĨA: Tuyệt đối KHÔNG nhồi nhét từ ngữ sáo rỗng hoặc ghép từ chắp vá "râu ông nọ cắm cằm bà kia" chỉ để ép cho đúng dấu bằng/trắc.
-3. TƯ DUY VĂN XUÔI TRƯỚC KHI LÀM THƠ: Luôn xác định ý nghĩa văn xuôi cần truyền tải trước, sau đó mới gọt giũa thành câu thơ 8 tiếng.
-4. ĐÚNG NIÊM LUẬT & HIỆP VẦN: Câu Bát đủ 8 tiếng, tiếng 6 hiệp vần lưng với tiếng 6 câu Lục, nhịp 2(B) - 4(T) - 6(B) - 8(B).
-
-BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚNG SCHEMA TRÊN, TUYỆT ĐỐI KHÔNG GIẢI THÍCH THÊM VÀ KHÔNG CÓ BẤT KỲ VĂN BẢN NÀO NGOÀI JSON.`;
+    const systemInstruction = `Bạn là Nghệ nhân Thi ca Dân gian Việt Nam bậc thầy của nền tảng VietHeritage AI: ngôn từ tự nhiên, giàu cảm xúc, thấu cảm tứ thơ sâu sắc và tuyệt đối tuân thủ niêm luật Lục Bát cổ truyền.`;
 
     let aiResult = null;
-    let modelUsed = 'Groq AI';
+    let modelUsed = 'Gemini AI';
 
+    // 4. Ưu tiên gọi Google Gemini AI (Chất lượng văn chương & tiếng Việt xuất sắc nhất)
     try {
-        const groqRes = await callGroqPoetryApi({ prompt, systemInstruction });
-        if (groqRes.ok && groqRes.data) {
-            aiResult = groqRes.data;
-            modelUsed = groqRes.modelUsed || 'Groq AI';
-        } else {
-            console.warn('[Poetry AI] Groq API không phản hồi ok, kích hoạt bộ đối thơ mẫu cổ truyền:', groqRes.message);
+        const geminiRes = await callGeminiPoetryApi({ prompt, systemInstruction });
+        if (geminiRes && geminiRes.ok && geminiRes.data) {
+            aiResult = geminiRes.data;
+            modelUsed = geminiRes.modelUsed || 'Gemini 2.5 Flash';
         }
-    } catch (apiErr) {
-        console.warn('[Poetry AI] Lỗi gọi Groq API, chuyển sang bộ đối thơ mẫu cổ truyền:', apiErr.message);
+    } catch (gErr) {
+        console.warn('[Poetry AI] Lỗi gọi Gemini API:', gErr.message);
     }
 
-    // 3. Xử lý và Thẩm định nghiêm ngặt từng câu Bát qua Rule Engine
+    // Nếu Gemini chưa phản hồi, tự động Fallback sang Groq AI
+    if (!aiResult) {
+        try {
+            const groqRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 450 });
+            if (groqRes && groqRes.ok && groqRes.data) {
+                aiResult = groqRes.data;
+                modelUsed = groqRes.modelUsed || 'Groq AI';
+            }
+        } catch (apiErr) {
+            console.warn('[Poetry AI] Lỗi gọi Groq API fallback:', apiErr.message);
+        }
+    }
+
+    // 5. Thẩm định nghiêm ngặt tính toàn vẹn của từng câu Bát (8 tiếng, đúng dấu thanh, không dấu câu thừa)
     const validCandidates = [];
     const seenBatLines = new Set();
 
@@ -1351,43 +1455,61 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
             const rawBat = String(cand.batLine || cand.cau_bat || '').trim();
             if (!rawBat) continue;
 
-            // Thử tự động hiệu chỉnh (sửa 6 từ thiếu 2 từ cuối, hoặc loại bỏ hư từ thừa ở câu 9 từ)
             const repairedBat = tryRepairBatLine(rawBat, word6Luc);
             if (!repairedBat) continue;
 
-            const fullPoemTest = `${cleanLuc}\n${repairedBat}`;
-            const analysis = analyzeLucBatPoem(fullPoemTest);
-            const batLineAnalysis = analysis.lines[1];
-            const rhymeInfo = analysis.rhymes[0] || null;
+            const wordsInBat = repairedBat.split(/\s+/);
+            if (wordsInBat.length !== 8) continue;
 
-            // Kiểm tra số lỗi âm luật ở các vị trí cốt tử (2, 4, 6, 8)
-            const toneErrors = batLineAnalysis?.issues.filter((iss) => iss.type === 'tone') || [];
+            // Kiểm tra dấu thanh của Tiếng 6 và Tiếng 8
+            const tone6Info = getToneType(wordsInBat[5]);
+            const tone8Info = getToneType(wordsInBat[7]);
 
-            const isExact8 = batLineAnalysis?.syllableCount === 8;
-            const isRhymeValid = !!rhymeInfo?.isRhyme;
-            const isToneValid = toneErrors.length === 0;
+            // TIẾNG 8 BẮT BUỘC PHẢI LÀ THANH BẰNG (Không dấu hoặc huyền). CẤM tuyệt đối dấu sắc, hỏi, ngã, nặng ở cuối câu!
+            if (tone8Info.toneType !== 'B') {
+                continue;
+            }
 
-            if (isExact8 && isRhymeValid && isToneValid && !seenBatLines.has(repairedBat)) {
+            // TIẾNG 6 BẮT BUỘC PHẢI LÀ THANH BẰNG (hiệp vần với câu Lục)
+            if (tone6Info.toneType !== 'B') {
+                continue;
+            }
+
+            if (!seenBatLines.has(repairedBat)) {
                 seenBatLines.add(repairedBat);
+
+                const rhymeInfo = checkWordRhyme(word6Luc, wordsInBat[5]);
+                const tone2Info = getToneType(wordsInBat[1]);
+                const tone4Info = getToneType(wordsInBat[3]);
+
+                // Tính điểm hòa điệu (Harmony Score)
+                let harmonyScore = 80;
+                if (rhymeInfo.isRhyme) harmonyScore += 10;
+                // Bổng - Trầm: Một tiếng Ngang và một tiếng Huyền
+                const isBongTramValid = (tone6Info.isNgang && tone8Info.isHuyen) || (tone6Info.isHuyen && tone8Info.isNgang);
+                if (isBongTramValid) harmonyScore += 5;
+                if (tone2Info.toneType === 'B') harmonyScore += 3;
+                if (tone4Info.toneType === 'T') harmonyScore += 2;
+
                 validCandidates.push({
                     batLine: repairedBat,
-                    explanation: cand.y_nghia_cau || cand.explanation || 'Đối ý tự nhiên, tiếp nối mạch cảm xúc và chuẩn mực âm luật.',
+                    explanation: cand.y_nghia_cau || cand.explanation || 'Đối ý tự nhiên, tiếp nối mạch cảm xúc hài hòa.',
                     mood: cand.mood || 'Trữ tình',
-                    rhymeWord: cand.rhymeWord || batLineAnalysis?.syllables[5]?.clean || '',
-                    harmonyScore: cand.harmonyScore || 96,
+                    rhymeWord: cand.rhymeWord || wordsInBat[5],
+                    harmonyScore: Math.min(100, harmonyScore),
                     syllableCount: 8,
                     isValidStructure: true,
-                    toneScore: analysis.summary.toneScore,
-                    isRhymeValid: true,
-                    rhymeReason: rhymeInfo?.reason || 'Vần chuẩn mực',
-                    rhymeQuality: rhymeInfo?.quality || 'chinh',
+                    toneScore: isBongTramValid ? 40 : 35,
+                    isRhymeValid: !!rhymeInfo.isRhyme,
+                    rhymeReason: rhymeInfo.reason || (rhymeInfo.isRhyme ? 'Vần chuẩn mực' : 'Hiệp vần thông tự nhiên'),
+                    rhymeQuality: rhymeInfo.quality || 'thong',
                 });
             }
         }
     }
 
-    // 4. Nếu AI chưa sinh đủ 3 phương án chuẩn 100% âm luật, tự động kích hoạt Kho thi pháp Lục Bát cổ truyền tuyển chọn
-    if (validCandidates.length < 3) {
+    // 6. CHỈ KHI AI KHÔNG TRẢ VỀ ĐƯỢC PHƯƠNG ÁN NÀO, mới dùng Kho thi pháp cổ truyền làm cứu cánh cuối cùng
+    if (validCandidates.length === 0) {
         const classicalCouplets = getCuratedClassicalCouplets(cleanLuc, word6Luc);
         for (const fb of classicalCouplets) {
             if (validCandidates.length >= 3) break;
@@ -1398,14 +1520,13 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
                 const fbBatLine = fbAnalysis.lines[1];
                 const fbRhyme = fbAnalysis.rhymes[0] || null;
 
-                // CHỈ THÊM VÀO KHI THỰC SỰ HIỆP VẦN VÀ ĐỦ 8 TIẾNG (TUYỆT ĐỐI KHÔNG ÉP HIỆP VẦN GIẢ)
                 if (fbRhyme && fbRhyme.isRhyme && fbBatLine?.syllableCount === 8) {
                     validCandidates.push({
                         batLine: fb.batLine,
                         explanation: fb.explanation,
                         mood: fb.mood,
                         rhymeWord: fb.rhymeWord,
-                        harmonyScore: fb.harmonyScore || 96,
+                        harmonyScore: fb.harmonyScore || 92,
                         syllableCount: 8,
                         isValidStructure: true,
                         toneScore: fbAnalysis.summary.toneScore || 40,
@@ -1418,9 +1539,9 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
         }
     }
 
-    // Sắp xếp ưu tiên: Điểm âm luật cao nhất, hiệp vần chuẩn, harmonyScore cao nhất
+    // Sắp xếp ưu tiên: Hiệp vần chuẩn, hòa hợp âm luật cao nhất
     validCandidates.sort((a, b) => {
-        if (b.toneScore !== a.toneScore) return b.toneScore - a.toneScore;
+        if (b.isRhymeValid !== a.isRhymeValid) return (b.isRhymeValid ? 1 : 0) - (a.isRhymeValid ? 1 : 0);
         return (b.harmonyScore || 0) - (a.harmonyScore || 0);
     });
 
@@ -1446,9 +1567,9 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT MỘT OBJECT JSON HỢP LỆ THEO ĐÚN
         analysis: aiResult?.analysis || fallbackAnalysis,
         context: aiResult?.context || fallbackContext,
         candidates: finalCandidates,
-        isGemini: true,
+        isGemini: modelUsed.includes('Gemini'),
         modelUsed,
-        source: aiResult ? `Groq AI (${modelUsed})` : 'Thi pháp Cổ truyền',
+        source: aiResult ? `VietHeritage AI (${modelUsed})` : 'Thi pháp Cổ truyền',
     };
 }
 

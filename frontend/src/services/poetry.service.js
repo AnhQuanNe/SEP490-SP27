@@ -20,8 +20,8 @@ export const poetryService = {
     /**
      * Ứng khẩu câu Bát cùng AI
      */
-    async coWrite({ lucLine, context }) {
-        const response = await api.post('/poetry/co-write', { lucLine, context }, { timeout: 120000 });
+    async coWrite({ lucLine, context, previousLines }) {
+        const response = await api.post('/poetry/co-write', { lucLine, context, previousLines }, { timeout: 120000 });
         return response.data;
     },
 

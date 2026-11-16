@@ -242,17 +242,24 @@ const PoetryStudio = () => {
                 .split('\n')
                 .map((l) => l.trim())
                 .filter(Boolean);
-            const hasAdditionalContext = priorLines.some((line) => line !== cleanInput);
-            const contextText = hasAdditionalContext
+
+            // Tách các câu thơ đã có trong bài (nếu câu cuối trùng với câu Lục đang xướng thì không lặp lại)
+            const historyLines = priorLines.filter((l, idx) => {
+                if (idx === priorLines.length - 1 && l === cleanInput) return false;
+                return true;
+            });
+
+            const contextText = historyLines.length > 0
                 ? [
                     title.trim() ? `Tựa đề bài thơ: ${title.trim()}` : null,
-                    `Các câu thơ hiện có:\n${priorLines.join('\n')}`,
+                    `Các câu thơ đã sáng tác trước đó:\n${historyLines.join('\n')}`,
                 ].filter(Boolean).join('\n')
                 : '';
 
             const res = await poetryService.coWrite({
                 lucLine: cleanInput,
                 context: contextText,
+                previousLines: historyLines,
             });
             const resultData = res?.data || res;
             setCoWriteResult(resultData);
@@ -268,8 +275,8 @@ const PoetryStudio = () => {
         }
     };
 
-    // Chèn cặp câu đối vào trình soạn thảo
-    const handleInsertCouplet = (batLine) => {
+    // Chèn cặp câu đối vào trình soạn thảo (hỗ trợ đóng modal hoặc xướng tiếp ngay lập tức)
+    const handleInsertCouplet = (batLine, continueWriting = false) => {
         const submittedLuc = (coWriteResult?.inputLucLine || inputLucLine).trim();
         const trimmedBat = batLine.trim();
         const existingLines = content.split('\n').map((l) => l.trim()).filter(Boolean);
@@ -280,11 +287,18 @@ const PoetryStudio = () => {
             : (content.trim() ? `${content.trim()}\n${submittedLuc}\n${trimmedBat}` : `${submittedLuc}\n${trimmedBat}`);
 
         setContent(newContent);
-        setCoWriteModalOpen(false);
-        setInputLucLine('');
-        setCoWriteResult(null);
-        setCoWriteCandidates([]);
         runRuleCheck(newContent);
+
+        if (continueWriting) {
+            setInputLucLine('');
+            setCoWriteResult(null);
+            setCoWriteCandidates([]);
+        } else {
+            setCoWriteModalOpen(false);
+            setInputLucLine('');
+            setCoWriteResult(null);
+            setCoWriteCandidates([]);
+        }
     };
 
     // Áp dụng từ gợi ý thay thế của AI
@@ -947,6 +961,34 @@ const PoetryStudio = () => {
 
                         {/* Scrollable body */}
                         <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+                            {/* Hiển thị mạch thơ đã có trong bài để người dùng theo dõi và đối tiếp */}
+                            {(() => {
+                                const priorLines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+                                const historyLines = priorLines.filter((l, idx) => {
+                                    if (idx === priorLines.length - 1 && l === inputLucLine.trim()) return false;
+                                    return true;
+                                });
+                                if (historyLines.length === 0) return null;
+                                return (
+                                    <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                                                <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                                                <span>Mạch thơ đã sáng tác ({historyLines.length} câu)</span>
+                                            </span>
+                                            <span className="text-[10px] text-stone-500 font-medium">AI sẽ bám sát mạch ý này</span>
+                                        </div>
+                                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1 font-serif text-xs text-stone-800 bg-white/70 p-2.5 rounded-xl border border-amber-100/80">
+                                            {historyLines.map((hLine, hIdx) => (
+                                                <p key={hIdx} className={`${hIdx % 2 === 0 ? 'pl-2 text-stone-700' : 'pl-6 font-medium text-amber-950'}`}>
+                                                    {hLine}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
                             {/* Input area */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
@@ -1162,14 +1204,26 @@ const PoetryStudio = () => {
                                                     )}
                                                 </div>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleInsertCouplet(cand.batLine)}
-                                                    className="px-3.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold transition flex-shrink-0 flex items-center justify-center gap-1.5"
-                                                >
-                                                    <span>Chọn câu này</span>
-                                                    <ArrowRight className="w-3.5 h-3.5" />
-                                                </button>
+                                                <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleInsertCouplet(cand.batLine, true)}
+                                                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
+                                                        title="Chèn câu này vào bài thơ và tiếp tục xướng câu Lục tiếp theo"
+                                                    >
+                                                        <Sparkles className="w-3.5 h-3.5" />
+                                                        <span>Chọn & Xướng tiếp</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleInsertCouplet(cand.batLine, false)}
+                                                        className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                                                        title="Chèn câu này vào bài thơ và đóng hộp thoại"
+                                                    >
+                                                        <span>Chọn & Đóng</span>
+                                                        <ArrowRight className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

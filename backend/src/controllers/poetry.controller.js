@@ -79,7 +79,7 @@ const critiquePoem = async (req, res) => {
  */
 const coWrite = async (req, res) => {
     try {
-        const { lucLine, context } = req.body;
+        const { lucLine, context, previousLines } = req.body;
         if (!lucLine || !lucLine.trim()) {
             return res.status(400).json({
                 success: false,
@@ -87,7 +87,7 @@ const coWrite = async (req, res) => {
             });
         }
 
-        const result = await poetryService.coWriteBatLine({ lucLine, context });
+        const result = await poetryService.coWriteBatLine({ lucLine, context, previousLines });
         res.status(200).json({
             success: true,
             data: result,
