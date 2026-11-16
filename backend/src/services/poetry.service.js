@@ -10,11 +10,11 @@ const { GEMINI_MODELS } = require('../constants/geminiModels');
 // Cấu hình Groq API & Model Fallback
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODELS = [
-    'qwen/qwen3.8-27b',
-    'openai/gpt-oss-120b',
     'openai/gpt-oss-20b',
+    'openai/gpt-oss-120b',
+    'qwen/qwen3.8-27b',
 ];
-const GROQ_TIMEOUT_MS = 30000;
+const GROQ_TIMEOUT_MS = 60000;
 const GROQ_FALLBACK_DELAY_MS = 1000;
 
 function sleep(ms) {
@@ -735,21 +735,119 @@ function getCuratedClassicalCouplets(lucLine, word6Luc) {
 }
 
 /**
- * Trích xuất an toàn JSON object từ phản hồi văn bản của model
+ * Sửa chữa và hoàn tất an toàn chuỗi JSON bị cắt cụt giữa chừng (do chạm max_tokens / finish_reason: length)
  */
-function extractJson(text) {
-    if (!text || typeof text !== 'string') return null;
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
+function repairTruncatedJson(str) {
+    if (!str || typeof str !== 'string') return null;
+    let s = str.trim();
+    const firstBrace = s.indexOf('{');
+    if (firstBrace === -1) return null;
+    s = s.slice(firstBrace);
+
     try {
-        return JSON.parse(match[0].trim());
-    } catch (err) {
-        console.warn('[Poetry AI] Lỗi parse JSON:', err.message);
-        return null;
+        return JSON.parse(s);
+    } catch (_) {}
+
+    let inString = false;
+    let isEscaped = false;
+    const stack = [];
+    let cleaned = '';
+
+    for (let i = 0; i < s.length; i++) {
+        const char = s[i];
+        if (isEscaped) {
+            isEscaped = false;
+            cleaned += char;
+            continue;
+        }
+        if (char === '\\') {
+            isEscaped = true;
+            cleaned += char;
+            continue;
+        }
+        if (char === '"') {
+            inString = !inString;
+            cleaned += char;
+            continue;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') {
+                stack.push(char);
+            } else if (char === '}') {
+                if (stack[stack.length - 1] === '{') stack.pop();
+            } else if (char === ']') {
+                if (stack[stack.length - 1] === '[') stack.pop();
+            }
+        }
+        cleaned += char;
+    }
+
+    if (inString) {
+        cleaned += '"';
+    }
+
+    cleaned = cleaned.replace(/,\s*$/, '');
+
+    while (stack.length > 0) {
+        const open = stack.pop();
+        if (open === '{') cleaned += '}';
+        else if (open === '[') cleaned += ']';
+    }
+
+    try {
+        return JSON.parse(cleaned);
+    } catch (_) {
+        try {
+            const cut = cleaned.replace(/,\s*"[^"]*"\s*:\s*[^,}\]]*$/, '');
+            return JSON.parse(cut + (stack.length > 0 ? '}' : ''));
+        } catch (e2) {
+            return null;
+        }
     }
 }
 
-function postJsonHttps(urlStr, headers, bodyObj, timeoutMs = 25000) {
+/**
+ * Trích xuất an toàn JSON object từ phản hồi văn bản của model:
+ * - Cắt bỏ thẻ suy luận <think>...</think> (từ Qwen, DeepSeek, v.v.)
+ * - Cắt bỏ các khối markdown code block ```json ... ```
+ * - Trích xuất đoạn JSON bằng regex ({ ... })
+ * - Try-catch bọc JSON.parse() và tự động phục hồi JSON bị cắt ngắn (finish_reason: length)
+ */
+function extractJson(text) {
+    if (!text || typeof text !== 'string') return null;
+
+    // 1. Cắt bỏ các thẻ suy luận <think>...</think>
+    let cleanText = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+    // 2. Loại bỏ khối markdown code block nếu có
+    cleanText = cleanText.replace(/```(?:json)?([\s\S]*?)```/gi, '$1').trim();
+
+    // 3. Trích xuất khối JSON hoàn chỉnh từ ký tự { đầu tiên đến } cuối cùng
+    const fullMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (fullMatch) {
+        try {
+            return JSON.parse(fullMatch[0].trim());
+        } catch (parseErr) {
+            // Nếu parse lỗi, tiếp tục thử giải pháp sửa chữa bên dưới
+        }
+    }
+
+    // 4. Nếu model bị cắt ngang giữa chừng (finish_reason: length), cố gắng tự động đóng ngoặc và phục hồi
+    const partialMatch = cleanText.match(/\{[\s\S]*/);
+    if (partialMatch) {
+        try {
+            const repaired = repairTruncatedJson(partialMatch[0]);
+            if (repaired) return repaired;
+        } catch (repairErr) {
+            console.warn('[Poetry AI] Lỗi khi tự động phục hồi JSON:', repairErr.message);
+        }
+    }
+
+    console.warn('[Poetry AI] Không thể trích xuất JSON hợp lệ từ phản hồi văn bản');
+    return null;
+}
+
+function postJsonHttps(urlStr, headers, bodyObj, timeoutMs = 60000) {
     return new Promise((resolve, reject) => {
         const url = new URL(urlStr);
         const postData = Buffer.from(JSON.stringify(bodyObj), 'utf8');
@@ -812,6 +910,9 @@ function getGeminiPoetryApiKeys() {
 
 /**
  * Gọi Google Gemini API cho Sáng tác & Phân tích Thơ Lục Bát (Chất lượng văn chương & niêm luật cao nhất)
+ * - Timeout: 60000ms (60 giây)
+ * - Xử lý HTTP 503: Retry sau 2.5s tối đa 3 lần
+ * - Xử lý HTTP 429: Đổi ngay sang Key tiếp theo trong bể xoay tua
  */
 async function callGeminiPoetryApi({ prompt, systemInstruction }) {
     const geminiKeys = getGeminiPoetryApiKeys();
@@ -820,36 +921,64 @@ async function callGeminiPoetryApi({ prompt, systemInstruction }) {
     for (let k = 0; k < geminiKeys.length; k++) {
         const keyIdx = (currentPoetryGeminiKeyIndex + k) % geminiKeys.length;
         const apiKey = geminiKeys[keyIdx];
+        let keyHitQuota = false;
 
         for (const model of GEMINI_MODELS) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                const body = {
-                    system_instruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
-                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: 'application/json',
-                        temperature: 0.65,
-                    },
-                };
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const body = {
+                system_instruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                    temperature: 0.65,
+                },
+            };
 
-                const res = await postJsonHttps(url, {}, body, 20000);
-                if (res.ok) {
-                    const data = await res.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        const parsed = extractJson(text);
-                        if (parsed) {
-                            return { ok: true, data: parsed, modelUsed: `Gemini (${model})` };
+            const max503Retries = 2; // Thử lại tối đa 2 lần nữa (tổng 3 lần) nếu gặp HTTP 503
+            for (let retry = 0; retry <= max503Retries; retry++) {
+                try {
+                    const res = await postJsonHttps(url, {}, body, 60000); // 60s timeout
+                    if (res.ok) {
+                        const data = await res.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                            const parsed = extractJson(text);
+                            if (parsed) {
+                                return { ok: true, data: parsed, modelUsed: `Gemini (${model})` };
+                            }
                         }
+                        break;
                     }
-                } else if ((res.status === 429 || res.status === 503) && geminiKeys.length > 1) {
-                    console.warn(`[Poetry Gemini AI] Key #${keyIdx + 1} chạm giới hạn (HTTP ${res.status}). Đổi sang Key tiếp theo...`);
-                    currentPoetryGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+
+                    // Phân biệt rõ lỗi HTTP 503 (Quá tải tạm thời) vs HTTP 429 (Hết Quota)
+                    if (res.status === 503) {
+                        console.warn(`[Poetry Gemini AI] Model ${model} (Key #${keyIdx + 1}) gặp HTTP 503 (Quá tải tạm thời). Lần thử ${retry + 1}/${max503Retries + 1}...`);
+                        if (retry < max503Retries) {
+                            await sleep(2500); // Đợi 2.5s rồi retry
+                            continue;
+                        } else {
+                            console.warn(`[Poetry Gemini AI] Model ${model} vẫn 503 sau ${max503Retries + 1} lần thử. Chuyển sang model/key tiếp theo.`);
+                            break;
+                        }
+                    } else if (res.status === 429) {
+                        console.warn(`[Poetry Gemini AI] Key #${keyIdx + 1} chạm giới hạn Quota (HTTP 429). Lập tức đổi sang Key tiếp theo trong bể xoay tua...`);
+                        currentPoetryGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+                        keyHitQuota = true;
+                        break;
+                    } else if (res.status === 404) {
+                        break;
+                    } else {
+                        console.warn(`[Poetry Gemini AI] Model ${model} phản hồi HTTP ${res.status}`);
+                        break;
+                    }
+                } catch (err) {
+                    console.warn(`[Poetry Gemini AI] Lỗi model ${model}:`, err.message);
                     break;
                 }
-            } catch (err) {
-                console.warn(`[Poetry Gemini AI] Lỗi model ${model}:`, err.message);
+            }
+
+            if (keyHitQuota) {
+                break; // Đổi sang key tiếp theo trong pool
             }
         }
     }
@@ -909,15 +1038,8 @@ async function callGroqPoetryApi({ prompt, systemInstruction, maxTokens }) {
                 const isQwen = model.toLowerCase().includes('qwen');
                 const isGptOss = model.startsWith('openai/gpt-oss');
 
-                // Giới hạn max_tokens an toàn: Qwen trên Groq free tier có OTPM limit 1000, không được vượt quá 450-800
-                let safeMaxTokens = 450;
-                if (isQwen) {
-                    safeMaxTokens = maxTokens ? Math.min(maxTokens, 450) : 450;
-                } else if (isGptOss) {
-                    safeMaxTokens = Math.max(maxTokens || 1200, 1500);
-                } else {
-                    safeMaxTokens = maxTokens || 2000;
-                }
+                // Tăng max_tokens / max_completion_tokens lên ít nhất 4096 để không bị cắt ngang JSON
+                const safeMaxTokens = Math.max(maxTokens || 4096, 4096);
 
                 const body = {
                     model,
@@ -926,10 +1048,11 @@ async function callGroqPoetryApi({ prompt, systemInstruction, maxTokens }) {
                         { role: 'user', content: prompt },
                     ],
                     max_tokens: safeMaxTokens,
-                    temperature: 0.6,
+                    max_completion_tokens: safeMaxTokens,
+                    temperature: 0.5,
                 };
 
-                // Tắt suy nghĩ nội bộ ở Qwen để không bị tràn token/rate limit, đặt low ở GPT-OSS
+                // Cấu hình reasoning_effort chuẩn cho từng dòng model trên Groq để tránh phung phí token
                 if (isQwen) {
                     body.reasoning_effort = 'none';
                 } else if (isGptOss) {
@@ -1143,41 +1266,65 @@ NGUYÊN TẮC BẮT BUỘC KHI GỢI Ý THAY TỪ ("suggestions"):
    - Thanh Bằng: Tiếng không dấu (ngang) và tiếng có dấu Huyền.
    - Thanh Trắc: Tiếng có dấu Sắc, Hỏi, Ngã, Nặng.
 
+QUY TẮC ĐỊNH DẠNG & TIẾT KIỆM TOKEN (BẮT BUỘC):
+- CHỈ TRẢ VỀ DUY NHẤT 1 KHỐI JSON HỢP LỆ, KHÔNG ĐƯỢC CÓ BẤT KỲ VĂN BẢN NÀO NGOÀI JSON, TUYỆT ĐỐI KHÔNG DÙNG THẺ <think>.
+- CÁC MẢNG VÀ MỤC NHẬN XÉT ("strengths", "weaknesses", "overallComment") PHẢI VIẾT THẬT NGẮN GỌN, SÚC TÍCH (TỐI ĐA 1-2 CÂU MỖI Ý) để tiết kiệm token và đảm bảo tốc độ phản hồi.
+
 Yêu cầu trả về đúng định dạng JSON:
 {
   "rhythmScore": (số nguyên từ 0 đến 30: đánh giá độ mượt mà của vần và nhịp thơ),
   "poeticScore": (số nguyên từ 0 đến 30: cảm xúc, hình tượng, chất văn học dân gian),
-  "strengths": ["ưu điểm 1", "ưu điểm 2"],
+  "strengths": ["ưu điểm 1 (ngắn gọn 1 câu)", "ưu điểm 2 (ngắn gọn 1 câu)"],
+  "weaknesses": ["điểm cần cải thiện 1 (ngắn gọn 1 câu, nếu có)"],
   "improvements": [
     {
       "lineIndex": (số chỉ dòng bị lỗi, bắt đầu từ 0),
       "syllablePosition": (vị trí tiếng cần sửa, từ 1 đến 8),
       "originalWord": (từ gốc trong câu),
-      "issueDescription": (mô tả lỗi hoặc lý do cần sửa),
+      "issueDescription": (mô tả lỗi ngắn gọn),
       "suggestions": [
         {
           "word": (từ thay thế gợi ý - BẮT BUỘC hợp nghĩa câu thơ và chuẩn 100% thanh Bằng/Trắc),
-          "reason": (giải thích từ này ghép vào câu như thế nào và câu sửa đọc ra sao)
+          "reason": (giải thích ngắn gọn dưới 15 từ ghép vào câu như thế nào)
         }
       ]
     }
   ],
-  "overallComment": "Nhận xét tổng thể về bài thơ",
+  "overallComment": "Nhận xét tổng thể súc tích tối đa 1-2 câu",
   "refinedVersion": "Phiên bản bài thơ được AI trau chuốt mượt mà hơn (giữ nguyên tứ thơ)"
 }`;
 
     const systemInstruction = `Bạn là Bậc thầy Chữa thơ & Giám khảo Thi pháp Lục Bát Cổ truyền Việt Nam của nền tảng VietHeritage AI.
-QUY TẮC CỐT TỬ KHI GỢI Ý THAY TỪ (SUGGESTIONS):
-1. ĐÚNG NGHĨA VÀ TỰ NHIÊN TRONG CÂU THƠ LÀ ƯU TIÊN SỐ 1:
-   - Một từ gợi ý CHỈ CÓ GIÁ TRỊ khi nó thay thế vào câu thơ và làm cho câu thơ có nghĩa tự nhiên, mượt mà và đúng ngữ pháp.
-   - Tuyệt đối CẤM ghép từ cơ học hoặc bốc từ vô nghĩa chỉ để ép cho đúng dấu Bằng/Trắc.
-2. NGUYÊN TẮC CỤM TỪ (COLLOCATION):
-   - Luôn kết hợp hài hòa với tiếng trước và tiếng sau để tạo thành từ láy, từ ghép chuẩn xác trong tiếng Việt.
-3. CHỈ TRẢ VỀ DUY NHẤT MỘT KHỐI JSON HỢP LỆ THEO SCHEMA, TUYỆT ĐỐI KHÔNG CÓ BẤT KỲ VĂN BẢN NÀO NGOÀI JSON.`;
+QUY TẮC BẮT BUỘC:
+1. TRẢ VỀ JSON THUẦN TÚY: Tuyệt đối không xuất ra bất kỳ lời chào, văn bản thừa hay thẻ suy luận <think>...</think> nào ngoài khối JSON.
+2. NGẮN GỌN & SÚC TÍCH: Mọi mục nhận xét trong strengths, weaknesses, overallComment tối đa 1-2 câu ngắn để tiết kiệm token.
+3. GỢI Ý THAY TỪ: Từ thay thế phải chuẩn thanh Bằng/Trắc và có nghĩa tự nhiên khi ghép vào câu thơ.`;
 
-    const groqCriticRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 800 });
-    let aiCritic = groqCriticRes.ok ? groqCriticRes.data : null;
+    let aiCritic = null;
 
+    // 1. Thử gọi Gemini AI trước nếu có cấu hình (chất lượng ngôn ngữ & thi pháp cao cấp)
+    try {
+        const geminiRes = await callGeminiPoetryApi({ prompt, systemInstruction });
+        if (geminiRes && geminiRes.ok && geminiRes.data && typeof geminiRes.data.rhythmScore === 'number') {
+            aiCritic = geminiRes.data;
+        }
+    } catch (gErr) {
+        console.warn('[Poetry AI] Lỗi gọi Gemini AI critique:', gErr.message);
+    }
+
+    // 2. Nếu Gemini chưa phản hồi, chuyển sang Groq AI (maxTokens >= 4096)
+    if (!aiCritic) {
+        try {
+            const groqCriticRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 4096 });
+            if (groqCriticRes && groqCriticRes.ok && groqCriticRes.data && typeof groqCriticRes.data.rhythmScore === 'number') {
+                aiCritic = groqCriticRes.data;
+            }
+        } catch (grErr) {
+            console.warn('[Poetry AI] Lỗi gọi Groq AI critique:', grErr.message);
+        }
+    }
+
+    // 3. Nếu cả hai AI đều không khả dụng, dùng Rule Engine
     if (!aiCritic || typeof aiCritic.rhythmScore !== 'number') {
         aiCritic = fallbackPoetryCritic(content, ruleAnalysis);
     }
@@ -1412,7 +1559,10 @@ CÁC NGUYÊN TẮC BẮT BUỘC:
   ]
 }`;
 
-    const systemInstruction = `Bạn là Nghệ nhân Thi ca Dân gian Việt Nam bậc thầy của nền tảng VietHeritage AI: ngôn từ tự nhiên, giàu cảm xúc, thấu cảm tứ thơ sâu sắc và tuyệt đối tuân thủ niêm luật Lục Bát cổ truyền.`;
+    const systemInstruction = `Bạn là Nghệ nhân Thi ca Dân gian Việt Nam bậc thầy của nền tảng VietHeritage AI: ngôn từ tự nhiên, giàu cảm xúc, thấu cảm tứ thơ sâu sắc và tuyệt đối tuân thủ niêm luật Lục Bát cổ truyền.
+QUY TẮC BẮT BUỘC:
+1. TRẢ VỀ JSON THUẦN TÚY: Tuyệt đối không xuất lời chào hay thẻ <think> ngoài JSON.
+2. NGẮN GỌN & SÚC TÍCH: Các phần giải thích viết ngắn gọn dưới 15 từ mỗi câu để tiết kiệm token.`;
 
     let aiResult = null;
     let modelUsed = 'Gemini AI';
@@ -1422,7 +1572,7 @@ CÁC NGUYÊN TẮC BẮT BUỘC:
         const geminiRes = await callGeminiPoetryApi({ prompt, systemInstruction });
         if (geminiRes && geminiRes.ok && geminiRes.data) {
             aiResult = geminiRes.data;
-            modelUsed = geminiRes.modelUsed || 'Gemini 2.5 Flash';
+            modelUsed = geminiRes.modelUsed || 'Gemini Flash';
         }
     } catch (gErr) {
         console.warn('[Poetry AI] Lỗi gọi Gemini API:', gErr.message);
@@ -1431,7 +1581,7 @@ CÁC NGUYÊN TẮC BẮT BUỘC:
     // Nếu Gemini chưa phản hồi, tự động Fallback sang Groq AI
     if (!aiResult) {
         try {
-            const groqRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 450 });
+            const groqRes = await callGroqPoetryApi({ prompt, systemInstruction, maxTokens: 4096 });
             if (groqRes && groqRes.ok && groqRes.data) {
                 aiResult = groqRes.data;
                 modelUsed = groqRes.modelUsed || 'Groq AI';

@@ -16,6 +16,10 @@ const {
 } = require('../constants/aiKnowledge.constants');
 let currentAiGeminiKeyIndex = 0;
 
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Lấy danh sách Gemini API Keys hỗ trợ Bể xoay tua (Rotation Pool)
  */
@@ -85,42 +89,77 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
         parts: [{ text: userPrompt }],
     });
 
+    const callStart = Date.now();
+    const MAX_TOTAL_BUDGET_MS = 180000; // Ngân sách thời gian chờ tối đa 180s (3 phút)
+
     for (let k = 0; k < geminiKeys.length; k++) {
+        if (Date.now() - callStart > MAX_TOTAL_BUDGET_MS) {
+            console.warn('[Gemini API] Quá ngân sách thời gian chờ (180s). Kích hoạt Động cơ Tri thức Nội bộ...');
+            break;
+        }
         const keyIdx = (currentAiGeminiKeyIndex + k) % geminiKeys.length;
         const apiKey = geminiKeys[keyIdx];
+        let keyHitQuota = false;
 
         for (const model of GEMINI_MODELS) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            if (Date.now() - callStart > MAX_TOTAL_BUDGET_MS) break;
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        system_instruction: { parts: [{ text: systemInstruction }] },
-                        contents,
-                        generationConfig: {
-                            temperature: 0.6,
-                            maxOutputTokens: 4096,
-                        },
-                    }),
-                    signal: AbortSignal.timeout(7000),
-                });
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const max503Retries = 2; // Thử lại 2 lần (tổng 3 lần) cho HTTP 503
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const parts = data.candidates?.[0]?.content?.parts || [];
-                    const fullAnswer = parts.map((p) => p.text || '').join('').trim();
-                    if (fullAnswer) return fullAnswer;
-                } else if ((response.status === 429 || response.status === 503) && geminiKeys.length > 1) {
-                    console.warn(`[Gemini API] Key #${keyIdx + 1} chạm giới hạn (HTTP ${response.status}). Đổi sang Key tiếp theo trong bể xoay tua...`);
-                    currentAiGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
-                    break; // Thử ngay key tiếp theo trong bể
-                } else {
-                    console.warn(`[Gemini API] Model ${model} (Key #${keyIdx + 1}) failed with status ${response.status}`);
+            for (let retry = 0; retry <= max503Retries; retry++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            system_instruction: { parts: [{ text: systemInstruction }] },
+                            contents,
+                            generationConfig: {
+                                temperature: 0.6,
+                                maxOutputTokens: 4096,
+                            },
+                        }),
+                        signal: AbortSignal.timeout(60000), // Timeout 60 giây (60000ms)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const parts = data.candidates?.[0]?.content?.parts || [];
+                        const fullAnswer = parts.map((p) => p.text || '').join('').trim();
+                        if (fullAnswer) return fullAnswer;
+                        break;
+                    }
+
+                    // Phân biệt rõ HTTP 503 (Quá tải tạm thời) vs HTTP 429 (Hết Quota)
+                    if (response.status === 503) {
+                        console.warn(`[Gemini API] Model ${model} (Key #${keyIdx + 1}) gặp HTTP 503 (Quá tải tạm thời). Lần thử ${retry + 1}/${max503Retries + 1}...`);
+                        if (retry < max503Retries) {
+                            await sleep(2500); // Thử lại sau 2.5s
+                            continue;
+                        } else {
+                            console.warn(`[Gemini API] Model ${model} vẫn 503 sau các lần thử. Chuyển sang model/key tiếp theo.`);
+                            break;
+                        }
+                    } else if (response.status === 429) {
+                        console.warn(`[Gemini API] Key #${keyIdx + 1} hết quota (HTTP 429). Lập tức đổi sang Key tiếp theo trong bể xoay tua...`);
+                        currentAiGeminiKeyIndex = (keyIdx + 1) % geminiKeys.length;
+                        keyHitQuota = true;
+                        break;
+                    } else if (response.status === 404) {
+                        break;
+                    } else {
+                        console.warn(`[Gemini API] Model ${model} (Key #${keyIdx + 1}) failed with status ${response.status}`);
+                        break;
+                    }
+                } catch (err) {
+                    console.warn(`[Gemini API] Lỗi model ${model}:`, err.message);
+                    break;
                 }
-            } catch (err) {
-                console.warn(`[Gemini API] Lỗi model ${model}:`, err.message);
+            }
+
+            if (keyHitQuota) {
+                break; // Đổi sang key khác
             }
         }
     }

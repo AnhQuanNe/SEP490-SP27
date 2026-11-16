@@ -21,7 +21,10 @@ import {
     X,
     Trophy,
     Heart,
-    Compass
+    Compass,
+    Plus,
+    Copy,
+    Edit3
 } from 'lucide-react';
 import { poetryService } from '../services/poetry.service';
 import { useAuth } from '../context/AuthContext';
@@ -135,8 +138,8 @@ const PoetryStudio = () => {
         }
     };
 
-    // Lưu bài thơ hoặc bản nháp
-    const handleSavePoem = async (status = 'draft') => {
+    // Lưu bài thơ hoặc bản nháp (hỗ trợ lưu cập nhật bài cũ hoặc lưu thành bài mới)
+    const handleSavePoem = async (status = 'draft', asNew = false) => {
         if (!content.trim() || !title.trim()) {
             alert('Vui lòng nhập tựa đề và nội dung bài thơ trước khi lưu');
             return;
@@ -144,16 +147,19 @@ const PoetryStudio = () => {
 
         try {
             setSaveStatus('saving');
+            const targetPoemId = asNew ? null : currentPoemId;
             const res = await poetryService.savePoem({
-                poemId: currentPoemId,
+                poemId: targetPoemId,
                 title: title.trim(),
                 content: content.trim(),
-                authorName: authorName.trim() || user?.name,
+                authorName: authorName.trim() || user?.name || 'Tác giả',
                 status,
                 analysisResult: aiCriticResult || { scores: ruleAnalysis?.summary ? { toneScore: ruleAnalysis.summary.toneScore } : {} },
             });
-            setCurrentPoemId(res?._id || res?.data?._id || currentPoemId);
+            const savedPoem = res?.data || res;
+            setCurrentPoemId(savedPoem?._id || targetPoemId);
             setSaveStatus('saved');
+            fetchMyPoems();
             setTimeout(() => setSaveStatus(null), 3000);
         } catch (err) {
             console.error('Lỗi lưu thơ:', err);
@@ -168,7 +174,7 @@ const PoetryStudio = () => {
         try {
             setLoadingPoems(true);
             const poems = await poetryService.getMyPoems();
-            setMyPoems(poems);
+            setMyPoems(Array.isArray(poems) ? poems : poems?.data || []);
         } catch (err) {
             console.warn('Lỗi tải thơ cá nhân:', err.message);
         } finally {
@@ -198,20 +204,32 @@ const PoetryStudio = () => {
     const handleLoadPoem = (p) => {
         setTitle(p.title);
         setContent(p.content);
-        setAuthorName(p.authorName || user?.name);
+        setAuthorName(p.authorName || user?.name || '');
         setCurrentPoemId(p._id);
         setActiveTab('editor');
         runRuleCheck(p.content);
         setAiCriticResult(p.analysisResult || null);
     };
 
-    // Tạo bài thơ mới
+    // Nhân bản một bài thơ thành bài thơ mới riêng biệt trong tuyển tập
+    const handleDuplicatePoem = (p) => {
+        setTitle(`${p.title} (Bản mới)`);
+        setContent(p.content);
+        setAuthorName(p.authorName || user?.name || '');
+        setCurrentPoemId(null); // Đặt null để khi lưu sẽ tạo bài thơ mới!
+        setActiveTab('editor');
+        runRuleCheck(p.content);
+        setAiCriticResult(p.analysisResult || null);
+    };
+
+    // Tạo bài thơ mới hoàn toàn
     const handleNewPoem = () => {
         setTitle('');
         setContent('');
         setCurrentPoemId(null);
         setRuleAnalysis(null);
         setAiCriticResult(null);
+        setActiveTab('editor');
     };
 
     // Mở modal đối thơ (tự động lấy câu Lục 6 tiếng cuối cùng từ khung soạn thảo nếu hợp lệ)
@@ -380,6 +398,52 @@ const PoetryStudio = () => {
                         <div className="lg:col-span-7 space-y-5">
                             <div className="bg-[#fffdf9] rounded-3xl p-5 sm:p-7 border border-amber-900/15 shadow-sm space-y-4 relative">
                                 
+                                {/* Banner trạng thái: Đang sửa bài cũ hay Sáng tác bài mới */}
+                                <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs">
+                                    {currentPoemId ? (
+                                        <div className="flex items-center gap-2 text-amber-950 font-medium">
+                                            <Edit3 className="w-4 h-4 text-amber-800 shrink-0" />
+                                            <span>
+                                                Đang chỉnh sửa: <strong className="font-bold text-amber-900 font-heritage text-sm">"{title || 'Chưa đặt tên'}"</strong>
+                                            </span>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900 font-bold">
+                                                Mã: {currentPoemId.slice(-6)}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-emerald-900 font-medium">
+                                            <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+                                            <span>
+                                                Đang sáng tác <strong className="font-bold text-emerald-800 text-sm">Bài thơ mới</strong> (Chưa lưu vào tuyển tập)
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-2 ml-auto">
+                                        {currentPoemId && isAuthenticated && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSavePoem('draft', true)}
+                                                disabled={saveStatus === 'saving'}
+                                                className="px-3 py-1.5 bg-white hover:bg-amber-100/60 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                                                title="Nhân bản nội dung này thành một bài thơ mới riêng biệt trong tuyển tập của bạn"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                                <span>Lưu thành bài mới (+)</span>
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={handleNewPoem}
+                                            className="px-3 py-1.5 bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-700 hover:to-amber-800 text-amber-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                                            title="Bắt đầu sáng tác một bài thơ hoàn toàn mới"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            <span>+ Sáng tác bài mới</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {/* Tựa đề & Bút danh */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
@@ -468,7 +532,7 @@ const PoetryStudio = () => {
                                         <button
                                             type="button"
                                             onClick={handleOpenCoWriteModal}
-                                            className="px-3.5 py-2 bg-amber-100/90 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-300/80 shadow-2xs"
+                                            className="px-3.5 py-2 bg-amber-100/90 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-300/80 shadow-2xs cursor-pointer"
                                         >
                                             <Bot className="w-3.5 h-3.5 text-amber-800" />
                                             <span>Xướng họa thi ca</span>
@@ -476,31 +540,47 @@ const PoetryStudio = () => {
                                         <button
                                             type="button"
                                             onClick={handleNewPoem}
-                                            title="Tạo bài thơ mới"
-                                            className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition"
+                                            title="Bắt đầu sáng tác bài thơ mới"
+                                            className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border border-stone-200 shadow-2xs cursor-pointer"
                                         >
-                                            <RotateCcw className="w-4 h-4" />
+                                            <Plus className="w-3.5 h-3.5 text-stone-600" />
+                                            <span>Bài mới</span>
                                         </button>
                                     </div>
 
                                     <div className="flex items-center gap-2">
                                         {isAuthenticated && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleSavePoem('draft')}
-                                                disabled={saveStatus === 'saving'}
-                                                className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
-                                            >
-                                                <Save className="w-3.5 h-3.5" />
-                                                <span>{saveStatus === 'saving' ? 'Đang lưu...' : 'Lưu nháp'}</span>
-                                            </button>
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSavePoem('draft', false)}
+                                                    disabled={saveStatus === 'saving'}
+                                                    className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    <Save className="w-3.5 h-3.5" />
+                                                    <span>{saveStatus === 'saving' ? 'Đang lưu...' : currentPoemId ? 'Cập nhật' : 'Lưu nháp'}</span>
+                                                </button>
+
+                                                {currentPoemId && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSavePoem('draft', true)}
+                                                        disabled={saveStatus === 'saving'}
+                                                        className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                                                        title="Lưu thành một bài thơ mới độc lập, không ghi đè bài đang sửa"
+                                                    >
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                        <span>Lưu bài mới (+)</span>
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
 
                                         <button
                                             type="button"
                                             onClick={handleRunCritique}
                                             disabled={isCritiquing || !content.trim()}
-                                            className="px-5 py-2 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="px-5 py-2 bg-gradient-to-r from-red-800 via-red-900 to-amber-900 hover:from-red-700 hover:to-amber-800 text-amber-100 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                         >
                                             {isCritiquing ? (
                                                 <>
@@ -518,8 +598,8 @@ const PoetryStudio = () => {
                                         {isAuthenticated && (
                                             <button
                                                 type="button"
-                                                onClick={() => handleSavePoem('published')}
-                                                className="px-3.5 py-2 bg-amber-900 hover:bg-amber-950 text-white rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1"
+                                                onClick={() => handleSavePoem('published', false)}
+                                                className="px-3.5 py-2 bg-amber-900 hover:bg-amber-950 text-white rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1 cursor-pointer"
                                                 title="Công bố lên Thơ Cộng Đồng"
                                             >
                                                 <Send className="w-3.5 h-3.5" />
@@ -810,16 +890,24 @@ const PoetryStudio = () => {
                 {/* TAB 2: THƠ CỦA TÔI */}
                 {activeTab === 'my-poems' && (
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold font-heritage text-stone-900">
-                                Tuyển tập tác phẩm của bạn ({myPoems.length})
-                            </h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-amber-900/15 shadow-2xs">
+                            <div>
+                                <h2 className="text-lg font-bold font-heritage text-stone-900 flex items-center gap-2">
+                                    <span>Tuyển tập tác phẩm của bạn ({myPoems.length})</span>
+                                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                                        Sáng tác không giới hạn
+                                    </span>
+                                </h2>
+                                <p className="text-xs text-stone-500 mt-1">
+                                    Tất cả các bài thơ Lục Bát do bạn sáng tác đều được lưu trữ đầy đủ tại đây. Bạn có thể mở sửa, nhân bản tạo bài mới hoặc xóa bất kỳ lúc nào.
+                                </p>
+                            </div>
                             <button
                                 onClick={handleNewPoem}
-                                className="px-4 py-2 bg-amber-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                                className="px-4 py-2.5 bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-700 hover:to-amber-800 text-amber-50 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
                             >
-                                <Feather className="w-3.5 h-3.5" />
-                                <span>Sáng tác bài mới</span>
+                                <Plus className="w-4 h-4" />
+                                <span>+ Sáng tác bài thơ mới</span>
                             </button>
                         </div>
 
@@ -830,6 +918,13 @@ const PoetryStudio = () => {
                         ) : myPoems.length === 0 ? (
                             <div className="bg-white rounded-3xl p-12 text-center border border-amber-900/15 shadow-sm space-y-3">
                                 <p className="text-stone-500 text-sm">Bạn chưa lưu bài thơ nào. Hãy quay lại Studio để sáng tác nhé!</p>
+                                <button
+                                    onClick={handleNewPoem}
+                                    className="px-4 py-2 bg-amber-900 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Bắt đầu sáng tác ngay</span>
+                                </button>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -858,21 +953,31 @@ const PoetryStudio = () => {
                                             <span className="text-[11px] text-stone-400">
                                                 {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
                                             </span>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 <button
                                                     onClick={() => handleLoadPoem(p)}
-                                                    className="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-lg font-bold"
+                                                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-lg text-xs font-bold border border-amber-200/60 cursor-pointer transition"
+                                                    title="Mở bài thơ này vào Studio để chỉnh sửa tiếp"
                                                 >
                                                     Mở sửa
                                                 </button>
                                                 <button
+                                                    onClick={() => handleDuplicatePoem(p)}
+                                                    className="px-2.5 py-1 bg-stone-50 hover:bg-stone-100 text-stone-700 rounded-lg text-xs font-semibold border border-stone-200 cursor-pointer transition flex items-center gap-1"
+                                                    title="Nhân bản nội dung bài này để sáng tác một bài thơ mới riêng biệt"
+                                                >
+                                                    <Copy className="w-3 h-3 text-stone-500" />
+                                                    <span>Nhân bản</span>
+                                                </button>
+                                                <button
                                                     onClick={async () => {
-                                                        if (confirm('Bạn có chắc muốn xóa bài thơ này?')) {
+                                                        if (confirm(`Bạn có chắc muốn xóa bài thơ "${p.title}"?`)) {
                                                             await poetryService.deletePoem(p._id);
                                                             fetchMyPoems();
                                                         }
                                                     }}
-                                                    className="p-1 text-stone-400 hover:text-red-700"
+                                                    className="p-1 text-stone-400 hover:text-red-700 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                                                    title="Xóa bài thơ này"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
