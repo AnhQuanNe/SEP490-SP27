@@ -90,11 +90,11 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
     });
 
     const callStart = Date.now();
-    const MAX_TOTAL_BUDGET_MS = 180000; // Ngân sách thời gian chờ tối đa 180s (3 phút)
+    const MAX_TOTAL_BUDGET_MS = 22000; // Ngân sách chờ tối đa 22s cho phản hồi hội thoại trực tiếp
 
     for (let k = 0; k < geminiKeys.length; k++) {
         if (Date.now() - callStart > MAX_TOTAL_BUDGET_MS) {
-            console.warn('[Gemini API] Quá ngân sách thời gian chờ (180s). Kích hoạt Động cơ Tri thức Nội bộ...');
+            console.warn('[Gemini API] Quá ngân sách thời gian chờ (22s). Kích hoạt Động cơ Tri thức Nội bộ...');
             break;
         }
         const keyIdx = (currentAiGeminiKeyIndex + k) % geminiKeys.length;
@@ -105,7 +105,7 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
             if (Date.now() - callStart > MAX_TOTAL_BUDGET_MS) break;
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            const max503Retries = 2; // Thử lại 2 lần (tổng 3 lần) cho HTTP 503
+            const max503Retries = 1; // Thử lại 1 lần nếu gặp HTTP 503
 
             for (let retry = 0; retry <= max503Retries; retry++) {
                 try {
@@ -120,7 +120,7 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
                                 maxOutputTokens: 4096,
                             },
                         }),
-                        signal: AbortSignal.timeout(60000), // Timeout 60 giây (60000ms)
+                        signal: AbortSignal.timeout(12000), // Timeout 12 giây cho mỗi lượt gọi
                     });
 
                     if (response.ok) {
@@ -135,7 +135,7 @@ Hãy giải đáp trực tiếp, sâu sắc, đúng trọng tâm và tự nhiên
                     if (response.status === 503) {
                         console.warn(`[Gemini API] Model ${model} (Key #${keyIdx + 1}) gặp HTTP 503 (Quá tải tạm thời). Lần thử ${retry + 1}/${max503Retries + 1}...`);
                         if (retry < max503Retries) {
-                            await sleep(2500); // Thử lại sau 2.5s
+                            await sleep(1500); // Thử lại sau 1.5s
                             continue;
                         } else {
                             console.warn(`[Gemini API] Model ${model} vẫn 503 sau các lần thử. Chuyển sang model/key tiếp theo.`);

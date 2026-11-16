@@ -5,11 +5,15 @@ export const aiService = {
      * Gửi câu hỏi tới Trợ lý AI Di sản (RAG & Dẫn nguồn kiểm chứng)
      */
     async ask({ question, contextSlug = null, history = [] }) {
-        const response = await api.post('/ai/ask', {
-            question,
-            contextSlug,
-            history,
-        });
+        const response = await api.post(
+            '/ai/ask',
+            {
+                question,
+                contextSlug,
+                history,
+            },
+            { timeout: 90000 }
+        );
         return {
             ...(response.data || {}),
             quota: response.quota || null,
@@ -36,12 +40,16 @@ export const aiService = {
      * Tương tác hỏi đáp học tập với Gia sư văn hóa AI
      */
     async chatWithTutor({ message, topic = null, history = [], selectedWorkSlug = null }) {
-        const response = await api.post('/ai/tutor', {
-            message,
-            topic,
-            history,
-            selectedWorkSlug,
-        });
+        const response = await api.post(
+            '/ai/tutor',
+            {
+                message,
+                topic,
+                history,
+                selectedWorkSlug,
+            },
+            { timeout: 90000 }
+        );
         return response.data;
     },
 
